@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
             window.storeData = parseAllData(msrData, targetData, dailyCashData, advOrdData, Number(targetStore));
             
             buildDateDropdowns();
-            renderDashboard("ALL", null, null, Number(targetUPT), Number(targetAUR));
+            renderDashboard("ALL", null, null, Number(targetUPT), Number(targetATV), Number(targetAUR));
             
             if(loading) loading.style.display = "none";
         } catch (err) {
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const t = getTargets();
         const discFilter = document.getElementById("discountTypeFilter")?.value || "ALL";
         const catFilter = document.getElementById("categoryTypeFilter")?.value || "ALL";
-        renderDashboard(mode, dFrom, dTo, t.upt, t.aur, discFilter, catFilter);
+        renderDashboard(mode, dFrom, dTo, t.upt, t.atv, t.aur, discFilter, catFilter);
     };
 
     const applyBtn = document.getElementById("applyPerformanceDateRange");
@@ -181,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("performanceDateFrom").value = "";
         document.getElementById("performanceDateTo").value = "";
         const t = getTargets();
-        renderDashboard("ALL", null, null, t.upt, t.aur, "ALL", "ALL");
+        renderDashboard("ALL", null, null, t.upt, t.atv, t.aur, "ALL", "ALL");
     });
 
     const discFilterEl = document.getElementById("discountTypeFilter");
@@ -726,14 +726,25 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetATV, targetAUR, disc
     }
 
     
-    const formatGrowth = (actual, lw, targetVal) => {
+    const formatGrowth = (actual, lw, targetVal, isMoney) => {
         let text = "";
         
         // Target Achievement
         if (targetVal && targetVal > 0) {
-            const achPct = (actual / targetVal) * 100;
-            const tColor = achPct >= 100 ? 'green' : 'red';
-            text += `<div style="font-size:12px;color:${tColor};margin-top:4px;font-weight:bold;">T: ${achPct.toFixed(1)}%</div>`;
+            const diff = actual - targetVal;
+            const achPct = (diff / targetVal) * 100;
+            const tColor = achPct >= 0 ? 'green' : 'red';
+            const sign = achPct > 0 ? '+' : '';
+            const diffSign = diff > 0 ? '+' : '';
+            
+            let diffText = "";
+            if (isMoney) {
+                diffText = `(${diffSign}Rp ${Math.round(Math.abs(diff)).toLocaleString('id-ID')})`;
+            } else {
+                diffText = `(${diffSign}${Math.abs(diff).toFixed(2)})`;
+            }
+            
+            text += `<div style="font-size:12px;color:${tColor};margin-top:4px;font-weight:bold;">T: ${sign}${achPct.toFixed(1)}% <span style="font-size:10px;color:#555;">${diffText}</span></div>`;
         }
         
         // Last Year (Placeholder for now)
