@@ -526,7 +526,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
     
     if (mode === "ALL") {
         selectedDates = dates;
-        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) titleEl.innerText = "SUMMARY SALES STORE: ALL DATES";
+        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) { const dtStr = dates.length > 0 ? (dates[0] + " TO " + dates[dates.length-1]) : "ALL DATES"; titleEl.innerText = "SUMMARY SALES STORE: " + dtStr; } const statusEl = document.getElementById("performanceFilterStatus"); if(statusEl) statusEl.innerText = "ALL PERIOD";
         const infoEl = document.getElementById("performanceFilterInfo");
         if(infoEl) infoEl.innerText = "CURRENT SUMMARY • ALL AVAILABLE DATES";
     } else if (mode === "CUSTOM") {
@@ -544,7 +544,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
             return true;
         });
 
-        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) titleEl.innerText = "SUMMARY SALES STORE: " + fromD + " TO " + toD;
+        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) titleEl.innerText = "SUMMARY SALES STORE: " + fromD + " TO " + toD; const statusEl = document.getElementById("performanceFilterStatus"); if(statusEl) statusEl.innerText = "CUSTOM PERIOD";
         const infoEl = document.getElementById("performanceFilterInfo");
         if(infoEl) infoEl.innerText = `CURRENT SUMMARY • ${fromD || '...'} TO ${toD || '...'}`;
     }
@@ -753,7 +753,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
         if(!el) return;
         
         let textVal = "";
-        if(isMoney) textVal = "Rp " + Math.round(val).toLocaleString('id-ID');
+        if(isMoney) textVal = "Rp&nbsp;" + Math.round(val).toLocaleString('id-ID');
         else if (isDec) textVal = val.toFixed(2);
         else textVal = Math.round(val).toLocaleString('id-ID');
 
