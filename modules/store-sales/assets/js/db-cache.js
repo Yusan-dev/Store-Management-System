@@ -19,17 +19,26 @@
 
     async function saveFiles() {
         try {
-            const db = await initDB();
-            const tx = db.transaction("file_cache", "readwrite");
-            const store = tx.objectStore("file_cache");
-            
+            const filesToSave = [];
             const inputs = document.querySelectorAll('input[type="file"]');
             for (let input of inputs) {
                 if (input.files && input.files.length > 0) {
                     const file = input.files[0];
                     const arrayBuffer = await file.arrayBuffer();
-                    store.put({ name: file.name, type: file.type, data: arrayBuffer }, `${MOD_NAME}_${input.id}`);
+                    filesToSave.push({
+                        id: input.id,
+                        name: file.name,
+                        type: file.type,
+                        data: arrayBuffer
+                    });
                 }
+            }
+            
+            const db = await initDB();
+            const tx = db.transaction("file_cache", "readwrite");
+            const store = tx.objectStore("file_cache");
+            for (let f of filesToSave) {
+                store.put({ name: f.name, type: f.type, data: f.data }, `${MOD_NAME}_${f.id}`);
             }
         } catch(e) { console.error(e); }
     }
