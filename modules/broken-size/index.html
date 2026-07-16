@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAA BROKEN SIZE & IL</title>
+<link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body>
+<div class="container">
+
+<header class="topbar">
+<div class="brand">
+<div class="logo-box" style="width:60px;height:60px;background:#00FFFF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
+<div>
+<h1>MAA BROKEN SIZE & IL</h1>
+<p>Create By : 2309445</p>
+</div>
+</div>
+
+<div style="display:flex;gap:12px;">
+<button id="print">PRINT</button>
+<button id="export">EXPORT</button>
+</div>
+</header>
+
+
+
+<section class="upload-card">
+<div class="upload-group">
+
+<div class="upload-item">
+<label>UPLOAD STOCK (Stock Position Report)</label>
+<input id="stock" type="file" accept=".xlsx,.xls">
+</div>
+
+<div class="upload-item">
+<label>UPLOAD MSR BULAN 1</label>
+<input id="msr1" type="file" accept=".xlsx,.xls">
+</div>
+
+<div class="upload-item">
+<label>UPLOAD MSR BULAN 2</label>
+<input id="msr2" type="file" accept=".xlsx,.xls">
+</div>
+
+<div class="upload-item">
+<label>UPLOAD MSR BULAN 3</label>
+<input id="msr3" type="file" accept=".xlsx,.xls">
+</div>
+
+</div>
+
+<button id="process">PROSES</button>
+</section>
+
+
+
+<div class="tab-bar">
+<button class="tab-btn active" data-tab="broken">BROKEN SIZE</button>
+<button class="tab-btn" data-tab="il">IL (INVENTORY LEVEL)</button>
+</div>
+
+
+
+<!-- ===== TAB: BROKEN SIZE ===== -->
+<div id="tab-broken" class="tab-content active">
+
+<section class="summary" id="bs-summary">
+
+<div class="card">
+<div class="label">TOTAL ARTIKEL</div>
+<h2 id="bsTotalArtikel">0</h2>
+</div>
+
+<div class="card">
+<div class="label">TOTAL QTY</div>
+<h2 id="bsTotalQty">0</h2>
+</div>
+
+<div class="card broken">
+<div class="label">BROKEN SIZE</div>
+<h2 id="bsBrokenCount">0</h2>
+<small id="bsBrokenPct">0%</small>
+</div>
+
+<div class="card not-broken">
+<div class="label">NOT BROKEN</div>
+<h2 id="bsNotBrokenCount">0</h2>
+<small id="bsNotBrokenPct">0%</small>
+</div>
+
+<div class="card">
+<div class="label">APPAREL BROKEN</div>
+<h2 id="bsApparelBroken">0</h2>
+<small id="bsApparelBrokenPct">0%</small>
+</div>
+
+<div class="card">
+<div class="label">FOOTWEAR BROKEN</div>
+<h2 id="bsFootwearBroken">0</h2>
+<small id="bsFootwearBrokenPct">0%</small>
+</div>
+
+</section>
+
+
+
+<div class="main-layout">
+
+<aside class="filter" id="bs-filter">
+<h3>FILTER</h3>
+
+<input id="bsSearch" placeholder="Search Artikel">
+
+<div class="filter-box">
+<div class="filter-title">BRAND</div>
+<div id="bsBrand"></div>
+</div>
+
+<div class="filter-box">
+<div class="filter-title">CATEGORY</div>
+<div id="bsCategory"></div>
+</div>
+
+<div class="filter-box">
+<div class="filter-title">DISCOUNT</div>
+<div id="bsDiscount"></div>
+</div>
+
+<div class="filter-box">
+<div class="filter-title">STATUS</div>
+<div id="bsStatus"></div>
+</div>
+
+</aside>
+
+
+
+<section class="content">
+<div class="content-header">BROKEN SIZE ANALYSIS</div>
+<div class="table-wrap">
+<table id="bsTable">
+<thead>
+<tr>
+<th data-key="brand" data-label="BRAND" onclick="sortBsTable('brand')">BRAND</th>
+<th data-key="category" data-label="CATEGORY" onclick="sortBsTable('category')">CATEGORY</th>
+<th data-key="artikel" data-label="ARTIKEL" onclick="sortBsTable('artikel')">ARTIKEL</th>
+<th data-key="desc" data-label="DESCRIPTION" onclick="sortBsTable('desc')">DESCRIPTION</th>
+<th data-key="discount" data-label="DISCOUNT" onclick="sortBsTable('discount')">DISCOUNT</th>
+<th data-key="sizes" data-label="SIZES" onclick="sortBsTable('sizes')">SIZES</th>
+<th data-key="sizeCount" data-label="SIZE COUNT" onclick="sortBsTable('sizeCount')">SIZE COUNT</th>
+<th data-key="status" data-label="STATUS" onclick="sortBsTable('status')">STATUS</th>
+<th data-key="totalQty" data-label="TOTAL QTY" onclick="sortBsTable('totalQty')">TOTAL QTY</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="9">UPLOAD FILE</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+
+</div>
+
+
+
+<!-- ===== TAB: IL ===== -->
+<div id="tab-il" class="tab-content">
+
+<section class="summary" id="il-summary">
+
+<div class="card">
+<div class="label">TOTAL KATEGORI</div>
+<h2 id="ilTotalCat">0</h2>
+</div>
+
+<div class="card">
+<div class="label">TOTAL STOCK</div>
+<h2 id="ilTotalStock">0</h2>
+</div>
+
+<div class="card">
+<div class="label">AVG SALES / BULAN</div>
+<h2 id="ilAvgSales">0</h2>
+</div>
+
+<div class="card">
+<div class="label">IL RATIO (OVERALL)</div>
+<h2 id="ilOverall">0</h2>
+</div>
+
+</section>
+
+
+
+<div class="main-layout">
+
+<aside class="filter" id="il-filter">
+<h3>INFO</h3>
+<div class="filter-box">
+<div class="filter-title">CARA HITUNG IL</div>
+<p style="font-size:12px;line-height:1.6">
+IL = Stock Sekarang ÷ Rata-Rata Penjualan per Bulan (3 bulan).
+<br><br>
+<strong>IL &lt; 2</strong> = Stock Kurang<br>
+<strong>IL 2 - 4</strong> = Stock Ideal<br>
+<strong>IL &gt; 4</strong> = Stock Berlebih
+</p>
+</div>
+</aside>
+
+
+
+<section class="content">
+<div class="content-header">INVENTORY LEVEL PER KATEGORI</div>
+<div class="table-wrap">
+<table id="ilTable">
+<thead>
+<tr>
+<th>CATEGORY</th>
+<th>STOCK QTY</th>
+<th>SALES BULAN 1</th>
+<th>SALES BULAN 2</th>
+<th>SALES BULAN 3</th>
+<th>AVG SALES / BULAN</th>
+<th>IL RATIO</th>
+<th>STATUS</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="8">UPLOAD FILE</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+</div>
+
+</div>
+
+
+
+<footer class="footer">
+  <div style="display:flex; justify-content:center; gap:20px; align-items:center; flex-wrap:wrap; font-size:12px;">
+    <div>📧 yusup.gunners@gmail.com</div>
+    <div>☕ Buy me a coffee: <a href="https://trakteer.id/muhammad_yusuf525" target="_blank" style="color:inherit; text-decoration:underline;">Trakteer</a></div>
+    <div><strong>MAA BROKEN SIZE & IL</strong> &copy; 2026</div>
+  </div>
+</footer>
+
+</div>
+
+<script src="libs/xlsx.full.min.js"></script>
+<script src="assets/js/process.js"></script>
+<script src="assets/js/filter.js"></script>
+<script src="assets/js/sort.js"></script>
+<script src="assets/js/export.js"></script>
+<script src="assets/js/print.js"></script>
+<script src="assets/js/il-process.js"></script>
+<script src="assets/js/tabs.js"></script>
+
+<div id="loading" class="gt-loading">
+<div class="gt-spinner"></div>
+<h3>PROCESSING DATA</h3>
+<p>Analyzing broken sizes...</p>
+</div>
+
+<script src="assets/js/db-cache.js"></script>
+</body>
+</html>

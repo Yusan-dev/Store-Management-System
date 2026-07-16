@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>MAA AUTO STOCK</title>
+
+<link
+rel="stylesheet"
+href="assets/css/dashboard.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<header class="topbar">
+
+<div class="brand">
+
+<div class="logo-box" style="width:60px;height:60px;background:#00FFFF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
+
+<div>
+
+<h1>MAA AUTO STOCK</h1>
+
+<p>
+Create By : 23029445
+</p>
+
+</div>
+
+</div>
+
+
+</div>
+
+<div
+style="
+display:flex;
+gap:12px;
+">
+
+<button id="print">
+
+PRINT
+
+</button>
+
+<button id="export">
+
+EXPORT
+
+</button>
+
+</div>
+
+</header>
+
+
+
+
+
+<section class="upload-card">
+
+<div>
+
+<label>
+
+UPLOAD STOCK
+
+</label>
+
+<br><br>
+
+<input
+id="stock"
+type="file"
+accept=".xlsx,.xls">
+
+</div>
+
+
+
+<button
+id="process">
+
+PROSES
+
+</button>
+
+</section>
+
+
+
+
+
+<section class="summary">
+
+<div class="card">
+
+<div class="label">
+
+SKU
+
+</div>
+
+<h2 id="totalSku">
+
+0
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+QTY
+
+</div>
+
+<h2 id="totalQty">
+
+0
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+MEN
+
+</div>
+
+<h2 id="menSku">
+
+0 SKU
+
+</h2>
+
+<small id="menQty">
+
+0 PCS
+
+</small>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+WOMEN
+
+</div>
+
+<h2 id="womenSku">
+
+0 SKU
+
+</h2>
+
+<small id="womenQty">
+
+0 PCS
+
+</small>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+KIDS
+
+</div>
+
+<h2 id="kidsSku">
+
+0 SKU
+
+</h2>
+
+<small id="kidsQty">
+
+0 PCS
+
+</small>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+UNISEX
+
+</div>
+
+<h2 id="unisexSku">
+
+0 SKU
+
+</h2>
+
+<small id="unisexQty">
+
+0 PCS
+
+</small>
+
+</div>
+
+<div class="card">
+
+<div class="label">
+
+FOOTWEAR
+
+</div>
+
+<h2 id="footwearSku">
+
+0 SKU
+
+</h2>
+
+<small id="footwearQty">
+
+0 PCS
+
+</small>
+
+</div>
+
+</section>
+
+
+
+
+
+<div class="main-layout">
+
+
+
+
+<aside class="filter">
+
+<h3>
+
+FILTER
+
+</h3>
+
+
+
+<input
+id="search"
+placeholder="Search Artikel">
+
+
+
+<div class="filter-box">
+
+<div class="filter-title">
+
+PRICE
+
+</div>
+
+
+
+<input
+id="price"
+type="number"
+placeholder="EXACT">
+
+
+
+<input
+id="minPrice"
+type="number"
+placeholder="MIN">
+
+
+
+<input
+id="maxPrice"
+type="number"
+placeholder="MAX">
+
+</div>
+
+
+
+
+
+<div class="filter-box">
+
+<div class="filter-title">
+
+BRAND
+
+</div>
+
+<div id="brand">
+
+</div>
+
+</div>
+
+
+
+
+
+<div class="filter-box">
+
+<div class="filter-title">
+
+CATEGORY
+
+</div>
+
+<div id="category">
+
+</div>
+
+</div>
+
+
+
+
+
+<div class="filter-box">
+
+<div class="filter-title">
+
+GENDER
+
+</div>
+
+<div id="gender">
+
+</div>
+
+</div>
+
+
+
+
+
+<div class="filter-box">
+
+<div class="filter-title">
+
+STATUS
+
+</div>
+
+<div id="status">
+
+</div>
+
+</div>
+
+
+
+</aside>
+
+
+
+
+
+<section class="content">
+
+<div class="content-header">
+
+GT AUTO STOCK RESULT
+
+</div>
+
+
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th
+data-key="brand"
+data-label="BRAND"
+onclick="sortTable('brand')">
+
+BRAND
+
+</th>
+
+
+
+<th
+data-key="category"
+data-label="CATEGORY"
+onclick="sortTable('category')">
+
+CATEGORY
+
+</th>
+
+
+
+<th
+data-key="artikel"
+data-label="ARTIKEL"
+onclick="sortTable('artikel')">
+
+ARTIKEL
+
+</th>
+
+
+
+<th
+data-key="desc"
+data-label="DESCRIPTION"
+onclick="sortTable('desc')">
+
+DESCRIPTION
+
+</th>
+
+
+
+<th
+data-key="price"
+data-label="PRICE"
+onclick="sortTable('price')">
+
+PRICE
+
+</th>
+
+
+
+<th
+data-key="status"
+data-label="STATUS"
+onclick="sortTable('status')">
+
+STATUS
+
+</th>
+
+
+
+<th
+data-key="gender"
+data-label="GENDER"
+onclick="sortTable('gender')">
+
+GENDER
+
+</th>
+
+
+
+<th
+data-key="qty"
+data-label="QTY"
+onclick="sortTable('qty')">
+
+QTY
+
+</th>
+
+</tr>
+
+</thead>
+
+
+
+<tbody>
+
+<tr>
+
+<td
+colspan="8">
+
+UPLOAD FILE
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+</div>
+
+
+
+
+
+<footer class="footer">
+  <div style="display:flex; justify-content:center; gap:20px; align-items:center; flex-wrap:wrap; font-size:12px;">
+    <div>📧 yusup.gunners@gmail.com</div>
+    <div>☕ Buy me a coffee: <a href="https://trakteer.id/muhammad_yusuf525" target="_blank" style="color:inherit; text-decoration:underline;">Trakteer</a></div>
+    <div><strong>MAA AUTO STOCK</strong> &copy; 2026</div>
+  </div>
+</footer>
+
+
+
+
+
+<script src="libs/xlsx.full.min.js"></script>
+
+<script src="assets/js/processor.js"></script>
+
+<script src="assets/js/filter.js"></script>
+
+<script src="assets/js/process.js"></script>
+
+
+
+<script src="assets/js/sort.js"></script>
+
+<script src="assets/js/export.js"></script>
+
+<script src="assets/js/print.js"></script>
+
+<script src="assets/js/desktop.js"></script>
+
+
+
+
+<div
+id="loading"
+class="gt-loading"
+>
+
+<div
+class="gt-spinner"
+></div>
+
+<h3>
+
+PROCESSING STOCK
+
+</h3>
+
+<p>
+
+Generating dashboard...
+
+</p>
+
+</div>
+
+
+<script src="assets/js/db-cache.js"></script>
+</body>
+
+</html>
+
+

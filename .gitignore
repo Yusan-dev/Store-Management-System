@@ -1,0 +1,13 @@
+# Excel files
+*.xls
+*.xlsx
+*.csv
+
+# Mac OS
+.DS_Store
+
+# Node
+node_modules/
+
+# Temporary files
+*.log

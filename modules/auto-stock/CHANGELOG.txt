@@ -1,0 +1,15 @@
+GT AUTO STOCK
+Version 1.0
+
+Features:
+- Upload Stock
+- Dashboard
+- Multi Filter
+- Export
+- Print PDF
+- Sort
+- Gender Detection
+- Preset
+
+Build:
+GESTTECH © 2026

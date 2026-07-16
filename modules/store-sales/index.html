@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta name="gt-runtime" content="KANGODING.ORG:19002369:GTASS">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAA STORE SALES</title>
+<link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+
+<body>
+
+<div id="gt-runtime-anchor" data-owner="19002369" data-product="GTASS" hidden></div>
+
+<div class="container">
+
+<header class="topbar">
+    <div class="brand">
+        <div class="logo-box" style="width:50px;height:50px;background:#FF00FF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
+        <div>
+            <h1>MAA STORE SALES</h1>
+            <p>Create By : 2309445</p>
+            <span class="version">ENGINE V2 STABLE</span>
+        </div>
+    </div>
+    <div class="top-action">
+        <div id="licenseStatusCard" class="license-status-card" data-plan="NONE">
+            <div class="license-status-top">
+                <span class="license-status-dot"></span>
+                <span id="licensePlan">NOT AUTHORIZED</span>
+            </div>
+            <div class="license-status-info">
+                <span>USER ID</span>
+                <strong id="licenseUserId">-</strong>
+            </div>
+            <div class="license-status-footer">
+                <span id="licenseAccessInfo">PROCESS DAILY CASH TO VERIFY ACCESS</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<h2>UPLOAD SOURCE FILE</h2>
+
+<div class="upload-grid">
+    <div class="upload-box" id="dz-msr">
+        <label>MERCHANDISE SALES REPORT</label>
+        <input type="file" id="msr" accept=".xls,.xlsx">
+        <div id="msrName" class="filename">Belum dipilih</div>
+    </div>
+    <div class="upload-box" id="dz-target">
+        <label>TARGET HARIAN (EXCEL)</label>
+        <input type="file" id="target" accept=".xls,.xlsx">
+        <div id="targetName" class="filename">Belum dipilih</div>
+    </div>
+    <div class="upload-box" id="dz-dailyCash">
+        <label>DAILY CASH COLLECTION</label>
+        <input type="file" id="dailyCash" accept=".xls,.xlsx">
+        <div id="dailyCashName" class="filename">Belum dipilih</div>
+    </div>
+    <div class="upload-box" id="dz-advOrd">
+        <label>SALESPERSON / ADV ORD</label>
+        <input type="file" id="advOrd" accept=".xls,.xlsx">
+        <div id="advOrdName" class="filename">Belum dipilih</div>
+    </div>
+    <div class="upload-box">
+        <label>TARGET STORE (Bulan)</label>
+        <input type="number" id="targetStore" placeholder="Contoh: 100000000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+    </div>
+    <div class="upload-box">
+        <label>TARGET UPT</label>
+        <input type="number" step="0.01" id="targetUPT" placeholder="Contoh: 1.5" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+    </div>
+    <div class="upload-box">
+        <label>TARGET AUR</label>
+        <input type="number" id="targetAUR" placeholder="Contoh: 350000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+    </div>
+</div>
+
+<div class="process-area">
+    <button type="button" class="print-report-btn" onclick="printStaffPerformanceReport()">PRINT REPORT</button>
+    <button id="process">PROCESS</button>
+</div>
+
+<!-- ===================================== -->
+<!-- SUMMARY CARDS (5 kartu atas) -->
+<!-- ===================================== -->
+<section class="summary">
+
+    <div class="summary-card">
+        <span class="summary-title">TOTAL STAFF</span>
+        <h2 id="staffCount">0</h2>
+    </div>
+
+    <div class="summary-card">
+        <span class="summary-title">TOTAL SALES</span>
+        <h2 id="salesTotal">0</h2>
+    </div>
+
+    <div class="summary-card">
+        <span class="summary-title">TOTAL SM</span>
+        <h2 id="smTotal">0</h2>
+    </div>
+
+    <div class="summary-card">
+        <span class="summary-title">TOTAL QTY</span>
+        <h2 id="qtyTotal">0</h2>
+    </div>
+
+    <div class="summary-card">
+        <span class="summary-title">AVG SALES</span>
+        <h2 id="avgSales">0</h2>
+    </div>
+
+</section>
+
+<!-- ===================================== -->
+<!-- REPORT CONTROL -->
+<!-- ===================================== -->
+<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px;">
+        <div>
+            <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0;" id="performanceFilterStatus">ALL PERIOD</h2>
+            <div style="font-size:11px; color:#666; margin-top:4px;" id="performanceFilterInfo">CURRENT SUMMARY &bull; ALL AVAILABLE DATES</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="performanceDateFrom" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;"><option value="">SELECT FROM DATE</option></select>
+            <select id="performanceDateTo" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;"><option value="">SELECT TO DATE</option></select>
+            <button id="applyPerformanceDateRange" style="background:#111; color:#fff; padding:6px 12px; font-weight:bold; cursor:pointer; border:none; font-family:monospace;">APPLY</button>
+            <button id="resetPerformanceDateRange" style="background:#fff; color:#111; padding:6px 12px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">RESET</button>
+        </div>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="report-table" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
+            <thead>
+                <tr style="border-bottom:2px solid #111; background:#f0f0f0;">
+                    <th style="padding:8px; text-align:left;">DATE</th>
+                    <th style="padding:8px; text-align:right;">SALES</th>
+                    <th style="padding:8px; text-align:right;">SM</th>
+                    <th style="padding:8px; text-align:right;">QTY</th>
+                    <th style="padding:8px; text-align:right;">UPT</th>
+                    <th style="padding:8px; text-align:right;">ATV</th>
+                    <th style="padding:8px; text-align:right;">AUR</th>
+                    <th style="padding:8px; text-align:right;">ACC</th>
+                    <th style="padding:8px; text-align:right;">BAG</th>
+                    <th style="padding:8px; text-align:right;">APP</th>
+                    <th style="padding:8px; text-align:right;">FTW</th>
+                    <th style="padding:8px; text-align:right;">O2O</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="12" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ===================================== -->
+<!-- CATEGORY BREAKDOWN CARDS -->
+<!-- ===================================== -->
+<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+    <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">RINGKASAN KATEGORI</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">BAG</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumBagQty">0</span></div>
+            <div style="font-size:12px; color:#111;" id="sumBagSales">Rp 0</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">APPAREL</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumApparelQty">0</span></div>
+            <div style="font-size:12px; color:#111;" id="sumApparelSales">Rp 0</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">ACCESSORIES</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumAccQty">0</span></div>
+            <div style="font-size:12px; color:#111;" id="sumAccSales">Rp 0</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">FOOTWEAR</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumFtwQty">0</span></div>
+            <div style="font-size:12px; color:#111;" id="sumFtwSales">Rp 0</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">O2O</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">SM: <span id="sumO2OSM">0</span> &nbsp; QTY: <span id="sumO2OQty">0</span></div>
+            <div style="font-size:12px; color:#111;" id="sumO2OSales">Rp 0</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px; background:#111; color:#fff;">
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px;">TOTAL</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;" id="sumTotalSales">Rp 0</div>
+            <div style="font-size:11px;">SM: <span id="sumTotalSM">0</span> &nbsp; QTY: <span id="sumTotalQty">0</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================================== -->
+<!-- SALES KATEGORI & DISCOUNT -->
+<!-- ===================================== -->
+<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+        <div>
+            <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0;">SALES KATEGORI &amp; DISCOUNT</h2>
+            <div style="font-size:11px; color:#666; margin-top:4px;">Breakdown by Category and Type</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <select id="categoryTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
+                <option value="ALL">SEMUA KATEGORI</option>
+                <option value="APP">APPAREL</option>
+                <option value="BAG">BAG</option>
+                <option value="ACC">ACCESSORIES</option>
+                <option value="FTW">FOOTWEAR</option>
+            </select>
+            <select id="discountTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
+                <option value="ALL">SEMUA TIPE</option>
+                <option value="normal">NORMAL</option>
+                <option value="DISKON 10%">DISKON 10%</option>
+                <option value="DISKON 20%">DISKON 20%</option>
+                <option value="DISKON 30%">DISKON 30%</option>
+                <option value="DISKON 40%">DISKON 40%</option>
+                <option value="DISKON 50%">DISKON 50%</option>
+                <option value="DISKON 60%">DISKON 60%</option>
+                <option value="DISKON 70%">DISKON 70%</option>
+                <option value="DISKON 80%">DISKON 80%</option>
+                <option value="DISKON 90%">DISKON 90%</option>
+                <option value="FREEFALL">FREEFALL</option>
+            </select>
+        </div>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="report-table" id="tableCat" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
+            <thead>
+                <tr style="border-bottom:2px solid #111; background:#f0f0f0;">
+                    <th style="padding:10px; text-align:left;">KATEGORI</th>
+                    <th style="padding:10px; text-align:left;">TYPE</th>
+                    <th style="padding:10px; text-align:right;">QTY</th>
+                    <th style="padding:10px; text-align:right;">SALES (Rp)</th>
+                </tr>
+            </thead>
+            <tbody id="tableCatBody">
+                <tr><td colspan="4" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ===================================== -->
+<!-- TOP ARTICLES -->
+<!-- ===================================== -->
+<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+    <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">TOP 5 ARTIKEL</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px;">
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 BY SALES (Rp)</div>
+            <div id="topSales">-</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 BY QTY</div>
+            <div id="topQty">-</div>
+        </div>
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 FOOTWEAR</div>
+            <div id="topFootwear">-</div>
+        </div>
+    </div>
+</section>
+
+<footer class="footer" style="text-align:center; padding:20px; font-size:13px; margin-top:24px; border:4px solid #111; background:#fff; box-shadow:6px 6px 0px #111;">
+  <div style="display:flex; justify-content:center; gap:20px; align-items:center; flex-wrap:wrap; font-size:12px;">
+    <div>📧 yusup.gunners@gmail.com</div>
+    <div>☕ Buy me a coffee: <a href="https://trakteer.id/muhammad_yusuf525" target="_blank" style="color:inherit; text-decoration:underline;">Trakteer</a></div>
+    <div><strong>MAA STORE SALES</strong> &copy; 2026</div>
+  </div>
+</footer>
+
+</div>
+
+<script src="libs/xlsx.full.min.js"></script>
+<script src="assets/js/runtime.js"></script>
+<script src="assets/js/process.js"></script>
+<script src="assets/js/modal.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    GTRuntime.boot();
+    updateLicenseStatusUI();
+});
+</script>
+
+<div id="printWatermark" class="print-watermark">
+    <div class="print-watermark-brand">KANGODING.ORG</div>
+    <div class="print-watermark-id">2309445</div>
+</div>
+
+<!-- ===================================== -->
+<!-- LICENSE ACCESS SCREEN -->
+<!-- ===================================== -->
+<div id="licenseAccessScreen" class="license-access-screen" aria-hidden="true">
+    <div class="license-access-panel">
+        <div class="license-access-brand">
+            <img src="img/logo.png" alt="KANGODING.ORG">
+            <div>
+                <strong>KANGODING.ORG</strong>
+                <span>MAA STORE SALES</span>
+            </div>
+        </div>
+        <div class="license-access-badge">FREE ACCESS ENDED</div>
+        <h1>LIFETIME ACCESS REQUIRED</h1>
+        <p class="license-access-description">
+            The Free Access period for this User ID has ended.
+            Upgrade to KANGODING.ORG VIP Lifetime Access to continue
+            using MAA STORE SALES.
+        </p>
+        <div class="license-access-details">
+            <div>
+                <span>USER ID</span>
+                <strong id="expiredUserId">-</strong>
+            </div>
+            <div>
+                <span>ACCESS PLAN</span>
+                <strong>FREE ACCESS</strong>
+            </div>
+            <div>
+                <span>FREE ACCESS ENDED</span>
+                <strong id="expiredDate">29 NOVEMBER 2026</strong>
+            </div>
+            <div>
+                <span>STATUS</span>
+                <strong>ACCESS EXPIRED</strong>
+            </div>
+        </div>
+        <div class="license-access-action">
+            <strong>CONTACT KANGODING.ORG</strong>
+            <span>ACTIVATE VIP LIFETIME ACCESS</span>
+        </div>
+        <div class="license-access-code">GT LICENSE &bull; 2309445 &bull; FREE_ACCESS_EXPIRED</div>
+    </div>
+</div>
+
+<div id="printReportRoot"></div>
+<script src="assets/js/db-cache.js"></script>
+</body>
+</html>

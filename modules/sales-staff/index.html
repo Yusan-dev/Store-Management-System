@@ -1,0 +1,1046 @@
+
+<!DOCTYPE html>
+
+<html lang="id">
+
+<head>
+
+<meta
+    name="gt-runtime"
+    content="KANGODING.ORG:23029445:GTASS"
+>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>
+
+MAA AUTO SALES STAFF
+
+</title>
+
+<meta
+    name="gt-runtime"
+    content="KANGODING.ORG:23029445:GTASS"
+>
+
+<link
+rel="stylesheet"
+href="assets/css/dashboard.css">
+
+</head>
+
+<body>
+
+<div
+    id="gt-runtime-anchor"
+    data-owner="23029445"
+    data-product="GTASS"
+    hidden
+></div>
+
+
+<div class="container">
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="logo-box" style="width:50px;height:50px;background:#FF00FF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
+
+        <div>
+
+            <h1>MAA SALES STAFF</h1>
+
+            <p>Create By : 2309445</p>
+
+            <span class="version"><i>Version 1.0</i></span>
+
+        </div>
+
+    </div>
+
+   <div class="top-action">
+
+    <div
+        id="licenseStatusCard"
+        class="license-status-card"
+        data-plan="NONE"
+    >
+
+        <div class="license-status-top">
+
+            <span class="license-status-dot"></span>
+
+            <span id="licensePlan">
+                NOT AUTHORIZED
+            </span>
+
+        </div>
+
+
+        <div class="license-status-info">
+
+            <span>
+                USER ID
+            </span>
+
+            <strong id="licenseUserId">
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="license-status-footer">
+
+            <span id="licenseAccessInfo">
+                PROCESS DAILY CASH TO VERIFY ACCESS
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+</header>
+
+
+<h2>
+
+UPLOAD SOURCE FILE
+
+</h2>
+
+<div class="upload-grid">
+
+<div class="upload-box">
+
+<label>
+
+DAILY CASH COLLECTION
+
+</label>
+
+<input
+type="file"
+id="dailyCash"
+accept=".xls,.xlsx">
+
+<div
+id="dailyCashName"
+class="filename">
+
+Belum dipilih
+
+</div>
+
+</div>
+
+<div class="upload-box">
+
+<label>
+
+MERCHANDISE SALES REPORT
+
+</label>
+
+<input
+type="file"
+id="msr"
+accept=".xls,.xlsx">
+
+<div
+id="msrName"
+class="filename">
+
+Belum dipilih
+
+</div>
+
+</div>
+
+<div class="upload-box">
+
+<label>
+
+SALESPERSON WISE
+
+</label>
+
+<input
+type="file"
+id="salesPerson"
+accept=".xls,.xlsx">
+
+<div
+id="salesPersonName"
+class="filename">
+
+Belum dipilih
+
+</div>
+
+</div>
+
+</div>
+
+<div class="process-area">
+
+    <button
+        type="button"
+        class="print-report-btn"
+        onclick="printStaffPerformanceReport()"
+    >
+        PRINT REPORT
+    </button>
+
+    <button id="process">
+        PROCESS
+    </button>
+
+</div>
+
+<section class="summary">
+
+    <div class="summary-card">
+
+        <span class="summary-title">
+
+            TOTAL STAFF
+
+        </span>
+
+        <h2 id="staffCount">
+
+            0
+
+        </h2>
+
+    </div>
+
+    <div class="summary-card">
+
+        <span class="summary-title">
+
+            TOTAL SALES
+
+        </span>
+
+        <h2 id="salesTotal">
+
+            0
+
+        </h2>
+
+    </div>
+
+    <div class="summary-card">
+
+        <span class="summary-title">
+
+            TOTAL SM
+
+        </span>
+
+        <h2 id="smTotal">
+
+            0
+
+        </h2>
+
+    </div>
+
+    <div class="summary-card">
+
+        <span class="summary-title">
+
+            TOTAL QTY
+
+        </span>
+
+        <h2 id="qtyTotal">
+
+            0
+
+        </h2>
+
+    </div>
+
+    <div class="summary-card">
+
+        <span class="summary-title">
+
+            AVG SALES
+
+        </span>
+
+        <h2 id="avgSales">
+
+            0
+
+        </h2>
+
+    </div>
+
+</section>
+
+
+<section class="validation-card">
+
+    <h2>DATA VALIDATION</h2>
+
+    <table class="validation-table">
+
+        <tbody>
+
+            <tr>
+
+    <td>Daily Cash SM</td>
+
+    <td id="valDailySM">0</td>
+
+</tr>
+
+<tr>
+    <td>Staff SM</td>
+    <td id="valStaffSM">0</td>
+</tr>
+
+<tr>
+    <td>Diff</td>
+    <td id="valSMDiff">0</td>
+</tr>
+
+<tr>
+
+    <td>Status</td>
+
+    <td id="valSMStatus">-</td>
+
+</tr>
+
+<tr>
+
+    <td>Reason</td>
+
+    <td id="valReason">-</td>
+
+</tr>
+            
+        </tbody>
+
+    </table>
+
+</section>
+
+
+
+<!-- ===================================== -->
+<!-- DAILY VALIDATION DETAIL MODAL -->
+<!-- ===================================== -->
+
+<div id="validationModal" class="modal">
+
+    <div class="modal-box validation-modal-box">
+
+        <div class="modal-header">
+
+            <h2 id="validationModalTitle">
+                VALIDATION DETAIL
+            </h2>
+
+            <button id="closeValidationModal">
+                ✕
+            </button>
+
+        </div>
+
+
+        <div id="validationModalBody">
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- MONTHLY SUMMARY -->
+<!-- ===================================== -->
+
+<section class="content" style="margin-bottom: 20px;">
+
+    <div class="content-header">
+
+        <div>
+
+            <span class="section-eyebrow">
+                DATA CONTROL
+            </span>
+
+            <h2>
+                MONTHLY SUMMARY
+            </h2>
+
+            <p>
+                Aggregated Staff Performance
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="table-wrap">
+
+        <table id="monthlySummaryTable">
+
+            <thead id="monthlySummaryHead">
+
+                <tr>
+                </tr>
+
+            </thead>
+
+            <tbody id="monthlySummaryBody">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+<!-- ===================================== -->
+<!-- DAILY AUDIT -->
+<!-- ===================================== -->
+
+<section class="daily-audit-card">
+
+    <div class="daily-audit-header">
+
+        <div class="daily-audit-title">
+
+            <span class="section-eyebrow">
+                DATA CONTROL
+            </span>
+
+            <h2>
+                DAILY AUDIT
+            </h2>
+
+            <p>
+                Daily Source Reconciliation & Staff Performance
+            </p>
+
+        </div>
+
+
+        <div class="daily-audit-controls">
+
+            <select id="dailyAuditDate">
+
+                <option value="">
+                    SELECT DATE
+                </option>
+
+            </select>
+
+
+            <span
+                id="dailyAuditStatus"
+                data-status="EMPTY"
+            >
+                NO DATA
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div id="dailyAuditWorkspace">
+
+        <div class="daily-audit-empty">
+
+            PROCESS SOURCE FILE TO LOAD DAILY AUDIT
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ===================================== -->
+<!-- STAFF PERFORMANCE DATE RANGE -->
+<!-- ===================================== -->
+
+<section class="performance-filter-card">
+
+    <div class="performance-filter-header">
+
+        <div class="performance-filter-heading">
+
+            <span class="section-eyebrow">
+                REPORT CONTROL
+            </span>
+
+            <h2>
+                PERFORMANCE PERIOD
+            </h2>
+
+            <p>
+                Select a reporting period to analyze staff performance.
+            </p>
+
+        </div>
+
+
+        <div
+            id="performanceFilterStatus"
+            class="performance-filter-status"
+            data-mode="ALL"
+        >
+            ALL PERIOD
+        </div>
+
+    </div>
+
+
+    <div class="performance-filter-toolbar">
+        <div class="performance-filter-dates">
+            
+            <!-- STAFF FILTER -->
+            <div class="performance-filter-field" style="margin-right:16px;">
+                <label for="performanceFilterStaff">STAFF FILTER</label>
+                <div class="input-with-icon">
+                    <span class="input-icon">👤</span>
+                    <select id="performanceFilterStaff" class="date-input" style="width:200px; appearance:none; -webkit-appearance:none; padding-left:36px; background-color:transparent; border:none; outline:none; font-family:inherit; font-size:inherit;">
+                        <option value="ALL">ALL STAFF</option>
+                    </select>
+                </div>
+            </div>            <!-- FROM DATE -->
+
+            <div class="performance-filter-field">
+
+                <label for="performanceDateFrom">
+                    FROM
+                </label>
+
+                <div class="performance-date-control">
+
+                    <span class="performance-date-icon">
+                        ◫
+                    </span>
+
+                    <select
+                        id="performanceDateFrom"
+                        aria-label="Performance start date"
+                        disabled
+                    >
+
+                        <option value="">
+                            SELECT FROM DATE
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="performance-range-separator">
+
+                <span></span>
+
+                <strong>
+                    TO
+                </strong>
+
+                <span></span>
+
+            </div>
+
+
+            <!-- TO DATE -->
+
+            <div class="performance-filter-field">
+
+                <label for="performanceDateTo">
+                    UNTIL
+                </label>
+
+                <div class="performance-date-control">
+
+                    <span class="performance-date-icon">
+                        ◫
+                    </span>
+
+                    <select
+                        id="performanceDateTo"
+                        aria-label="Performance end date"
+                        disabled
+                    >
+
+                        <option value="">
+                            SELECT TO DATE
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="performance-filter-actions">
+
+            <button
+                type="button"
+                id="resetPerformanceDateRange"
+                class="performance-filter-reset"
+            >
+                RESET
+            </button>
+
+
+            <button
+                type="button"
+                id="applyPerformanceDateRange"
+                class="performance-filter-apply"
+            >
+                <span>
+                    APPLY PERIOD
+                </span>
+
+                <strong>
+                    →
+                </strong>
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="performance-filter-footer">
+
+        <div
+            id="performanceFilterInfo"
+            class="performance-filter-info"
+        >
+            CURRENT SUMMARY • ALL AVAILABLE DATES
+        </div>
+
+
+        <div class="performance-filter-hint">
+
+            Performance table, ranking, and analytics
+            follow the active reporting period.
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="content">
+
+    <div class="content-header">
+
+        <div>
+
+            <span class="section-eyebrow">
+                PERFORMANCE ANALYTICS
+            </span>
+
+            <h2>
+                SALES STAFF PERFORMANCE
+            </h2>
+
+            <p>
+                Automatic Summary by KANGODING.ORG Engine
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-wrap">
+
+        <table id="resultTable">
+
+            <thead id="tableHead">
+
+                <tr>
+
+                    <th>TANGGAL</th>
+
+                    <th>STAFF</th>
+
+                    <th>SALES</th>
+
+                    <th>SM</th>
+
+                    <th>QTY</th>
+
+                    <th>UPT</th>
+
+                    <th>ATV</th>
+
+                    <th>AUR</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="tableBody">
+
+                <tr>
+
+                    <td colspan="100">
+
+                        UPLOAD 3 FILE LALU KLIK PROCESS
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+
+<section class="ranking">
+
+<div class="rank-card">
+
+<h3>
+
+🏆 TOP SALES
+
+</h3>
+
+<div id="topSales">
+
+-
+
+</div>
+
+</div>
+
+<div class="rank-card">
+
+<h3>
+
+📦 TOP QTY
+
+</h3>
+
+<div id="topQty">
+
+-
+
+</div>
+
+</div>
+
+<div class="rank-card">
+
+<h3>
+
+👟 TOP FOOTWEAR
+
+</h3>
+
+<div id="topFw">
+
+-
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ===================================== -->
+<!-- STAFF DETAIL MODAL -->
+<!-- ===================================== -->
+
+<div id="staffModal" class="modal">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2 id="modalTitle">
+
+                STAFF DETAIL
+
+            </h2>
+
+            <button id="closeModal">
+
+                ✕
+
+            </button>
+
+        </div>
+
+        <div id="modalBody">
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<footer class="footer" style="text-align:center; padding:20px; font-size:13px; margin-top:24px; border:4px solid #111; background:#fff; box-shadow:6px 6px 0px #111;">
+  <div style="display:flex; justify-content:center; gap:20px; align-items:center; flex-wrap:wrap; font-size:12px;">
+    <div>📧 yusup.gunners@gmail.com</div>
+    <div>☕ Buy me a coffee: <a href="https://trakteer.id/muhammad_yusuf525" target="_blank" style="color:inherit; text-decoration:underline;">Trakteer</a></div>
+    <div><strong>MAA SALES STAFF</strong> &copy; 2026</div>
+  </div>
+</footer>
+</div>
+<div id="loading" class="gt-loading">
+
+<div class="loading-card">
+
+<h1>
+
+KANGODING.ORG
+
+</h1>
+
+<h2>
+
+MAA SALES STAFF
+
+</h2>
+
+<p id="loadingText">
+
+Initializing Engine...
+
+</p>
+
+<div class="loading-bar">
+
+<div id="loadingProgress">
+
+</div>
+
+</div>
+
+<div id="loadingPercent">
+
+0%
+
+</div>
+
+</div>
+
+</div>
+<script src="libs/xlsx.full.min.js?v=2"></script>
+
+<script src="assets/js/engine.js?v=5"></script>
+
+<script src="assets/js/runtime.js?v=2"></script>
+
+<script src="assets/js/summary.js?v=5"></script>
+<script src="assets/js/process.js?v=5"></script>
+
+<script src="assets/js/modal.js?v=2"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    GTRuntime.boot();
+
+    updateLicenseStatusUI();
+
+});
+</script>
+
+<div id="printWatermark" class="print-watermark">
+
+    <div class="print-watermark-brand">
+        KANGODING.ORG
+    </div>
+
+    <div class="print-watermark-id">
+        2309445
+    </div>
+
+</div>
+<!-- ===================================== -->
+<!-- PRINT REPORT ROOT -->
+<!-- HANYA DIGUNAKAN SAAT PRINT -->
+<!-- ===================================== -->
+
+<!-- ===================================== -->
+<!-- LICENSE ACCESS SCREEN -->
+<!-- ===================================== -->
+
+<div
+    id="licenseAccessScreen"
+    class="license-access-screen"
+    aria-hidden="true"
+>
+
+    <div class="license-access-panel">
+
+
+        <div class="license-access-brand">
+
+            <img
+                src="img/logo.png"
+                alt="KANGODING.ORG"
+            >
+
+
+            <div>
+
+                <strong>
+                    KANGODING.ORG
+                </strong>
+
+                <span>
+                    MAA SALES STAFF
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="license-access-badge">
+
+            FREE ACCESS ENDED
+
+        </div>
+
+
+        <h1>
+
+            LIFETIME ACCESS REQUIRED
+
+        </h1>
+
+
+        <p class="license-access-description">
+
+            The Free Access period for this User ID has ended.
+            Upgrade to KANGODING.ORG VIP Lifetime Access to continue
+            using MAA SALES STAFF.
+
+        </p>
+
+
+        <div class="license-access-details">
+
+
+            <div>
+
+                <span>
+                    USER ID
+                </span>
+
+                <strong id="expiredUserId">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    ACCESS PLAN
+                </span>
+
+                <strong>
+                    FREE ACCESS
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    FREE ACCESS ENDED
+                </span>
+
+                <strong id="expiredDate">
+                    29 NOVEMBER 2026
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    STATUS
+                </span>
+
+                <strong>
+                    ACCESS EXPIRED
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="license-access-action">
+
+            <strong>
+                CONTACT KANGODING.ORG
+            </strong>
+
+            <span>
+                ACTIVATE VIP LIFETIME ACCESS
+            </span>
+
+        </div>
+
+
+        <div class="license-access-code">
+
+            GT LICENSE   2309445   FREE_ACCESS_EXPIRED
+
+        </div>
+
+
+    </div>
+
+</div>
+
+<div id="printReportRoot"></div>
+<script src="assets/js/db-cache.js"></script>
+</body>
+</html>
