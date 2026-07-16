@@ -526,8 +526,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
     
     if (mode === "ALL") {
         selectedDates = dates;
-        const statusEl = document.getElementById("performanceFilterStatus");
-        if(statusEl) statusEl.innerText = "ALL PERIOD";
+        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) titleEl.innerText = "SUMMARY SALES STORE: ALL DATES";
         const infoEl = document.getElementById("performanceFilterInfo");
         if(infoEl) infoEl.innerText = "CURRENT SUMMARY • ALL AVAILABLE DATES";
     } else if (mode === "CUSTOM") {
@@ -545,8 +544,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
             return true;
         });
 
-        const statusEl = document.getElementById("performanceFilterStatus");
-        if(statusEl) statusEl.innerText = "CUSTOM PERIOD";
+        const titleEl = document.getElementById("summaryStoreTitle"); if(titleEl) titleEl.innerText = "SUMMARY SALES STORE: " + fromD + " TO " + toD;
         const infoEl = document.getElementById("performanceFilterInfo");
         if(infoEl) infoEl.innerText = `CURRENT SUMMARY • ${fromD || '...'} TO ${toD || '...'}`;
     }
@@ -725,15 +723,32 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
         }
     }
 
-    const formatGrowth = (actual, lw) => {
-        if(!showGrowth || lw === 0) return `<div style="font-size:12px;color:#666;margin-top:4px;">No LY Data</div>`;
-        const pct = ((actual - lw) / lw) * 100;
-        const color = pct >= 0 ? 'green' : 'red';
-        const sign = pct > 0 ? '▲' : '▼';
-        return `<div style="font-size:14px;color:${color};margin-top:4px;font-weight:bold;">${sign} ${Math.abs(pct).toFixed(1)}% vs Last Week</div>`;
+    
+    const formatGrowth = (actual, lw, targetVal) => {
+        let text = "";
+        
+        // Target Achievement
+        if (targetVal && targetVal > 0) {
+            const achPct = (actual / targetVal) * 100;
+            const tColor = achPct >= 100 ? 'green' : 'red';
+            text += `<div style="font-size:12px;color:${tColor};margin-top:4px;font-weight:bold;">T: ${achPct.toFixed(1)}%</div>`;
+        }
+        
+        // Last Year (Placeholder for now)
+        text += `<div style="font-size:11px;color:#666;margin-top:2px;">No LY Data</div>`;
+
+        // Last Week
+        if(showGrowth && lw > 0) {
+            const pct = ((actual - lw) / lw) * 100;
+            const color = pct >= 0 ? 'green' : 'red';
+            const sign = pct > 0 ? '+' : '';
+            text += `<div style="font-size:11px;color:${color};margin-top:2px;">${sign}${pct.toFixed(1)}% vs Last Week</div>`;
+        }
+        
+        return text;
     };
     
-    const idVal = (id, val, lwVal, isMoney, isDec) => {
+    const idVal = (id, val, lwVal, targetVal, isMoney, isDec) => {
         const el = document.getElementById(id);
         if(!el) return;
         
@@ -742,16 +757,18 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
         else if (isDec) textVal = val.toFixed(2);
         else textVal = Math.round(val).toLocaleString('id-ID');
 
-        el.innerHTML = textVal + formatGrowth(val, lwVal);
+        el.innerHTML = textVal + formatGrowth(val, lwVal, targetVal);
     };
 
     const lwUPT = lwSM > 0 ? (lwQty / lwSM) : 0;
-    idVal("staffCount", actualUPT, lwUPT, false, true);
-    idVal("salesTotal", totalSales, lwSales, true, false);
-    idVal("smTotal", totalSM, lwSM, false, false);
-    idVal("qtyTotal", totalQty, lwQty, false, false);
+    idVal("staffCount", actualUPT, lwUPT, targetUPT, false, true);
+    idVal("salesTotal", totalSales, lwSales, totalTargetSales, true, false);
+    idVal("smTotal", totalSM, lwSM, 0, false, false);
+    idVal("qtyTotal", totalQty, lwQty, 0, false, false);
     const lwATV = lwSM > 0 ? (lwSales / lwSM) : 0;
-    idVal("avgSales", actualATV, lwATV, true, false);
+    idVal("avgSales", actualATV, lwATV, 0, true, false);
+    const lwAUR = lwQty > 0 ? (lwSales / lwQty) : 0;
+    idVal("aurTotal", actualAUR, lwAUR, targetAUR, true, false);
 
     // ===================================
     // Render SALES BY DISCOUNT table (collapsible per kategori)
