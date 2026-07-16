@@ -153,10 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Report Control listeners
     const targetUPTEl = document.getElementById("targetUPT");
+    const targetATVEl = document.getElementById("targetATV");
     const targetAUREl = document.getElementById("targetAUR");
     const getTargets = () => {
         return {
             upt: parseFloat(targetUPTEl ? targetUPTEl.value : "1.8"),
+            atv: parseFloat(targetATVEl ? targetATVEl.value : "850000"),
             aur: parseFloat(targetAUREl ? targetAUREl.value : "250000")
         };
     };
@@ -518,7 +520,7 @@ function getPreviousWeekDate(dateStr) {
 }
 
 
-function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "ALL", catFilter = "ALL") {
+function renderDashboard(mode, fromD, toD, targetUPT, targetATV, targetAUR, discFilter = "ALL", catFilter = "ALL") {
     if(!window.storeData) return;
     
     const dates = Object.keys(window.storeData.dates).sort((a,b) => dateToComparable(a) - dateToComparable(b));
@@ -533,7 +535,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
         const cFrom = dateToComparable(fromD);
         const cTo = dateToComparable(toD);
         if(!cFrom && !cTo) {
-            renderDashboard("ALL", null, null, targetUPT, targetAUR);
+            renderDashboard("ALL", null, null, targetUPT, targetATV, targetAUR);
             return;
         }
         
@@ -757,7 +759,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
         else if (isDec) textVal = val.toFixed(2);
         else textVal = Math.round(val).toLocaleString('id-ID');
 
-        el.innerHTML = textVal + formatGrowth(val, lwVal, targetVal);
+        el.innerHTML = textVal + formatGrowth(val, lwVal, targetVal, isMoney);
     };
 
     const lwUPT = lwSM > 0 ? (lwQty / lwSM) : 0;
@@ -766,7 +768,7 @@ function renderDashboard(mode, fromD, toD, targetUPT, targetAUR, discFilter = "A
     idVal("smTotal", totalSM, lwSM, 0, false, false);
     idVal("qtyTotal", totalQty, lwQty, 0, false, false);
     const lwATV = lwSM > 0 ? (lwSales / lwSM) : 0;
-    idVal("avgSales", actualATV, lwATV, 0, true, false);
+    idVal("avgSales", actualATV, lwATV, targetATV, true, false);
     const lwAUR = lwQty > 0 ? (lwSales / lwQty) : 0;
     idVal("aurTotal", actualAUR, lwAUR, targetAUR, true, false);
 
