@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     registerFileInput("advOrd", "advOrdName", "advOrd");
     
 
-    const inputs = ["targetStore", "targetUPT", "targetAUR"];
+    const inputs = ["targetStore", "targetUPT", "targetATV", "targetAUR"];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if(el) {
@@ -115,10 +115,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const targetStore = document.getElementById("targetStore").value;
         const targetUPT = document.getElementById("targetUPT").value;
+        const targetATV = document.getElementById("targetATV").value;
         const targetAUR = document.getElementById("targetAUR").value;
 
-        if (!targetStore || !targetUPT || !targetAUR) {
-            alert("Mohon lengkapi isian Target Store, UPT, dan AUR.");
+        if (!targetStore || !targetUPT || !targetATV || !targetAUR) {
+            alert("Mohon lengkapi isian Target Store, UPT, ATV, dan AUR.");
             return;
         }
 
