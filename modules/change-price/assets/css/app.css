@@ -1,0 +1,324 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    }
+    
+    body{
+    
+    background:#e9edf3;
+    
+    font-family:
+    Segoe UI,
+    Arial;
+    
+    color:#111;
+    
+    }
+    
+    
+    
+    .container{
+    
+    padding:28px;
+    
+    }
+    
+    
+    
+    header{
+    
+    display:flex;
+    
+    justify-content:space-between;
+    
+    align-items:center;
+    
+    padding-bottom:20px;
+    
+    }
+    
+    
+    
+    .brand{
+    
+    display:flex;
+    
+    align-items:center;
+    
+    gap:20px;
+    
+    }
+    
+    
+    
+    .logo{
+    
+    width:92px;
+    
+    height:92px;
+    
+    object-fit:contain;
+    
+    filter:
+    drop-shadow(
+    0 5px 15px rgba(0,0,0,.18)
+    );
+    
+    }
+    
+    
+    
+    h1{
+    
+    font-size:52px;
+    
+    font-weight:900;
+    
+    }
+    
+    
+    
+    p{
+    
+    margin-top:8px;
+    
+    color:#666;
+    
+    }
+    
+    
+    
+    button{
+    
+    background:
+    linear-gradient(
+    135deg,
+    #111,
+    #222
+    );
+    
+    color:white;
+    
+    border:none;
+    
+    padding:14px 26px;
+    
+    border-radius:14px;
+    
+    cursor:pointer;
+    
+    font-weight:700;
+    
+    }
+    
+    
+    
+    button:hover{
+    
+    transform:
+    translateY(-2px);
+    
+    }
+    
+    
+    
+    .upload{
+    
+    background:white;
+    
+    padding:28px;
+    
+    margin-top:20px;
+    
+    border-radius:20px;
+    
+    box-shadow:
+    0 10px 40px rgba(0,0,0,.06);
+    
+    display:flex;
+    
+    justify-content:space-between;
+    
+    align-items:center;
+    
+    }
+    
+    
+    
+    .summary{
+    
+    display:grid;
+    
+    grid-template-columns:
+    repeat(
+    4,
+    1fr
+    );
+    
+    gap:18px;
+    
+    margin-top:20px;
+    
+    }
+    
+    
+    
+    .summary div{
+    
+    background:white;
+    
+    padding:28px;
+    
+    border-radius:18px;
+    
+    box-shadow:
+    0 10px 35px rgba(0,0,0,.05);
+    
+    }
+    
+    
+    
+    .summary h2{
+    
+    margin-top:18px;
+    
+    font-size:42px;
+    
+    }
+    
+    
+    
+    .filter{
+    
+    display:flex;
+    
+    gap:12px;
+    
+    margin-top:22px;
+    
+    }
+    
+    
+    
+    .filter input,
+    .filter select{
+    
+    background:white;
+    
+    border:none;
+    
+    padding:15px;
+    
+    border-radius:12px;
+    
+    box-shadow:
+    0 6px 25px rgba(0,0,0,.05);
+    
+    }
+    
+    
+    
+    .table-wrap{
+    
+    margin-top:20px;
+    
+    background:white;
+    
+    border-radius:20px;
+    
+    overflow:hidden;
+    
+    box-shadow:
+    0 12px 50px rgba(0,0,0,.06);
+    
+    }
+    
+    
+    
+    table{
+    
+    width:100%;
+    
+    border-collapse:collapse;
+    
+    }
+    
+    
+    
+    th{
+    
+    background:
+    linear-gradient(
+    90deg,
+    #0e0e0e,
+    #1a1a1a
+    );
+    
+    color:white;
+    
+    padding:20px;
+    
+    }
+    
+    
+    
+    td{
+    
+    padding:16px;
+    
+    border-bottom:
+    1px solid #ececec;
+    
+    }
+    
+    
+    
+    tbody tr:hover{
+    
+    background:
+    #f7f9fb;
+    
+    }
+    
+    
+    
+    .wm{
+    
+    position:fixed;
+    
+    top:50%;
+    
+    left:50%;
+    
+    transform:
+    translate(
+    -50%,
+    -50%
+    );
+    
+    opacity:.03;
+    
+    pointer-events:none;
+    
+    }
+    
+    
+    
+    .wm-text{
+    
+    font-size:180px;
+    
+    font-weight:900;
+    
+    }
+    
+    
+    
+    .wm-id{
+    
+    font-size:48px;
+    
+    text-align:center;
+    
+    }

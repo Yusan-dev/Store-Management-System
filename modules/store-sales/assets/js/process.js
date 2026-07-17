@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const loading = document.getElementById("loading");
-      if (loading) loading.style.display = "flex";
+      if (loading) loading.classList.add("show");
 
       const msrData = await readExcel(files.msr);
 
@@ -178,12 +178,14 @@ document.addEventListener("DOMContentLoaded", () => {
         Number(targetAUR),
       );
 
-      if (loading) loading.style.display = "none";
+      if (loading) {
+        setTimeout(() => loading.classList.remove("show"), 300);
+      }
     } catch (err) {
       console.error(err);
       alert("Error processing data: " + err.message);
       const loading = document.getElementById("loading");
-      if (loading) loading.style.display = "none";
+      if (loading) loading.classList.remove("show");
     }
   };
 

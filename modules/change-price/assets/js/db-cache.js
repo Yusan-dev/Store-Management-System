@@ -84,7 +84,7 @@
       }
 
       tx.oncomplete = () => {
-        if (loadedCount > 0 && loadedCount >= 3) {
+        if (loadedCount > 0 && loadedCount >= totalExpected) {
           setTimeout(() => {
             const form = document.getElementById("uploadForm");
             if (form) {

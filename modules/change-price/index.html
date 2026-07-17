@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAA CHANGE PRICE</title>
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <style>
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 255, 255, 0.9); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loading-overlay.show { opacity: 1; pointer-events: auto; }
+        .cool-spinner {
+            width: 80px; height: 80px; border: 8px solid #000;
+            border-top: 8px solid transparent; border-radius: 50%;
+            animation: spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { margin-top: 20px; font-size: 24px; font-weight: bold; color: #000; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="topbar">
+            <div class="brand">
+                <div class="logo-box" style="width: 60px; height: 60px; background: #00FFFF; border: 4px solid #000; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; box-shadow: 4px 4px 0px #000; margin-right: 16px;">KG</div>
+                <div>
+                    <h1>MAA CHANGE PRICE</h1>
+                    <p>Create By : 23029445</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button id="print">PRINT</button>
+                <button id="export">EXPORT</button>
+            </div>
+        </header>
+
+        <section class="upload-card">
+            <div style="display: flex; gap: 20px;">
+                <div>
+                    <label>FILE A (STOCK REPORT)</label><br><br>
+                    <input id="stock" type="file" accept=".xlsx,.xls">
+                </div>
+                <div>
+                    <label>FILE B (PRICE LIST)</label><br><br>
+                    <input id="pricelist" type="file" accept=".xlsx,.xls,.xlsb">
+                </div>
+                <div>
+                    <br><br>
+                    <button id="process">PROSES</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="summary">
+            <div class="card">
+                <div class="label">TOTAL SKU</div>
+                <h2 id="totalSku">0</h2>
+            </div>
+            <div class="card">
+                <div class="label">TOTAL QTY</div>
+                <h2 id="totalQty">0</h2>
+            </div>
+            <div class="card">
+                <div class="label">AFFECTED SKU</div>
+                <h2 id="affectedSku">0 SKU</h2>
+                <small id="affectedQty">0 PCS</small>
+            </div>
+            <div class="card">
+                <div class="label">UNAFFECTED SKU</div>
+                <h2 id="unaffectedSku">0 SKU</h2>
+                <small id="unaffectedQty">0 PCS</small>
+            </div>
+            <div id="dynamicCategories" style="display: contents;"></div>
+        </section>
+
+        <div class="main-layout">
+            <aside class="filter">
+                <h3>FILTER</h3>
+                <input type="text" id="search" placeholder="Search Artikel, Brand...">
+                
+                <div class="filter-box">
+                    <div class="filter-title">SORT BY</div>
+                    <select id="sortSelect" style="width: 100%; padding: 8px; border: 2px solid #000; background: #fff; font-weight: bold;">
+                        <option value="qty-desc">Qty Tertinggi</option>
+                        <option value="qty-asc">Qty Terendah</option>
+                        <option value="brand-asc">Brand A-Z</option>
+                        <option value="brand-desc">Brand Z-A</option>
+                        <option value="category-asc">Kategori A-Z</option>
+                    </select>
+                </div>
+
+                <div class="filter-box">
+                    <div class="filter-title">STATUS</div>
+                    <div id="status"></div>
+                </div>
+
+                <div class="filter-box">
+                    <div class="filter-title">BRAND</div>
+                    <div id="brand"></div>
+                </div>
+
+                <div class="filter-box">
+                    <div class="filter-title">CATEGORY</div>
+                    <div id="category"></div>
+                </div>
+            </aside>
+
+            <section class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>BRAND</th>
+                            <th>CATEGORY</th>
+                            <th>ARTIKEL</th>
+                            <th>DESCRIPTION</th>
+                            <th>STATUS</th>
+                            <th>PRICE LAMA</th>
+                            <th>NEW PRICE</th>
+                            <th>DISC LAMA</th>
+                            <th>NEW DISC</th>
+                            <th>STOCK QTY</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="10" style="text-align: center; padding: 20px;">Upload data untuk melihat tabel</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loading">
+        <div class="cool-spinner"></div>
+        <div class="loading-text">MEMPROSES DATA...</div>
+    </div>
+    
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="assets/js/db-cache.js"></script>
+    <script src="assets/js/processor.js"></script>
+    <script src="assets/js/process.js"></script>
+    <script src="assets/js/filter.js"></script>
+    <script src="assets/js/sort.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/export.js"></script>
+    <script src="assets/js/print.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

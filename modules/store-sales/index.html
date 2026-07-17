@@ -6,6 +6,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MAA STORE SALES</title>
 <link rel="stylesheet" href="assets/css/dashboard.css?v=5">
+<style>
+    .loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(255, 0, 255, 0.9); z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .loading-overlay.show { opacity: 1; pointer-events: auto; }
+    .cool-spinner {
+        width: 80px; height: 80px; border: 8px solid #000;
+        border-top: 8px solid transparent; border-radius: 50%;
+        animation: spin 1s linear infinite; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loading-text { margin-top: 20px; font-size: 24px; font-weight: bold; color: #000; letter-spacing: 2px; }
+</style>
 </head>
 
 <body>
@@ -347,6 +363,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="license-access-code">GT LICENSE &bull; 2309445 &bull; FREE_ACCESS_EXPIRED</div>
     </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+    <div class="cool-spinner"></div>
+    <div class="loading-text">MEMPROSES DATA...</div>
 </div>
 
 <div id="printReportRoot"></div>
