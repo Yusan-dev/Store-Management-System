@@ -93,13 +93,8 @@
     }
 
     window.addEventListener('load', () => {
-        const form = document.getElementById('uploadForm');
-        if (form) {
-            form.addEventListener('submit', saveFiles);
-        } else {
-            const processBtns = document.querySelectorAll('#process, #processBtn, .btn-process');
-            processBtns.forEach(btn => btn.addEventListener('click', saveFiles));
-        }
+        const inputs = document.querySelectorAll('input[type="file"]');
+        inputs.forEach(input => input.addEventListener('change', saveFiles));
         setTimeout(loadFiles, 300);
     });
 })();

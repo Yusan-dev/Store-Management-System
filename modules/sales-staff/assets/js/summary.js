@@ -351,19 +351,29 @@ function getPerformanceFilterLabel(filter){
 // =====================================================
 function populateStaffFilter(){
     const staffFilterEl = document.getElementById("performanceFilterStaff");
-    if(staffFilterEl && staffFilterEl.options.length <= 1) {
+    if(staffFilterEl) {
         if(typeof GTEngine !== "undefined" && GTEngine.staffMap) {
             const staffs = Array.from(GTEngine.staffMap.values())
                                .map(s => String(s.name || "").trim().toUpperCase())
                                .filter(name => name && name !== "UNKNOWN");
             staffs.push('O2O');
             const uniqueStaffs = [...new Set(staffs.sort())];
+            
+            const currentSelected = staffFilterEl.value;
+            staffFilterEl.innerHTML = '<option value="ALL">ALL STAFF</option>';
+            
             uniqueStaffs.forEach(staff => {
                 const opt = document.createElement("option");
                 opt.value = staff;
                 opt.innerText = staff;
                 staffFilterEl.appendChild(opt);
             });
+            
+            if (uniqueStaffs.includes(currentSelected) || currentSelected === "ALL") {
+                staffFilterEl.value = currentSelected;
+            } else {
+                staffFilterEl.value = "ALL";
+            }
             
             if(staffFilterEl.dataset.registered !== "true") {
                 staffFilterEl.addEventListener("change", () => {
@@ -873,20 +883,20 @@ function updateSummary(summary, divisions){
         return true;
     });
 
-    const elTotalStaff = document.getElementById("summaryTotalStaff");
+    const elTotalStaff = document.getElementById("staffCount");
     if(elTotalStaff) elTotalStaff.innerText = formatNumber(uniqueStaffs.size);
 
-    const elTotalSales = document.getElementById("summaryTotalSales");
+    const elTotalSales = document.getElementById("salesTotal");
     if(elTotalSales) elTotalSales.innerText = `Rp ${money(total.sales)}`;
 
-    const elTotalSM = document.getElementById("summaryTotalSM");
+    const elTotalSM = document.getElementById("smTotal");
     if(elTotalSM) elTotalSM.innerText = formatNumber(total.sm);
 
-    const elTotalQty = document.getElementById("summaryTotalQty");
+    const elTotalQty = document.getElementById("qtyTotal");
     if(elTotalQty) elTotalQty.innerText = formatNumber(total.qty);
 
     const activeCount = uniqueStaffs.size > 0 ? uniqueStaffs.size : 1;
-    const elAvgSales = document.getElementById("summaryAvgSales");
+    const elAvgSales = document.getElementById("avgSales");
     if(elAvgSales) elAvgSales.innerText = `Rp ${money(Math.round(total.sales / activeCount))}`;
 
     updateValidation();
