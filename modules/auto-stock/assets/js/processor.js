@@ -25,10 +25,21 @@ function extractVariant(desc){
     
     
     
+// function extractArtikel(variant) {
+//     if (!variant) return "";
+//     // User requested "CCR10001-001" which is exactly 12 characters.
+//     return variant.trim().substring(0, 12);
+// }
+
 function extractArtikel(variant) {
     if (!variant) return "";
-    // User requested "CCR10001-001" which is exactly 12 characters.
-    return variant.trim().substring(0, 12);
+    variant = String(variant).trim();
+
+    if(variant.length <=6) {
+        return variant
+    }
+
+    return variant.slice(0,-6);
 }
     
     
