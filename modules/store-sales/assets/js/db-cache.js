@@ -1,10 +1,16 @@
 // MAA DASHBOARD GLOBAL CACHE
+// Menyimpan dan memulihkan file upload otomatis menggunakan IndexedDB
+// sehingga user tidak perlu upload ulang setiap refresh/pindah halaman.
 (function () {
   const DB_NAME = "MAA_DASHBOARD_CACHE";
   const MOD_NAME =
     window.location.pathname.split("/").filter(Boolean).slice(-2)[0] ||
     "unknown";
 
+  /**
+   * Buka koneksi ke IndexedDB.
+   * @returns {Promise<IDBDatabase>}
+   */
   function initDB() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, 1);
@@ -19,95 +25,103 @@
     });
   }
 
+  /**
+   * Simpan semua file yang sedang ada di input[type=file] ke IndexedDB.
+   */
   async function saveFiles() {
     try {
-      const filesToSave = [];
-      const inputs = document.querySelectorAll('input[type="file"]');
-      for (let input of inputs) {
-        if (input.files && input.files.length > 0) {
-          const file = input.files[0];
-          const arrayBuffer = await file.arrayBuffer();
-          filesToSave.push({
-            id: input.id,
-            name: file.name,
-            type: file.type,
-            data: arrayBuffer,
-          });
-        }
-      }
-
       const db = await initDB();
       const tx = db.transaction("file_cache", "readwrite");
       const store = tx.objectStore("file_cache");
-      for (let f of filesToSave) {
+
+      const inputs = document.querySelectorAll('input[type="file"]');
+      for (let input of inputs) {
+        if (!input.id || !input.files || input.files.length === 0) continue;
+        const file = input.files[0];
+        const data = await file.arrayBuffer();
         store.put(
-          { name: f.name, type: f.type, data: f.data },
-          `${MOD_NAME}_${f.id}`,
+          { name: file.name, type: file.type, data },
+          `${MOD_NAME}_${input.id}`
         );
       }
     } catch (e) {
-      console.error(e);
+      console.error("[db-cache] saveFiles error:", e);
     }
   }
 
+  /**
+   * Ambil satu file dari IndexedDB berdasarkan key.
+   * @param {IDBObjectStore} store
+   * @param {string} key
+   * @returns {Promise<{name,type,data}|null>}
+   */
+  function getRecord(store, key) {
+    return new Promise((resolve) => {
+      const req = store.get(key);
+      req.onsuccess = (e) => resolve(e.target.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  /**
+   * Pulihkan semua file dari IndexedDB ke input[type=file].
+   * Jika cukup file berhasil dipulihkan, tombol PROSES diklik otomatis.
+   */
   async function loadFiles() {
     try {
       const db = await initDB();
       const tx = db.transaction("file_cache", "readonly");
       const store = tx.objectStore("file_cache");
 
-      const inputs = document.querySelectorAll('input[type="file"]');
+      const inputs = [...document.querySelectorAll('input[type="file"]')].filter(
+        (i) => i.id
+      );
+
+      if (inputs.length === 0) return;
+
+      // Ambil semua record secara paralel (Promise.all)
+      const records = await Promise.all(
+        inputs.map((input) => getRecord(store, `${MOD_NAME}_${input.id}`))
+      );
+
       let loadedCount = 0;
-      let totalExpected = 0;
+      records.forEach((record, idx) => {
+        if (!record) return;
+        const blob = new Blob([record.data], { type: record.type });
+        const file = new File([blob], record.name, { type: record.type });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        inputs[idx].files = dt.files;
+        inputs[idx].dispatchEvent(new Event("change", { bubbles: true }));
+        loadedCount++;
+      });
 
-      for (let input of inputs) {
-        if (input.id) totalExpected++;
-      }
-
-      if (totalExpected === 0) return;
-
-      for (let input of inputs) {
-        if (!input.id) continue;
-        const req = store.get(`${MOD_NAME}_${input.id}`);
-        req.onsuccess = (e) => {
-          const record = e.target.result;
-          if (record) {
-            const blob = new Blob([record.data], { type: record.type });
-            const file = new File([blob], record.name, { type: record.type });
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            input.files = dt.files;
-            input.dispatchEvent(new Event("change", { bubbles: true }));
-            loadedCount++;
+      // Klik proses jika minimal 1 file berhasil dipulihkan
+      // (untuk store-sales yang bisa berjalan tanpa file target karena ada di localStorage)
+      const minRequired = inputs.length >= 4 ? 3 : inputs.length;
+      if (loadedCount >= minRequired) {
+        setTimeout(() => {
+          const btn =
+            document.getElementById("process") ||
+            document.getElementById("processBtn");
+          const form = document.getElementById("uploadForm");
+          if (form) {
+            form.dispatchEvent(
+              new Event("submit", { cancelable: true, bubbles: true })
+            );
+          } else if (btn) {
+            btn.click();
           }
-        };
+        }, 1200);
       }
-
-      tx.oncomplete = () => {
-        if (loadedCount > 0 && loadedCount >= 3) {
-          setTimeout(() => {
-            const form = document.getElementById("uploadForm");
-            if (form) {
-              form.dispatchEvent(
-                new Event("submit", { cancelable: true, bubbles: true }),
-              );
-            } else {
-              const btn =
-                document.getElementById("process") ||
-                document.getElementById("processBtn");
-              if (btn) btn.click();
-            }
-          }, 1000);
-        }
-      };
     } catch (e) {
-      console.error(e);
+      console.error("[db-cache] loadFiles error:", e);
     }
   }
 
   window.addEventListener("load", () => {
     const inputs = document.querySelectorAll('input[type="file"]');
     inputs.forEach((input) => input.addEventListener("change", saveFiles));
-    setTimeout(loadFiles, 300);
+    setTimeout(loadFiles, 500);
   });
 })();

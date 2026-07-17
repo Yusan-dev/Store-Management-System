@@ -56,57 +56,66 @@
     </div>
 </header>
 
-<h2>UPLOAD SOURCE FILE</h2>
+<div class="main-layout" style="display: grid; grid-template-columns: 330px 1fr; gap: 22px; align-items: start;">
+    
+    <!-- SIDEBAR KIRI -->
+    <aside class="sidebar" style="position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; padding-right: 10px;">
+        <h2 style="font-size: 16px; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 15px;">UPLOAD SOURCE FILE</h2>
+        
+        <div class="upload-grid" style="display: flex; flex-direction: column; gap: 15px;">
+            <div class="upload-box" id="dz-msr">
+                <label>MERCHANDISE SALES REPORT</label>
+                <input type="file" id="msr" accept=".xls,.xlsx">
+                <div id="msrName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box" id="dz-target">
+                <label>TARGET HARIAN (EXCEL)</label>
+                <input type="file" id="target" accept=".xls,.xlsx">
+                <div id="targetName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box" id="dz-dailyCash">
+                <label>DAILY CASH COLLECTION</label>
+                <input type="file" id="dailyCash" accept=".xls,.xlsx">
+                <div id="dailyCashName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box" id="dz-advOrd">
+                <label>SALESPERSON / ADV ORD</label>
+                <input type="file" id="advOrd" accept=".xls,.xlsx">
+                <div id="advOrdName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box">
+                <label>TARGET STORE (Bulan)</label>
+                <input type="number" id="targetStore" placeholder="Contoh: 100000000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+            </div>
+            <div class="upload-box">
+                <label>TARGET UPT</label>
+                <input type="number" step="0.01" id="targetUPT" placeholder="Contoh: 1.5" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+            </div>
+            <div class="upload-box">
+                <label>TARGET ATV</label>
+                <input type="number" id="targetATV" placeholder="Contoh: 850000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+            </div>
+            <div class="upload-box">
+                <label>TARGET AUR</label>
+                <input type="number" id="targetAUR" placeholder="Contoh: 350000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+            </div>
+        </div>
 
-<div class="upload-grid">
-    <div class="upload-box" id="dz-msr">
-        <label>MERCHANDISE SALES REPORT</label>
-        <input type="file" id="msr" accept=".xls,.xlsx">
-        <div id="msrName" class="filename">Belum dipilih</div>
-    </div>
-    <div class="upload-box" id="dz-target">
-        <label>TARGET HARIAN (EXCEL)</label>
-        <input type="file" id="target" accept=".xls,.xlsx">
-        <div id="targetName" class="filename">Belum dipilih</div>
-    </div>
-    <div class="upload-box" id="dz-dailyCash">
-        <label>DAILY CASH COLLECTION</label>
-        <input type="file" id="dailyCash" accept=".xls,.xlsx">
-        <div id="dailyCashName" class="filename">Belum dipilih</div>
-    </div>
-    <div class="upload-box" id="dz-advOrd">
-        <label>SALESPERSON / ADV ORD</label>
-        <input type="file" id="advOrd" accept=".xls,.xlsx">
-        <div id="advOrdName" class="filename">Belum dipilih</div>
-    </div>
-    <div class="upload-box">
-        <label>TARGET STORE (Bulan)</label>
-        <input type="number" id="targetStore" placeholder="Contoh: 100000000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-    </div>
-    <div class="upload-box">
-        <label>TARGET UPT</label>
-        <input type="number" step="0.01" id="targetUPT" placeholder="Contoh: 1.5" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-    </div>
-    <div class="upload-box">
-        <label>TARGET ATV</label>
-        <input type="number" id="targetATV" placeholder="Contoh: 850000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-    </div>
-    <div class="upload-box">
-        <label>TARGET AUR</label>
-        <input type="number" id="targetAUR" placeholder="Contoh: 350000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-    </div>
-</div>
+        <div class="process-area" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button id="process" style="width: 100%;">PROCESS</button>
+            <button type="button" id="print" style="width: 100%; margin-left: 0; background-color: #000; color: #fff; padding: 12px; border: 4px solid #111; font-weight: bold; cursor: pointer;">PRINT REPORT</button>
+            <button type="button" id="export" style="width: 100%; margin-left: 0; background-color: #16a34a; color: #fff; padding: 12px; border: 4px solid #111; font-weight: bold; cursor: pointer;">EXPORT EXCEL</button>
+        </div>
+    </aside>
 
-<div class="process-area">
-    <button type="button" class="print-report-btn" onclick="printStaffPerformanceReport()">PRINT REPORT</button>
-    <button id="process">PROCESS</button>
-</div>
+    <!-- KONTEN KANAN -->
+    <main class="content-area">
 
 <!-- ===================================== -->
 <!-- SUMMARY CARDS (5 kartu atas) -->
 <!-- ===================================== -->
 
-<div style="margin-top: 25px; margin-bottom: 5px; border-bottom: 2px solid #111; padding-bottom: 10px;">
+<div style="margin-top: 0px; margin-bottom: 5px; border-bottom: 2px solid #111; padding-bottom: 10px;">
     <h2 id="summaryStoreTitle" style="font-size: 18px; letter-spacing: 1px; color: #111; margin: 0;">SUMMARY SALES STORE</h2>
 </div>
 <section class="summary">
@@ -161,23 +170,21 @@
     <div style="overflow-x:auto;">
         <table class="report-table" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
             <thead>
-                <tr style="border-bottom:2px solid #111; background:#f0f0f0;">
+                <tr id="tableHeaderRow" style="border-bottom:2px solid #111; background:#f0f0f0;">
                     <th style="padding:8px; text-align:left;">DATE</th>
+                    <th style="padding:8px; text-align:right;">TARGET</th>
                     <th style="padding:8px; text-align:right;">SALES</th>
                     <th style="padding:8px; text-align:right;">SM</th>
                     <th style="padding:8px; text-align:right;">QTY</th>
                     <th style="padding:8px; text-align:right;">UPT</th>
                     <th style="padding:8px; text-align:right;">ATV</th>
                     <th style="padding:8px; text-align:right;">AUR</th>
-                    <th style="padding:8px; text-align:right;">ACC</th>
-                    <th style="padding:8px; text-align:right;">BAG</th>
-                    <th style="padding:8px; text-align:right;">APP</th>
-                    <th style="padding:8px; text-align:right;">FTW</th>
+                    <!-- Dynamic Category Headers will be injected here -->
                     <th style="padding:8px; text-align:right;">O2O</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="12" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
+                <tr><td colspan="10" id="emptyRowCell" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
             </tbody>
         </table>
     </div>
@@ -188,32 +195,8 @@
 <!-- ===================================== -->
 <section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
     <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">RINGKASAN KATEGORI</h2>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
-        <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">BAG</div>
-            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumBagQty">0</span></div>
-            <div style="font-size:12px; color:#111;" id="sumBagSales">Rp 0</div>
-        </div>
-        <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">APPAREL</div>
-            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumApparelQty">0</span></div>
-            <div style="font-size:12px; color:#111;" id="sumApparelSales">Rp 0</div>
-        </div>
-        <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">ACCESSORIES</div>
-            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumAccQty">0</span></div>
-            <div style="font-size:12px; color:#111;" id="sumAccSales">Rp 0</div>
-        </div>
-        <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">FOOTWEAR</div>
-            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sumFtwQty">0</span></div>
-            <div style="font-size:12px; color:#111;" id="sumFtwSales">Rp 0</div>
-        </div>
-        <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">O2O</div>
-            <div style="font-size:18px; font-weight:bold; margin:4px 0;">SM: <span id="sumO2OSM">0</span> &nbsp; QTY: <span id="sumO2OQty">0</span></div>
-            <div style="font-size:12px; color:#111;" id="sumO2OSales">Rp 0</div>
-        </div>
+    <div id="categoryCardsContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
+        <!-- Dynamic Cards will be injected here -->
         <div style="border:2px solid #111; padding:12px; background:#111; color:#fff;">
             <div style="font-size:11px; font-weight:bold; letter-spacing:1px;">TOTAL</div>
             <div style="font-size:18px; font-weight:bold; margin:4px 0;" id="sumTotalSales">Rp 0</div>
@@ -234,10 +217,7 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <select id="categoryTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
                 <option value="ALL">SEMUA KATEGORI</option>
-                <option value="APP">APPAREL</option>
-                <option value="BAG">BAG</option>
-                <option value="ACC">ACCESSORIES</option>
-                <option value="FTW">FOOTWEAR</option>
+                <!-- Dynamic Options -->
             </select>
             <select id="discountTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
                 <option value="ALL">SEMUA TIPE</option>
@@ -300,12 +280,18 @@
     <div><strong>MAA STORE SALES</strong> &copy; 2026</div>
   </div>
 </footer>
+    </main> <!-- end .content-area -->
+</div> <!-- end .main-layout -->
 
 </div>
 
 <script src="libs/xlsx.full.min.js"></script>
 <script src="assets/js/runtime.js"></script>
+<script src="assets/js/db-cache.js"></script>
 <script src="assets/js/process.js?v=5"></script>
+<script src="assets/js/summary.js"></script>
+<script src="assets/js/print.js"></script>
+<script src="assets/js/export.js"></script>
 <script src="assets/js/modal.js"></script>
 
 <script>

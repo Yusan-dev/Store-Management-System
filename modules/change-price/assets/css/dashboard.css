@@ -406,6 +406,7 @@ text-transform:uppercase;
     1fr;
     
     gap:22px;
+    align-items: start;
     
     }
     

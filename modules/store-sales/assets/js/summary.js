@@ -176,8 +176,11 @@ function getActiveDivisions(summary, divisions) {
   if (Array.isArray(divisions) && divisions.length > 0) {
     return [...divisions];
   }
+  const divisionSet = new Set();
 
-  const divisionSet = new Set(["ACCESSORIES", "BAGS", "APPAREL", "FOOTWEAR"]);
+  if (window.storeData && window.storeData.categories) {
+    window.storeData.categories.forEach(d => divisionSet.add(d));
+  }
 
   if (Array.isArray(window.divisionData) && window.divisionData.length > 0) {
     window.divisionData.forEach((d) => divisionSet.add(d));

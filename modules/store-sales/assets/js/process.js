@@ -347,8 +347,9 @@ function parseAllData(
     const row = targetData[i];
     if (row && row[0]) {
       const dayStr = String(row[0]).trim();
-      // Use Kolom B (row[1]) for percentage instead of Kolom C (row[2])
-      let pct = parseFloat(row[1]) || 0;
+      // Gunakan Kolom C (row[2]) untuk target persentase harian, atau fallback ke row[1]
+      let rawPct = row[2] !== undefined ? row[2] : row[1];
+      let pct = parseFloat(rawPct) || 0;
       // If the percentage is written as a number > 1 (e.g. 3.5 instead of 0.035), divide by 100
       if (pct > 1) pct = pct / 100;
       targetMap[dayStr] = pct;
@@ -391,30 +392,19 @@ function parseAllData(
     if (!date) continue;
 
     if (!dataByDate[date]) {
+      const dayNum = parseInt(date.split("-")[0], 10);
       dataByDate[date] = {
         sales: 0,
         qty: 0,
         sm: 0,
-        acc: 0,
-        accSales: 0,
-        bags: 0,
-        bagsSales: 0,
-        app: 0,
-        appSales: 0,
-        ftw: 0,
-        ftwSales: 0,
         o2oSales: 0,
         o2oSM: 0,
         o2oQty: 0,
-        targetPercent: 0,
-        dayOfMonth: parseInt(date.split("-")[0], 10),
+        targetPercent: targetMap[String(dayNum)] || 0,
+        dayOfMonth: dayNum,
         articles: {},
-        catSM: {
-          ACC: new Set(),
-          BAG: new Set(),
-          APP: new Set(),
-          FTW: new Set(),
-        },
+        dynamicCats: {}, // Format: { "APP": { qty: 0, sales: 0 }, "BAG": ... }
+        catSM: {},       // Format: { "APP": new Set(), "BAG": new Set() }
       };
     }
 
@@ -425,25 +415,23 @@ function parseAllData(
     dataByDate[date].sales += netAmt;
     dataByDate[date].qty += qty;
 
-    if (division.includes("ACC") || division.includes("ACCESSORIES")) {
-      dataByDate[date].acc += qty;
-      dataByDate[date].accSales += netAmt;
+    // Determine the dynamic category key (e.g. "HARDGOODS", "ACC", etc)
+    let catKey = division;
+    if (division.includes("ACC") || division.includes("ACCESSORIES")) catKey = "ACC";
+    else if (division.includes("BAG") || division.includes("TAS")) catKey = "BAG";
+    else if (division.includes("SHOES") || division.includes("FOOTWEAR")) catKey = "FTW";
+    else if (division.includes("APP") || division.includes("APPAREL") || division.includes("CLOTHING")) catKey = "APP";
+    // We map known names to shorthand for backward compatibility, but any new ones like "HARDGOODS" will just stay "HARDGOODS"
+
+    if (!dataByDate[date].dynamicCats[catKey]) {
+      dataByDate[date].dynamicCats[catKey] = { qty: 0, sales: 0 };
     }
-    if (division.includes("BAG") || division.includes("TAS")) {
-      dataByDate[date].bags += qty;
-      dataByDate[date].bagsSales += netAmt;
+    if (!dataByDate[date].catSM[catKey]) {
+      dataByDate[date].catSM[catKey] = new Set();
     }
-    if (division.includes("SHOES") || division.includes("FOOTWEAR")) {
-      dataByDate[date].ftw += qty;
-      dataByDate[date].ftwSales += netAmt;
-    } else if (
-      division.includes("APP") ||
-      division.includes("APPAREL") ||
-      division.includes("CLOTHING")
-    ) {
-      dataByDate[date].app += qty;
-      dataByDate[date].appSales += netAmt;
-    }
+
+    dataByDate[date].dynamicCats[catKey].qty += qty;
+    dataByDate[date].dynamicCats[catKey].sales += netAmt;
 
     // *** DISCOUNT DETECTION FROM MSR ***
     if (qty > 0) {
@@ -607,9 +595,19 @@ function parseAllData(
     dataByDate[date].targetSales = targetStore * dataByDate[date].targetPercent;
   }
 
+  // Extract global unique categories
+  const allCategories = new Set();
+  for (const date in dataByDate) {
+    for (const cat in dataByDate[date].dynamicCats) {
+      allCategories.add(cat);
+    }
+  }
+
   return {
     targetStore: targetStore,
     dates: dataByDate,
+    targetMap: targetMap,
+    categories: Array.from(allCategories).sort()
   };
 }
 
@@ -667,7 +665,17 @@ function renderDashboard(
   const dates = Object.keys(window.storeData.dates).sort(
     (a, b) => dateToComparable(a) - dateToComparable(b),
   );
+  
+  if (dates.length === 0) return;
+
+  // Determine days in month from the first available date
+  const parts = dates[0].split("-");
+  const dataMonth = parseInt(parts[1], 10);
+  const dataYear = parseInt(parts[2], 10);
+  const daysInMonth = new Date(dataYear, dataMonth, 0).getDate();
+
   let selectedDates = [];
+  let displayDates = [];
 
   if (mode === "ALL") {
     selectedDates = dates;
@@ -683,6 +691,13 @@ function renderDashboard(
     if (statusEl) statusEl.innerText = "ALL PERIOD";
     const infoEl = document.getElementById("performanceFilterInfo");
     if (infoEl) infoEl.innerText = "CURRENT SUMMARY • ALL AVAILABLE DATES";
+
+    // Create array of all dates in this month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dStr = String(i).padStart(2, "0") + "-" + String(dataMonth).padStart(2, "0") + "-" + dataYear;
+      displayDates.push(dStr);
+    }
+
   } else if (mode === "CUSTOM") {
     const cFrom = dateToComparable(fromD);
     const cTo = dateToComparable(toD);
@@ -698,6 +713,8 @@ function renderDashboard(
       return true;
     });
 
+    displayDates = selectedDates;
+
     const titleEl = document.getElementById("summaryStoreTitle");
     if (titleEl)
       titleEl.innerText = "SUMMARY SALES STORE: " + fromD + " TO " + toD;
@@ -712,148 +729,238 @@ function renderDashboard(
     totalQty = 0,
     totalSM = 0,
     totalTargetSales = 0;
-  let totalAcc = 0,
-    totalAccSales = 0,
-    totalAccSM = 0;
-  let totalBags = 0,
-    totalBagsSales = 0,
-    totalBagsSM = 0;
-  let totalApp = 0,
-    totalAppSales = 0,
-    totalAppSM = 0;
-  let totalFtw = 0,
-    totalFtwSales = 0,
-    totalFtwSM = 0;
+  const formatMoney = (val) => "Rp " + Math.round(val).toLocaleString("id-ID");
+  const formatNumber = (val) => Math.round(val).toLocaleString("id-ID");
+  const formatDec = (val) => val.toFixed(2);
+
+  const rawTargetStore = window.storeData ? window.storeData.targetStore : 0;
+  const targetMap = window.storeData ? (window.storeData.targetMap || {}) : {};
+  const categories = window.storeData ? (window.storeData.categories || []) : [];
+
+  const dynamicCatTotals = {};
+  categories.forEach(cat => {
+    dynamicCatTotals[cat] = { qty: 0, sales: 0, sm: 0 };
+  });
+
+  // Inject table headers and update colspan
+  const tableHeaderRow = document.getElementById("tableHeaderRow");
+  if (tableHeaderRow) {
+    let thHtml = `
+      <th style="padding:8px; text-align:left;">DATE</th>
+      <th style="padding:8px; text-align:right;">TARGET</th>
+      <th style="padding:8px; text-align:right;">SALES</th>
+      <th style="padding:8px; text-align:right;">SM</th>
+      <th style="padding:8px; text-align:right;">QTY</th>
+      <th style="padding:8px; text-align:right;">UPT</th>
+      <th style="padding:8px; text-align:right;">ATV</th>
+      <th style="padding:8px; text-align:right;">AUR</th>
+    `;
+    categories.forEach(cat => {
+      thHtml += `<th style="padding:8px; text-align:right;">${cat}</th>`;
+    });
+    thHtml += `<th style="padding:8px; text-align:right;">O2O</th>`;
+    tableHeaderRow.innerHTML = thHtml;
+    
+    const emptyRowCell = document.getElementById("emptyRowCell");
+    if (emptyRowCell) {
+        emptyRowCell.setAttribute("colspan", 9 + categories.length);
+    }
+  }
+
+  // Generate Filter Dropdown Options
+  const categoryTypeFilter = document.getElementById("categoryTypeFilter");
+  if (categoryTypeFilter) {
+    let optHtml = `<option value="ALL">SEMUA KATEGORI</option>`;
+    categories.forEach(cat => {
+      optHtml += `<option value="${cat}">${cat}</option>`;
+    });
+    categoryTypeFilter.innerHTML = optHtml;
+  }
   let totalO2OSales = 0,
     totalO2OSM = 0,
     totalO2OQty = 0;
   let articleAgg = {};
 
-  const formatMoney = (val) => "Rp " + Math.round(val).toLocaleString("id-ID");
-  const formatNumber = (val) => Math.round(val).toLocaleString("id-ID");
-  const formatDec = (val) => val.toFixed(2);
+
 
   let htmlRows = "";
 
-  selectedDates.forEach((d) => {
+  displayDates.forEach((d) => {
     const data = window.storeData.dates[d];
-    totalSales += data.sales;
-    totalQty += data.qty;
-    totalSM += data.sm;
-    totalTargetSales += data.targetSales;
+    const dayStr = String(parseInt(d.split("-")[0], 10));
+    const dailyPct = targetMap[dayStr] || 0;
+    const dailyTarget = Math.round(rawTargetStore * dailyPct);
 
-    totalAcc += data.acc;
-    totalAccSales += data.accSales;
+    if (data && selectedDates.includes(d)) {
+      totalSales += data.sales;
+      totalQty += data.qty;
+      totalSM += data.sm;
+      totalTargetSales += data.targetSales;
 
-    totalBags += data.bags;
-    totalBagsSales += data.bagsSales;
+      categories.forEach(cat => {
+        if (data.dynamicCats && data.dynamicCats[cat]) {
+            dynamicCatTotals[cat].qty += data.dynamicCats[cat].qty || 0;
+            dynamicCatTotals[cat].sales += data.dynamicCats[cat].sales || 0;
+        }
+        if (data.catSM && data.catSM[cat]) {
+            dynamicCatTotals[cat].sm += data.catSM[cat].size || 0;
+        }
+      });
 
-    totalApp += data.app;
-    totalAppSales += data.appSales;
+      // aggregate articles
+      for (const art in data.articles) {
+        if (!articleAgg[art])
+          articleAgg[art] = {
+            qty: 0,
+            sales: 0,
+            division: data.articles[art].division,
+          };
+        articleAgg[art].qty += data.articles[art].qty;
+        articleAgg[art].sales += data.articles[art].sales;
+      }
 
-    totalFtw += data.ftw || 0;
-    totalFtwSales += data.ftwSales || 0;
+      const dUPT = data.sm > 0 ? data.qty / data.sm : 0;
+      const dAUR = data.qty > 0 ? data.sales / data.qty : 0;
+      const dATV = data.sm > 0 ? data.sales / data.sm : 0;
 
-    totalO2OSales += data.o2oSales;
-    totalO2OSM += data.o2oSM;
-    totalO2OQty += data.o2oQty;
+      const cSales = data.sales >= dailyTarget ? "#16a34a" : "#dc2626";
+      const cUPT = dUPT >= targetUPT ? "#16a34a" : "#dc2626";
+      const cATV = dATV >= targetATV ? "#16a34a" : "#dc2626";
+      const cAUR = dAUR >= targetAUR ? "#16a34a" : "#dc2626";
 
-    if (data.catSM) {
-      totalAccSM += data.catSM.ACC.size;
-      totalBagsSM += data.catSM.BAG.size;
-      totalAppSM += data.catSM.APP.size;
-      totalFtwSM += data.catSM.FTW.size;
+      let catTds = "";
+      categories.forEach(cat => {
+        const catQty = data.dynamicCats && data.dynamicCats[cat] ? data.dynamicCats[cat].qty : 0;
+        catTds += `<td>${formatNumber(catQty)}</td>`;
+      });
+
+      htmlRows += `
+              <tr>
+                  <td>${d}</td>
+                  <td>${formatMoney(dailyTarget)}</td>
+                  <td style="color:${cSales}; font-weight:600;">${formatMoney(data.sales)}</td>
+                  <td>${formatNumber(data.sm)}</td>
+                  <td>${formatNumber(data.qty)}</td>
+                  <td style="color:${cUPT}; font-weight:600;">${formatDec(dUPT)}</td>
+                  <td style="color:${cATV}; font-weight:600;">${formatMoney(dATV)}</td>
+                  <td style="color:${cAUR}; font-weight:600;">${formatMoney(dAUR)}</td>
+                  ${catTds}
+                  <td>${formatMoney(data.o2oSales)}</td>
+              </tr>
+          `;
+    } else {
+      // Row is generated but no sales data yet
+      let catEmptyTds = "";
+      categories.forEach(cat => { catEmptyTds += `<td>-</td>`; });
+
+      htmlRows += `
+              <tr>
+                  <td>${d}</td>
+                  <td>${formatMoney(dailyTarget)}</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  ${catEmptyTds}
+                  <td>-</td>
+              </tr>
+          `;
     }
-
-    // aggregate articles
-    for (const art in data.articles) {
-      if (!articleAgg[art])
-        articleAgg[art] = {
-          qty: 0,
-          sales: 0,
-          division: data.articles[art].division,
-        };
-      articleAgg[art].qty += data.articles[art].qty;
-      articleAgg[art].sales += data.articles[art].sales;
-    }
-
-    const dUPT = data.sm > 0 ? data.qty / data.sm : 0;
-    const dAUR = data.qty > 0 ? data.sales / data.qty : 0;
-    const dATV = data.sm > 0 ? data.sales / data.sm : 0;
-
-    htmlRows += `
-            <tr>
-                <td>${d}</td>
-                <td>${formatMoney(data.sales)}</td>
-                <td>${formatNumber(data.sm)}</td>
-                <td>${formatNumber(data.qty)}</td>
-                <td>${formatDec(dUPT)}</td>
-                <td>${formatMoney(dATV)}</td>
-                <td>${formatMoney(dAUR)}</td>
-                <td>${formatNumber(data.acc)}</td>
-                <td>${formatNumber(data.bags)}</td>
-                <td>${formatNumber(data.app)}</td>
-                <td>${formatNumber(data.ftw || 0)}</td>
-                <td>${formatMoney(data.o2oSales)}</td>
-            </tr>
-        `;
   });
 
   const actualUPT = totalSM > 0 ? totalQty / totalSM : 0;
   const actualAUR = totalQty > 0 ? totalSales / totalQty : 0;
   const actualATV = totalSM > 0 ? totalSales / totalSM : 0;
 
+  // =============================================
+  // TARGET AKUMULASI PRORATA
+  // Hitung berdasarkan hari ke-N dari data yang TAMPIL (selectedDates)
+  // dan jumlahkan persentase dari targetMap
+  // =============================================
+  let prorataTarget = totalTargetSales; // fallback
+  let lastDataDay = 0;
+  if (rawTargetStore > 0 && selectedDates.length > 0) {
+    const lastDate = selectedDates[selectedDates.length - 1]; // format: DD-MM-YYYY
+    const parts = lastDate.split("-");
+    if (parts.length === 3) {
+      lastDataDay = parseInt(parts[0], 10);
+      let totalPct = 0;
+      for (let i = 1; i <= lastDataDay; i++) {
+        totalPct += targetMap[String(i)] || 0;
+      }
+      prorataTarget = Math.round(rawTargetStore * totalPct);
+    }
+  }
+
+  const diffSales = totalSales - prorataTarget;
+  const diffUPT = actualUPT - targetUPT;
+  const diffAUR = actualAUR - targetAUR;
+
+  const colorSales = diffSales >= 0 ? "#16a34a" : "#dc2626";
+  const colorUPT = diffUPT >= 0 ? "#16a34a" : "#dc2626";
+  const colorAUR = diffAUR >= 0 ? "#16a34a" : "#dc2626";
+
+  const pct = prorataTarget > 0 ? ((totalSales / prorataTarget) * 100).toFixed(1) : "-";
+  const pctColor = parseFloat(pct) >= 100 ? "#16a34a" : "#dc2626";
+
   const tbody = document.getElementById("tableBody");
   if (tbody) {
-    const diffSales = totalSales - totalTargetSales;
-    const diffUPT = actualUPT - targetUPT;
-    const diffAUR = actualAUR - targetAUR;
+    let totalCatQtyTds = "";
+    categories.forEach(cat => {
+      totalCatQtyTds += `<td>${formatNumber(dynamicCatTotals[cat].qty)}</td>`;
+    });
+    let catDashTds = "";
+    categories.forEach(cat => { catDashTds += `<td>-</td>`; });
 
-    const colorSales = diffSales >= 0 ? "green" : "red";
-    const colorUPT = diffUPT >= 0 ? "green" : "red";
-    const colorAUR = diffAUR >= 0 ? "green" : "red";
-
-    tbody.innerHTML =
-      htmlRows +
-      `
-            <tr style="background:#e8f4fd;">
+    tbody.innerHTML = htmlRows + `
+            <tr style="border-top:2px solid #111; background:#f0f0f0;">
                 <td style="font-weight:bold;">ACTUAL TOTAL</td>
+                <td>-</td>
                 <td style="font-weight:bold;">${formatMoney(totalSales)}</td>
                 <td style="font-weight:bold;">${formatNumber(totalSM)}</td>
                 <td style="font-weight:bold;">${formatNumber(totalQty)}</td>
                 <td style="font-weight:bold;">${formatDec(actualUPT)}</td>
                 <td style="font-weight:bold;">${formatMoney(actualATV)}</td>
                 <td style="font-weight:bold;">${formatMoney(actualAUR)}</td>
-                <td style="font-weight:bold;">${formatNumber(totalAcc)}</td>
-                <td style="font-weight:bold;">${formatNumber(totalBags)}</td>
-                <td style="font-weight:bold;">${formatNumber(totalApp)}</td>
-                <td style="font-weight:bold;">${formatNumber(totalFtw)}</td>
+                ${totalCatQtyTds}
                 <td style="font-weight:bold;">${formatMoney(totalO2OSales)}</td>
             </tr>
-            <tr style="background:#f3f4f6;">
-                <td style="font-weight:bold;">TARGET</td>
-                <td>${formatMoney(totalTargetSales)}</td>
+            <tr style="background:#f9f9f9;">
+                <td style="font-weight:bold;">TARGET (S/D HR KE-${lastDataDay})</td>
+                <td>-</td>
+                <td style="font-weight:bold;">${formatMoney(prorataTarget)}</td>
                 <td>-</td>
                 <td>-</td>
-                <td>${formatDec(targetUPT)}</td>
+                <td style="font-weight:bold;">${formatDec(targetUPT)}</td>
                 <td>-</td>
-                <td>${formatMoney(targetAUR)}</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
+                <td style="font-weight:bold;">${formatMoney(targetAUR)}</td>
+                ${catDashTds}
                 <td>-</td>
             </tr>
-            <tr>
-                <td style="font-weight:bold;">DIFFERENCE</td>
-                <td style="color:${colorSales}; font-weight:bold;">${diffSales > 0 ? "+" : ""}${formatMoney(diffSales)}</td>
+            <tr style="background:#fff3cd;">
+                <td style="font-weight:bold;">SELISIH</td>
+                <td>-</td>
+                <td style="font-weight:bold; color:${colorSales};">${diffSales > 0 ? "+" : ""}${formatMoney(diffSales)}</td>
                 <td>-</td>
                 <td>-</td>
-                <td style="color:${colorUPT}; font-weight:bold;">${diffUPT > 0 ? "+" : ""}${formatDec(diffUPT)}</td>
+                <td style="font-weight:bold; color:${colorUPT};">${diffUPT > 0 ? "+" : ""}${formatDec(diffUPT)}</td>
                 <td>-</td>
-                <td style="color:${colorAUR}; font-weight:bold;">${diffAUR > 0 ? "+" : ""}${formatMoney(diffAUR)}</td>
+                <td style="font-weight:bold; color:${colorAUR};">${diffAUR > 0 ? "+" : ""}${formatMoney(diffAUR)}</td>
+                ${catDashTds}
+                <td>-</td>
+            </tr>
+            <tr style="background:#111; color:#fff; border-bottom:2px solid #111;">
+                <td style="font-weight:bold;">ACHIEVEMENT</td>
+                <td>-</td>
+                <td style="font-weight:bold; color:${pctColor}; font-size:15px;">${pct}%</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                ${catDashTds}
                 <td>-</td>
             </tr>
         `;
@@ -866,27 +973,39 @@ function renderDashboard(
   };
 
   setEl("sumTotalSales", formatMoney(totalSales));
-  setEl("sumTotalSM", formatNumber(totalSM));
   setEl("sumTotalQty", formatNumber(totalQty));
-
-  setEl("sumBagQty", formatNumber(totalBags));
-  setEl("sumBagSales", formatMoney(totalBagsSales));
-  setEl("sumBagSM", formatNumber(totalBagsSM));
-
-  setEl("sumApparelQty", formatNumber(totalApp));
-  setEl("sumApparelSales", formatMoney(totalAppSales));
-  setEl("sumApparelSM", formatNumber(totalAppSM));
-
-  setEl("sumAccQty", formatNumber(totalAcc));
-  setEl("sumAccSales", formatMoney(totalAccSales));
-  setEl("sumAccSM", formatNumber(totalAccSM));
-
-  setEl("sumFtwQty", formatNumber(totalFtw));
-  setEl("sumFtwSales", formatMoney(totalFtwSales));
-  setEl("sumFtwSM", formatNumber(totalFtwSM));
-
-  setEl("sumO2OSM", formatNumber(totalO2OSM));
-  setEl("sumO2OQty", formatNumber(totalO2OQty));
+  // Generate dynamic category cards
+  const categoryCardsContainer = document.getElementById("categoryCardsContainer");
+  if (categoryCardsContainer) {
+    let cardsHtml = "";
+    categories.forEach(cat => {
+      const catData = dynamicCatTotals[cat];
+      cardsHtml += `
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">${cat}</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">QTY: <span id="sum${cat}Qty">${formatNumber(catData.qty)}</span></div>
+            <div style="font-size:12px; color:#111;" id="sum${cat}Sales">${formatMoney(catData.sales)}</div>
+        </div>
+      `;
+    });
+    // Add O2O
+    cardsHtml += `
+        <div style="border:2px solid #111; padding:12px;">
+            <div style="font-size:11px; font-weight:bold; color:#555; letter-spacing:1px;">O2O</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;">SM: <span id="sumO2OSM">${formatNumber(totalO2OSM)}</span> &nbsp; QTY: <span id="sumO2OQty">${formatNumber(totalO2OQty)}</span></div>
+            <div style="font-size:12px; color:#111;" id="sumO2OSales">${formatMoney(totalO2OSales)}</div>
+        </div>
+    `;
+    // Add TOTAL
+    cardsHtml += `
+        <div style="border:2px solid #111; padding:12px; background:#111; color:#fff;">
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px;">TOTAL</div>
+            <div style="font-size:18px; font-weight:bold; margin:4px 0;" id="sumTotalSales">${formatMoney(totalSales)}</div>
+            <div style="font-size:11px;">SM: <span id="sumTotalSM">${formatNumber(totalSM)}</span> &nbsp; QTY: <span id="sumTotalQty">${formatNumber(totalQty)}</span></div>
+        </div>
+    `;
+    categoryCardsContainer.innerHTML = cardsHtml;
+  }
 
   // For Last Week Growth
   let lwSales = 0,
