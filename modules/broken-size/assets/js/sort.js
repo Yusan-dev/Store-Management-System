@@ -71,7 +71,7 @@ function getBsSortedRows(rows) {
 }
 
 function renderBsSort() {
-  document.querySelectorAll("#bsTable thead th").forEach(th => {
+  document.querySelectorAll("#bsTable thead th").forEach((th) => {
     const label = th.dataset.label || th.dataset.key;
     if (!label) return;
     th.innerText = label;

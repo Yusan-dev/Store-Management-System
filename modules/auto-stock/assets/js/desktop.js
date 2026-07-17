@@ -8,7 +8,7 @@
     ["price", "PRICE"],
     ["status", "STATUS"],
     ["gender", "GENDER"],
-    ["qty", "QTY"]
+    ["qty", "QTY"],
   ];
 
   function rows() {
@@ -28,13 +28,15 @@
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
       2,
-      "0"
+      "0",
     )}-${String(now.getDate()).padStart(2, "0")}`;
   }
 
   function currentFilterState() {
     const checked = (id) =>
-      [...document.querySelectorAll(`#${id} input:checked`)].map((x) => x.value);
+      [...document.querySelectorAll(`#${id} input:checked`)].map(
+        (x) => x.value,
+      );
 
     return {
       search: document.getElementById("search")?.value || "",
@@ -44,7 +46,7 @@
       brand: checked("brand"),
       category: checked("category"),
       gender: checked("gender"),
-      status: checked("status")
+      status: checked("status"),
     };
   }
 
@@ -66,16 +68,16 @@
     }
   }
 
-    const DB_NAME = 'gtAutoStockDB';
-  const STORE_NAME = 'presets';
-  
+  const DB_NAME = "gtAutoStockDB";
+  const STORE_NAME = "presets";
+
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, 1);
       request.onupgradeneeded = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+          db.createObjectStore(STORE_NAME, { keyPath: "name" });
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -86,7 +88,7 @@
   async function getPresets() {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readonly');
+      const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
       request.onsuccess = () => {
@@ -103,12 +105,12 @@
       name,
       createdAt: new Date().toISOString(),
       filters: currentFilterState(),
-      data: typeof dashboardData !== 'undefined' ? dashboardData : []
+      data: typeof dashboardData !== "undefined" ? dashboardData : [],
     };
-    
+
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
       store.put(preset);
       tx.oncomplete = () => resolve({ ok: true });
@@ -119,7 +121,7 @@
   async function deletePreset(name) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
       store.delete(name);
       tx.oncomplete = () => resolve({ ok: true });
@@ -128,7 +130,10 @@
   }
 
   function buildPrintHtml(data) {
-    const totalQty = data.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+    const totalQty = data.reduce(
+      (sum, item) => sum + (Number(item.qty) || 0),
+      0,
+    );
     const body = data
       .map(
         (item) => `
@@ -142,7 +147,7 @@
                 return `<td>${escapeHtml(value)}</td>`;
               })
               .join("")}
-          </tr>`
+          </tr>`,
       )
       .join("");
 
@@ -261,7 +266,9 @@ tr { break-inside: avoid; }
 
       const result = await window.gtDesktop.savePdf({
         html,
-        defaultFileName: fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`
+        defaultFileName: fileName.endsWith(".pdf")
+          ? fileName
+          : `${fileName}.pdf`,
       });
 
       if (result?.ok) {
@@ -284,9 +291,11 @@ tr { break-inside: avoid; }
 
     const modal = ensurePrintCenter();
     const qty = data.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
-    modal.querySelector("[data-print-sku]").innerText = data.length.toLocaleString();
+    modal.querySelector("[data-print-sku]").innerText =
+      data.length.toLocaleString();
     modal.querySelector("[data-print-qty]").innerText = qty.toLocaleString();
-    modal.querySelector("#printFileName").value = `GT_AUTO_STOCK_${stamp()}.pdf`;
+    modal.querySelector("#printFileName").value =
+      `GT_AUTO_STOCK_${stamp()}.pdf`;
     modal.classList.remove("hidden");
   }
 
@@ -343,12 +352,12 @@ tr { break-inside: avoid; }
 
       if (preset) {
         if (preset.data && preset.data.length > 0) {
-           if(typeof saveData === 'function') {
-               saveData(preset.data);
-           }
+          if (typeof saveData === "function") {
+            saveData(preset.data);
+          }
         }
         if (preset.filters) {
-           applyFilterState(preset.filters);
+          applyFilterState(preset.filters);
         }
       }
     };

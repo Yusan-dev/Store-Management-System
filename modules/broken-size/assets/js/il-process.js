@@ -37,7 +37,7 @@ async function processIL(stockRows) {
     const stockPerCat = calcStockPerCategory(stockRows);
 
     // Calculate sales per category per month from MSR files
-    const salesPerMonth = msrDataArr.map(rows => calcSalesPerCategory(rows));
+    const salesPerMonth = msrDataArr.map((rows) => calcSalesPerCategory(rows));
 
     // Combine into IL table
     const ilData = buildILTable(stockPerCat, salesPerMonth);
@@ -46,7 +46,6 @@ async function processIL(stockRows) {
     // Render IL table
     drawILTable(ilData);
     updateILSummary(ilData);
-
   } catch (err) {
     console.error("IL Error:", err);
     alert("Gagal memproses IL: " + err.message);
@@ -61,7 +60,9 @@ function calcStockPerCategory(rows) {
     const r = rows[i];
     if (!r) continue;
 
-    const category = String(r[1] || "").toUpperCase().trim();
+    const category = String(r[1] || "")
+      .toUpperCase()
+      .trim();
     const qty = Number(r[7]) || 0;
 
     if (!category || qty <= 0) continue;
@@ -81,13 +82,18 @@ function calcSalesPerCategory(rows) {
     const r = rows[i];
     if (!r) continue;
 
-    const division = String(r[1] || "").toUpperCase().trim();
+    const division = String(r[1] || "")
+      .toUpperCase()
+      .trim();
 
     // Skip header rows and totals
-    if (!division || 
-        division === "PRODUCT DIVISION" ||
-        division.startsWith("TOTAL") || 
-        division.startsWith("GRAND")) continue;
+    if (
+      !division ||
+      division === "PRODUCT DIVISION" ||
+      division.startsWith("TOTAL") ||
+      division.startsWith("GRAND")
+    )
+      continue;
 
     const qty = Math.abs(Number(r[6]) || 0);
 
@@ -103,17 +109,17 @@ function buildILTable(stockPerCat, salesPerMonth) {
   // Get all unique categories
   const allCats = new Set([
     ...Object.keys(stockPerCat),
-    ...salesPerMonth.flatMap(s => Object.keys(s))
+    ...salesPerMonth.flatMap((s) => Object.keys(s)),
   ]);
 
   const monthCount = salesPerMonth.length || 1;
   const result = [];
 
-  allCats.forEach(category => {
+  allCats.forEach((category) => {
     const stockQty = stockPerCat[category] || 0;
-    const sales1 = salesPerMonth[0] ? (salesPerMonth[0][category] || 0) : 0;
-    const sales2 = salesPerMonth[1] ? (salesPerMonth[1][category] || 0) : 0;
-    const sales3 = salesPerMonth[2] ? (salesPerMonth[2][category] || 0) : 0;
+    const sales1 = salesPerMonth[0] ? salesPerMonth[0][category] || 0 : 0;
+    const sales2 = salesPerMonth[1] ? salesPerMonth[1][category] || 0 : 0;
+    const sales3 = salesPerMonth[2] ? salesPerMonth[2][category] || 0 : 0;
 
     const totalSales = sales1 + sales2 + sales3;
     const avgSales = Math.round(totalSales / monthCount);
@@ -138,7 +144,7 @@ function buildILTable(stockPerCat, salesPerMonth) {
       sales3,
       avgSales,
       ilRatio: Math.round(ilRatio * 100) / 100,
-      ilStatus
+      ilStatus,
     });
   });
 
@@ -160,7 +166,7 @@ function drawILTable(rows) {
     return;
   }
 
-  rows.forEach(r => {
+  rows.forEach((r) => {
     let ratioClass = "";
     if (r.avgSales > 0) {
       if (r.ilRatio < 2) ratioClass = "il-ratio-bad";
@@ -168,7 +174,9 @@ function drawILTable(rows) {
       else ratioClass = "il-ratio-warn";
     }
 
-    body.insertAdjacentHTML("beforeend", `
+    body.insertAdjacentHTML(
+      "beforeend",
+      `
       <tr>
         <td>${r.category}</td>
         <td>${r.stockQty.toLocaleString()}</td>
@@ -179,7 +187,8 @@ function drawILTable(rows) {
         <td class="${ratioClass}">${r.ilRatio.toFixed(2)}</td>
         <td class="${ratioClass}">${r.ilStatus}</td>
       </tr>
-    `);
+    `,
+    );
   });
 }
 
@@ -188,10 +197,12 @@ function updateILSummary(rows) {
   const totalCat = rows.length;
   const totalStock = rows.reduce((a, b) => a + b.stockQty, 0);
   const totalAvgSales = rows.reduce((a, b) => a + b.avgSales, 0);
-  const overallIL = totalAvgSales > 0 ? (totalStock / totalAvgSales) : 0;
+  const overallIL = totalAvgSales > 0 ? totalStock / totalAvgSales : 0;
 
   document.getElementById("ilTotalCat").innerText = totalCat.toLocaleString();
-  document.getElementById("ilTotalStock").innerText = totalStock.toLocaleString();
-  document.getElementById("ilAvgSales").innerText = totalAvgSales.toLocaleString();
+  document.getElementById("ilTotalStock").innerText =
+    totalStock.toLocaleString();
+  document.getElementById("ilAvgSales").innerText =
+    totalAvgSales.toLocaleString();
   document.getElementById("ilOverall").innerText = overallIL.toFixed(2);
 }

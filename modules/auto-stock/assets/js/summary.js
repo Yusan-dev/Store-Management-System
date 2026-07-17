@@ -1,7 +1,5 @@
-function renderStatusSummary(rows){
-
-    const statuses=[
-    
+function renderStatusSummary(rows) {
+  const statuses = [
     "10%",
     "20%",
     "30%",
@@ -11,29 +9,12 @@ function renderStatusSummary(rows){
     "80%",
     "90%",
     "normal",
-    "freefall"
-    
-    ]
-    
-    
-    
-    const cats=[
-    
-    "ACCESSORIES",
-    
-    "APPAREL",
-    
-    "BAGS",
-    
-    "FOOTWEAR",
-    
-    "NON-MD"
-    
-    ]
-    
-    
-    
-    let html=`
+    "freefall",
+  ];
+
+  const cats = ["ACCESSORIES", "APPAREL", "BAGS", "FOOTWEAR", "NON-MD"];
+
+  let html = `
     
     <div class="status-grid">
     
@@ -50,14 +31,9 @@ function renderStatusSummary(rows){
     </th>
     
     ${statuses
-    .map(
-    x=>
-    
-    `<th>${x}</th>`
-    
-    )
-    
-    .join("")}
+      .map((x) => `<th>${x}</th>`)
+
+      .join("")}
     
     </tr>
     
@@ -65,15 +41,10 @@ function renderStatusSummary(rows){
     
     <tbody>
     
-    `
-    
-    
-    
-    cats.forEach(
-    
-    cat=>{
-    
-    html+=`
+    `;
+
+  cats.forEach((cat) => {
+    html += `
     
     <tr>
     
@@ -83,60 +54,24 @@ function renderStatusSummary(rows){
     
     </td>
     
-    `
-    
-    
-    
-    statuses.forEach(
-    
-    st=>{
-    
-    
-    const value=
-    
-    rows
-    
-    .filter(
-    
-    r=>
-    
-    String(
-    r.category
-    )
-    
-    .toUpperCase()
-    
-    ===cat
-    
-    &&
-    
-    String(
-    r.status
-    )
-    
-    .toLowerCase()
-    
-    ===st
-    
-    )
-    
-    .reduce(
-    
-    (
-    a,
-    b
-    )=>
-    
-    a+
-    1,
-    
-    0
-    
-    )
-    
-    
-    
-    html+=`
+    `;
+
+    statuses.forEach((st) => {
+      const value = rows
+
+        .filter(
+          (r) =>
+            String(r.category).toUpperCase() === cat &&
+            String(r.status).toLowerCase() === st,
+        )
+
+        .reduce(
+          (a, b) => a + 1,
+
+          0,
+        );
+
+      html += `
     
     <td>
     
@@ -144,28 +79,13 @@ function renderStatusSummary(rows){
     
     </td>
     
-    `
-    
-    
-    
-    }
-    
-    )
-    
-    
-    
-    html+=
-    `</tr>`
-    
-    
-    
-    }
-    
-    )
-    
-    
-    
-    html+=`
+    `;
+    });
+
+    html += `</tr>`;
+  });
+
+  html += `
     
     </tbody>
     
@@ -173,24 +93,9 @@ function renderStatusSummary(rows){
     
     </div>
     
-    `
-    
-    
-    
-    const target=
-    
-    document
-    .getElementById(
-    "statusSummary"
-    )
-    
-    
-    
-    if(
-    target
-    )
-    
-    target.innerHTML=
-    html
-    
-    }
+    `;
+
+  const target = document.getElementById("statusSummary");
+
+  if (target) target.innerHTML = html;
+}

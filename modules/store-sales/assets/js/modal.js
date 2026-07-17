@@ -5,199 +5,108 @@ const modalBody = document.getElementById("modalBody");
 const modalTitle = document.getElementById("modalTitle");
 
 const closeModalBtn = document.getElementById("closeModal");
-if(closeModalBtn) {
-closeModalBtn.onclick=()=>{
-
-    if(modal) modal.classList.remove("show");
-
-};
+if (closeModalBtn) {
+  closeModalBtn.onclick = () => {
+    if (modal) modal.classList.remove("show");
+  };
 }
 
-
-window.onclick=e=>{
-
-    if(e.target===modal){
-
-        modal.classList.remove("show");
-
-    }
-
+window.onclick = (e) => {
+  if (e.target === modal) {
+    modal.classList.remove("show");
+  }
 };
-
 
 // =====================================================
 // STAFF DETAIL MODAL
 // SUPPORT ACTIVE PERFORMANCE DATE FILTER
 // =====================================================
 
-function openStaffDetail(staff){
+function openStaffDetail(staff) {
+  // =============================================
+  // GET ACTIVE DATE FILTER FROM SUMMARY CONTROLLER
+  // =============================================
 
-    // =============================================
-    // GET ACTIVE DATE FILTER FROM SUMMARY CONTROLLER
-    // =============================================
+  const activeFilter =
+    typeof getActivePerformanceDateFilter === "function"
+      ? getActivePerformanceDateFilter()
+      : "";
 
-    const activeFilter =
+  // =============================================
+  // GET FILTERED STAFF TRANSACTIONS
+  // =============================================
 
-        typeof getActivePerformanceDateFilter === "function"
+  const data = GTEngine.getStaffTransactions(
+    staff,
 
-            ? getActivePerformanceDateFilter()
+    activeFilter,
+  );
 
-            : "";
+  // =============================================
+  // GET FILTERED STAFF SUMMARY
+  // =============================================
 
+  const staffSummary = GTEngine.getStaffSummary(
+    staff,
 
-    // =============================================
-    // GET FILTERED STAFF TRANSACTIONS
-    // =============================================
+    activeFilter,
+  );
 
-    const data =
+  // =============================================
+  // MODAL TITLE
+  // =============================================
 
-        GTEngine.getStaffTransactions(
+  modalTitle.innerText = staff;
 
-            staff,
+  // =============================================
+  // EMPTY DATA
+  // =============================================
 
-            activeFilter
+  if (data.length === 0) {
+    modalBody.innerHTML = "<p>Tidak ada data pada periode yang dipilih.</p>";
 
-        );
+    modal.classList.add("show");
 
+    return;
+  }
 
-    // =============================================
-    // GET FILTERED STAFF SUMMARY
-    // =============================================
+  // =============================================
+  // FILTER LABEL
+  // =============================================
 
-    const staffSummary =
+  let filterLabel = "ALL PERIOD";
 
-        GTEngine.getStaffSummary(
+  if (typeof getPerformanceFilterLabel === "function") {
+    filterLabel = getPerformanceFilterLabel(activeFilter);
+  }
 
-            staff,
+  // =============================================
+  // STAFF KPI
+  // =============================================
 
-            activeFilter
+  const sales = Number(staffSummary?.sales || 0);
 
-        );
+  const sm = Number(staffSummary?.sm || 0);
 
+  const qty = Number(staffSummary?.qty || 0);
 
-    // =============================================
-    // MODAL TITLE
-    // =============================================
+  const upt = sm > 0 ? qty / sm : 0;
 
-    modalTitle.innerText =
-        staff;
+  const atv = sm > 0 ? sales / sm : 0;
 
+  const aur = qty > 0 ? sales / qty : 0;
 
-    // =============================================
-    // EMPTY DATA
-    // =============================================
+  // =============================================
+  // BUILD HTML
+  // =============================================
 
-    if(data.length === 0){
+  let html = "";
 
-        modalBody.innerHTML =
+  // =============================================
+  // PERIOD INFORMATION
+  // =============================================
 
-            "<p>Tidak ada data pada periode yang dipilih.</p>";
-
-
-        modal.classList.add("show");
-
-        return;
-
-    }
-
-
-    // =============================================
-    // FILTER LABEL
-    // =============================================
-
-    let filterLabel =
-        "ALL PERIOD";
-
-
-    if(
-
-        typeof getPerformanceFilterLabel ===
-
-        "function"
-
-    ){
-
-        filterLabel =
-
-            getPerformanceFilterLabel(
-
-                activeFilter
-
-            );
-
-    }
-
-
-    // =============================================
-    // STAFF KPI
-    // =============================================
-
-    const sales =
-
-        Number(
-
-            staffSummary?.sales || 0
-
-        );
-
-
-    const sm =
-
-        Number(
-
-            staffSummary?.sm || 0
-
-        );
-
-
-    const qty =
-
-        Number(
-
-            staffSummary?.qty || 0
-
-        );
-
-
-    const upt =
-
-        sm > 0
-
-            ? qty / sm
-
-            : 0;
-
-
-    const atv =
-
-        sm > 0
-
-            ? sales / sm
-
-            : 0;
-
-
-    const aur =
-
-        qty > 0
-
-            ? sales / qty
-
-            : 0;
-
-
-    // =============================================
-    // BUILD HTML
-    // =============================================
-
-    let html = "";
-
-
-    // =============================================
-    // PERIOD INFORMATION
-    // =============================================
-
-    html += `
+  html += `
 
         <div class="staff-modal-period">
 
@@ -213,12 +122,11 @@ function openStaffDetail(staff){
 
     `;
 
+  // =============================================
+  // STAFF KPI SUMMARY
+  // =============================================
 
-    // =============================================
-    // STAFF KPI SUMMARY
-    // =============================================
-
-    html += `
+  html += `
 
         <div class="staff-modal-kpi-grid">
 
@@ -229,9 +137,7 @@ function openStaffDetail(staff){
 
                 <strong>
 
-                    Rp ${Number(sales)
-
-                        .toLocaleString("id-ID")}
+                    Rp ${Number(sales).toLocaleString("id-ID")}
 
                 </strong>
 
@@ -270,21 +176,15 @@ function openStaffDetail(staff){
 
                 <strong>
 
-                    ${Number(upt)
+                    ${Number(upt).toLocaleString(
+                      "id-ID",
 
-                        .toLocaleString(
+                      {
+                        minimumFractionDigits: 2,
 
-                            "id-ID",
-
-                            {
-
-                                minimumFractionDigits: 2,
-
-                                maximumFractionDigits: 2
-
-                            }
-
-                        )}
+                        maximumFractionDigits: 2,
+                      },
+                    )}
 
                 </strong>
 
@@ -299,7 +199,7 @@ function openStaffDetail(staff){
 
                     Rp ${Math.round(atv)
 
-                        .toLocaleString("id-ID")}
+                      .toLocaleString("id-ID")}
 
                 </strong>
 
@@ -314,7 +214,7 @@ function openStaffDetail(staff){
 
                     Rp ${Math.round(aur)
 
-                        .toLocaleString("id-ID")}
+                      .toLocaleString("id-ID")}
 
                 </strong>
 
@@ -325,12 +225,11 @@ function openStaffDetail(staff){
 
     `;
 
+  // =============================================
+  // TRANSACTION TABLE
+  // =============================================
 
-    // =============================================
-    // TRANSACTION TABLE
-    // =============================================
-
-    html += `
+  html += `
 
         <div class="table-wrap">
 
@@ -359,10 +258,8 @@ function openStaffDetail(staff){
 
     `;
 
-
-    data.forEach(t => {
-
-        html += `
+  data.forEach((t) => {
+    html += `
 
             <tr>
 
@@ -384,20 +281,16 @@ function openStaffDetail(staff){
 
                 <td>
 
-                    Rp ${Number(t.sales)
-
-                        .toLocaleString("id-ID")}
+                    Rp ${Number(t.sales).toLocaleString("id-ID")}
 
                 </td>
 
             </tr>
 
         `;
+  });
 
-    });
-
-
-    html += `
+  html += `
 
                 </tbody>
 
@@ -407,38 +300,27 @@ function openStaffDetail(staff){
 
     `;
 
+  modalBody.innerHTML = html;
 
-    modalBody.innerHTML =
-        html;
+  modal.classList.add("show");
+}
 
+function openStaffDetail(staff) {
+  const data = GTEngine.getStaffTransactions(staff);
+
+  modalTitle.innerText = staff;
+
+  if (data.length === 0) {
+    modalBody.innerHTML = "<p>Tidak ada data.</p>";
 
     modal.classList.add("show");
 
-}
+    return;
+  }
 
-function openStaffDetail(staff){
+  let html = "";
 
-    const data=
-
-    GTEngine.getStaffTransactions(staff);
-
-    modalTitle.innerText=staff;
-
-    if(data.length===0){
-
-        modalBody.innerHTML=
-
-        "<p>Tidak ada data.</p>";
-
-        modal.classList.add("show");
-
-        return;
-
-    }
-
-    let html="";
-
-    html+=`
+  html += `
 
     <table class="validation-table">
 
@@ -462,9 +344,8 @@ function openStaffDetail(staff){
 
     `;
 
-    data.forEach(t=>{
-
-        html+=`
+  data.forEach((t) => {
+    html += `
 
         <tr>
 
@@ -479,10 +360,9 @@ function openStaffDetail(staff){
         </tr>
 
         `;
+  });
 
-    });
-
-    html+=`
+  html += `
 
     </tbody>
 
@@ -490,9 +370,7 @@ function openStaffDetail(staff){
 
     `;
 
-    modalBody.innerHTML=html;
+  modalBody.innerHTML = html;
 
-    modal.classList.add("show");
-
+  modal.classList.add("show");
 }
-

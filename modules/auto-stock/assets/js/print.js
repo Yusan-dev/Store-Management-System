@@ -1,48 +1,15 @@
-document
+document.getElementById("print").onclick = printPDF;
 
-.getElementById(
-"print"
-)
+function printPDF() {
+  const rows = window.filteredData || [];
 
-.onclick=
+  if (!rows.length) {
+    alert("Tidak ada data");
 
-printPDF
+    return;
+  }
 
-
-
-
-
-function printPDF(){
-
-
-
-const rows=
-
-window.filteredData
-
-||
-
-[]
-
-
-
-if(
-!rows.length
-){
-
-alert(
-"Tidak ada data"
-)
-
-return
-
-}
-
-
-
-
-
-let html=`
+  let html = `
 
 <html>
 
@@ -224,11 +191,7 @@ ${rows.length}
 
 QTY:
 
-${rows.reduce(
-(a,b)=>
-a+b.qty,
-0
-)}
+${rows.reduce((a, b) => a + b.qty, 0)}
 
 </div>
 
@@ -280,15 +243,10 @@ QTY
 
 <tbody>
 
-`
+`;
 
-
-
-rows.forEach(
-
-r=>{
-
-html+=`
+  rows.forEach((r) => {
+    html += `
 
 <tr>
 
@@ -306,9 +264,7 @@ ${r.desc}
 
 <td>
 
-${Number(
-r.price
-).toLocaleString()}
+${Number(r.price).toLocaleString()}
 
 </td>
 
@@ -326,15 +282,10 @@ ${r.qty}
 
 </tr>
 
-`
+`;
+  });
 
-}
-
-)
-
-
-
-html+=`
+  html += `
 
 </tbody>
 
@@ -355,41 +306,19 @@ KANGODING.ORG © 2026
 
 </html>
 
-`
+`;
 
+  const win = window.open("", "_blank");
 
+  win.document.write(html);
 
-const win=
+  win.document.close();
 
-window.open(
-"",
-"_blank"
-)
+  setTimeout(
+    () => {
+      win.print();
+    },
 
-
-
-win.document.write(
-html
-)
-
-
-
-win.document.close()
-
-
-
-setTimeout(
-
-()=>{
-
-win.print()
-
-},
-
-400
-
-)
-
-
-
+    400,
+  );
 }

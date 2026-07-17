@@ -1,11 +1,3 @@
-document
-.getElementById(
-"export"
-)
-.onclick=()=>{
-
-alert(
-"Export Coming Soon"
-)
-
-}
+document.getElementById("export").onclick = () => {
+  alert("Export Coming Soon");
+};

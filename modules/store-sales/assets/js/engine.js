@@ -1,32 +1,30 @@
 const GTEngine = (() => {
+  // =====================================================
+  // MASTER DATABASE
+  // =====================================================
 
-    // =====================================================
-    // MASTER DATABASE
-    // =====================================================
+  const invoiceMap = new Map();
 
-    const invoiceMap = new Map();
+  const articleMap = new Map();
 
-    const articleMap = new Map();
+  const staffMap = new Map();
+  // ======================================
+  // ENGINE V2
+  // ======================================
+  const invoiceSales = new Map();
 
-    const staffMap = new Map();
-// ======================================
-// ENGINE V2
-// ======================================
-const invoiceSales = new Map();
+  const articleCategory = new Map();
 
-const articleCategory = new Map();
+  const transactions = [];
 
-const transactions = [];
+  const msrTransactions = [];
 
-const msrTransactions = [];
+  const sharedInvoiceMap = new Map();
+  // =====================================================
+  // RESET
+  // =====================================================
 
-const sharedInvoiceMap = new Map();
-    // =====================================================
-    // RESET
-    // =====================================================
-
-  function clear(){
-
+  function clear() {
     invoiceMap.clear();
 
     articleMap.clear();
@@ -39,102 +37,57 @@ const sharedInvoiceMap = new Map();
 
     transactions.length = 0;
 
-msrTransactions.length = 0;
+    msrTransactions.length = 0;
 
-sharedInvoiceMap.clear();
-}
+    sharedInvoiceMap.clear();
+  }
 
+  // =====================================================
+  // HELPER
+  // =====================================================
 
-    // =====================================================
-    // HELPER
-    // =====================================================
+  function text(value) {
+    return String(value ?? "")
+      .trim()
+      .toUpperCase();
+  }
 
-    function text(value){
+  function number(value) {
+    if (value === undefined || value === null) return 0;
 
-        return String(value ?? "")
-            .trim()
-            .toUpperCase();
+    return (
+      Number(
+        String(value)
+          .replace(/,/g, "")
 
+          .replace(/ /g, "")
+
+          .trim(),
+      ) || 0
+    );
+  }
+  function normalizeDate(value) {
+    if (value === undefined || value === null || value === "") {
+      return "";
     }
-
-
-    function number(value){
-
-        if(value===undefined || value===null)
-            return 0;
-
-        return Number(
-
-            String(value)
-
-            .replace(/,/g,"")
-
-            .replace(/ /g,"")
-
-            .trim()
-
-        ) || 0;
-
-    }
-function normalizeDate(value){
-
-    if(
-        value === undefined ||
-        value === null ||
-        value === ""
-    ){
-        return "";
-    }
-
 
     // ==========================================
     // EXCEL SERIAL DATE
     // ==========================================
 
-    if(
-        typeof value === "number" &&
-        Number.isFinite(value)
-    ){
+    if (typeof value === "number" && Number.isFinite(value)) {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
 
-        const excelEpoch = new Date(
+      const date = new Date(excelEpoch.getTime() + value * 86400000);
 
-            Date.UTC(1899, 11, 30)
+      const day = String(date.getUTCDate()).padStart(2, "0");
 
-        );
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
 
+      const year = date.getUTCFullYear();
 
-        const date = new Date(
-
-            excelEpoch.getTime() +
-
-            value * 86400000
-
-        );
-
-
-        const day = String(
-
-            date.getUTCDate()
-
-        ).padStart(2, "0");
-
-
-        const month = String(
-
-            date.getUTCMonth() + 1
-
-        ).padStart(2, "0");
-
-
-        const year =
-
-            date.getUTCFullYear();
-
-
-        return `${day}-${month}-${year}`;
-
+      return `${day}-${month}-${year}`;
     }
-
 
     // ==========================================
     // STRING DATE
@@ -142,39 +95,21 @@ function normalizeDate(value){
 
     const raw = String(value).trim();
 
-
     // DD-MM-YYYY
     // DD/MM/YYYY
     // DD.MM.YYYY
 
-    let match = raw.match(
+    let match = raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
 
-        /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/
+    if (match) {
+      const day = match[1].padStart(2, "0");
 
-    );
+      const month = match[2].padStart(2, "0");
 
+      const year = match[3];
 
-    if(match){
-
-        const day =
-
-            match[1].padStart(2, "0");
-
-
-        const month =
-
-            match[2].padStart(2, "0");
-
-
-        const year =
-
-            match[3];
-
-
-        return `${day}-${month}-${year}`;
-
+      return `${day}-${month}-${year}`;
     }
-
 
     // ==========================================
     // JAVASCRIPT PARSEABLE DATE
@@ -182,1044 +117,712 @@ function normalizeDate(value){
 
     const parsed = new Date(raw);
 
+    if (!Number.isNaN(parsed.getTime())) {
+      const day = String(parsed.getDate()).padStart(2, "0");
 
-    if(!Number.isNaN(parsed.getTime())){
+      const month = String(parsed.getMonth() + 1).padStart(2, "0");
 
-        const day = String(
+      const year = parsed.getFullYear();
 
-            parsed.getDate()
-
-        ).padStart(2, "0");
-
-
-        const month = String(
-
-            parsed.getMonth() + 1
-
-        ).padStart(2, "0");
-
-
-        const year =
-
-            parsed.getFullYear();
-
-
-        return `${day}-${month}-${year}`;
-
+      return `${day}-${month}-${year}`;
     }
-
 
     console.warn(
+      "UNRECOGNIZED DATE:",
 
-        "UNRECOGNIZED DATE:",
-
-        value
-
+      value,
     );
 
-
     return raw;
+  }
 
-}
+  // =====================================================
+  // STAFF
+  // =====================================================
 
-    // =====================================================
-    // STAFF
-    // =====================================================
+  function getStaff(id, name) {
+    id = text(id);
 
-    function getStaff(id,name){
+    name = text(name);
 
-        id = text(id);
+    if (!staffMap.has(id)) {
+      staffMap.set(id, {
+        id,
 
-        name = text(name);
-
-        if(!staffMap.has(id)){
-
-            staffMap.set(id,{
-
-                id,
-
-                name
-
-            });
-
-        }
-
-        return staffMap.get(id);
-
+        name,
+      });
     }
 
+    return staffMap.get(id);
+  }
 
-    // =====================================================
-    // INVOICE
-    // =====================================================
+  // =====================================================
+  // INVOICE
+  // =====================================================
 
-    function getInvoice(invoice){
+  function getInvoice(invoice) {
+    invoice = text(invoice);
 
-        invoice = text(invoice);
+    if (!invoiceMap.has(invoice)) {
+      invoiceMap.set(invoice, {
+        invoice,
 
-        if(!invoiceMap.has(invoice)){
+        date: "",
 
-            invoiceMap.set(invoice,{
+        counter: 0,
 
-    invoice,
+        sales: 0,
 
-    date:"",
+        staff: null,
 
-    counter:0,
+        isO2O: false,
 
-    sales:0,
+        isSale: false,
 
-    staff:null,
+        isReturn: false,
 
-    isO2O:false,
+        transactionType: "UNKNOWN",
 
-    isSale:false,
-
-    isReturn:false,
-
-    transactionType:"UNKNOWN",
-
-    items:[]
-
-});
-        }
-
-        return invoiceMap.get(invoice);
-
+        items: [],
+      });
     }
 
-function getCategory(article){
+    return invoiceMap.get(invoice);
+  }
 
+  function getCategory(article) {
     article = text(article);
 
     return articleCategory.get(article) || "";
-
-}
-function registerSharedInvoice(invoice, staff){
-
+  }
+  function registerSharedInvoice(invoice, staff) {
     invoice = text(invoice);
 
-    const staffName =
+    const staffName = staff ? staff.name : "UNKNOWN";
 
-        staff
+    if (!sharedInvoiceMap.has(invoice)) {
+      sharedInvoiceMap.set(
+        invoice,
 
-        ?
-
-        staff.name
-
-        :
-
-        "UNKNOWN";
-
-    if(!sharedInvoiceMap.has(invoice)){
-
-        sharedInvoiceMap.set(
-
-            invoice,
-
-            new Set()
-
-        );
-
+        new Set(),
+      );
     }
 
     sharedInvoiceMap
 
-        .get(invoice)
+      .get(invoice)
 
-        .add(staffName);
+      .add(staffName);
+  }
 
-}
+  // =====================================================
+  // non md
+  // =====================================================
 
-    // =====================================================
-    // non md
-    // =====================================================
-
-
-function isNonMD(article){
-
+  function isNonMD(article) {
     article = text(article);
 
     return (
-
-        article.startsWith("ZSP") ||
-
-        article.startsWith("ZZZ") ||
-
-        article.startsWith("NON")
-
+      article.startsWith("ZSP") ||
+      article.startsWith("ZZZ") ||
+      article.startsWith("NON")
     );
+  }
 
-}
+  // =====================================================
+  // ARTICLE
+  // =====================================================
 
-    // =====================================================
-    // ARTICLE
-    // =====================================================
+  function getArticle(article) {
+    article = text(article);
 
-    function getArticle(article){
+    if (!articleMap.has(article)) {
+      articleMap.set(article, {
+        article,
 
-        article = text(article);
-
-        if(!articleMap.has(article)){
-
-            articleMap.set(article,{
-
-                article,
-
-                category:""
-
-            });
-
-        }
-
-        return articleMap.get(article);
-
+        category: "",
+      });
     }
 
-        // =====================================================
-// PARSER DAILY CASH COLLECTION
-// DATE-AWARE V1
-// =====================================================
+    return articleMap.get(article);
+  }
 
-function parseDailyCash(rows){
+  // =====================================================
+  // PARSER DAILY CASH COLLECTION
+  // DATE-AWARE V1
+  // =====================================================
 
+  function parseDailyCash(rows) {
     let currentDate = "";
 
-    for(let i = 0; i < rows.length; i++){
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
 
-        const row = rows[i];
+      if (!row) continue;
 
-        if(!row) continue;
+      // ============================================
+      // DETECT DATE HEADER
+      // CONTOH:
+      // 01-06-2026
+      // ============================================
 
+      const firstCell = String(row[0] ?? "").trim();
 
-        // ============================================
-        // DETECT DATE HEADER
-        // CONTOH:
-        // 01-06-2026
-        // ============================================
+      const dateMatch = firstCell.match(/^(\d{2})-(\d{2})-(\d{4})$/);
 
-        const firstCell = String(
-            row[0] ?? ""
-        ).trim();
+      if (dateMatch) {
+        currentDate = firstCell;
 
+        continue;
+      }
 
-        const dateMatch = firstCell.match(
-            /^(\d{2})-(\d{2})-(\d{4})$/
-        );
+      // ============================================
+      // COUNTER
+      // 1  = STORE
+      // 99 = O2O
+      // ============================================
 
+      const counter = number(row[0]);
 
-        if(dateMatch){
+      // ============================================
+      // INVOICE
+      // ============================================
 
-            currentDate = firstCell;
+      const invoice = text(row[1]);
 
-            continue;
+      if (invoice === "") {
+        continue;
+      }
 
-        }
+      // ============================================
+      // VALID INVOICE DETECTOR
+      //
+      // Mencegah:
+      // header
+      // total
+      // text lain
+      // masuk invoiceMap
+      // ============================================
 
+      if (!/^\d{6,}$/.test(invoice)) {
+        continue;
+      }
 
-        // ============================================
-        // COUNTER
-        // 1  = STORE
-        // 99 = O2O
-        // ============================================
+      // ============================================
+      // SALES
+      // ============================================
 
-        const counter = number(row[0]);
+      const sales = number(row[2]);
 
+      invoiceSales.set(
+        invoice,
 
-        // ============================================
-        // INVOICE
-        // ============================================
+        sales,
+      );
 
-        const invoice = text(row[1]);
+      // ============================================
+      // GET INVOICE OBJECT
+      // ============================================
 
+      const inv = getInvoice(invoice);
 
-        if(invoice === ""){
+      inv.date = currentDate;
 
-            continue;
+      inv.counter = counter;
 
-        }
+      inv.sales = sales;
 
+      inv.isO2O = counter === 99;
 
-        // ============================================
-        // VALID INVOICE DETECTOR
-        //
-        // Mencegah:
-        // header
-        // total
-        // text lain
-        // masuk invoiceMap
-        // ============================================
+      // ============================================
+      // TRANSACTION TYPE DETECTOR
+      //
+      // 100... = NORMAL SALE
+      // 63...  = RETURN
+      // ============================================
 
-        if(!/^\d{6,}$/.test(invoice)){
+      inv.isSale = invoice.startsWith("100");
 
-            continue;
+      inv.isReturn = invoice.startsWith("63");
 
-        }
+      if (inv.isSale) {
+        inv.transactionType = "SALE";
+      } else if (inv.isReturn) {
+        inv.transactionType = "RETURN";
+      } else {
+        inv.transactionType = "UNKNOWN";
+      }
 
-
-        // ============================================
-        // SALES
-        // ============================================
-
-        const sales = number(row[2]);
-
-
-        invoiceSales.set(
-
-            invoice,
-
-            sales
-
-        );
-
-
-        // ============================================
-        // GET INVOICE OBJECT
-        // ============================================
-
-        const inv = getInvoice(invoice);
-
-
-inv.date = currentDate;
-
-inv.counter = counter;
-
-inv.sales = sales;
-
-inv.isO2O = (
-
-    counter === 99
-
-);
-
-
-// ============================================
-// TRANSACTION TYPE DETECTOR
-//
-// 100... = NORMAL SALE
-// 63...  = RETURN
-// ============================================
-
-inv.isSale =
-
-    invoice.startsWith("100");
-
-
-inv.isReturn =
-
-    invoice.startsWith("63");
-
-
-if(inv.isSale){
-
-    inv.transactionType = "SALE";
-
-}
-
-else if(inv.isReturn){
-
-    inv.transactionType = "RETURN";
-
-}
-
-else{
-
-    inv.transactionType = "UNKNOWN";
-
-}
-
-        // ============================================
-        // COUNTER 99 = O2O
-        // ============================================
-
-        if(counter === 99){
-
-            inv.staff = {
-
-                id: "O2O",
-
-                name: "O2O"
-
-            };
-
-        }
-
+      // ============================================
+      // COUNTER 99 = O2O
+      // ============================================
+
+      if (counter === 99) {
+        inv.staff = {
+          id: "O2O",
+
+          name: "O2O",
+        };
+      }
     }
 
-
     console.log(
+      "Daily Cash Loaded:",
 
-        "Daily Cash Loaded:",
+      {
+        invoices: invoiceMap.size,
 
-        {
+        dates: [
+          ...new Set(
+            [...invoiceMap.values()]
 
-            invoices: invoiceMap.size,
+              .map((inv) => inv.date)
 
-            dates: [
-
-                ...new Set(
-
-                    [...invoiceMap.values()]
-
-                        .map(inv => inv.date)
-
-                        .filter(Boolean)
-
-                )
-
-            ]
-
-        }
-
+              .filter(Boolean),
+          ),
+        ],
+      },
     );
+  }
+  // =====================================================
+  // PARSER SALESPERSON WISE
+  // DATE-AWARE V1
+  // =====================================================
 
-}
-    // =====================================================
-// PARSER SALESPERSON WISE
-// DATE-AWARE V1
-// =====================================================
-
-function parseSalesPerson(rows){
-
+  function parseSalesPerson(rows) {
     let currentDate = "";
 
     let currentStaff = null;
 
     let currentArticle = "";
 
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
 
-    for(let i = 0; i < rows.length; i++){
+      if (!row) continue;
 
-        const row = rows[i];
+      // ============================================
+      // DATE HEADER
+      // CONTOH:
+      // 01-06-2026
+      // ============================================
 
-        if(!row) continue;
+      const firstCell = String(row[0] ?? "").trim();
 
+      const dateMatch = firstCell.match(/^(\d{2})-(\d{2})-(\d{4})$/);
 
-        // ============================================
-        // DATE HEADER
-        // CONTOH:
-        // 01-06-2026
-        // ============================================
+      if (dateMatch) {
+        currentDate = firstCell;
 
-        const firstCell = String(
-            row[0] ?? ""
-        ).trim();
+        // PENTING:
+        // reset state antar tanggal
 
+        currentStaff = null;
 
-        const dateMatch = firstCell.match(
-            /^(\d{2})-(\d{2})-(\d{4})$/
+        currentArticle = "";
+
+        continue;
+      }
+
+      // ============================================
+      // UNIVERSAL STAFF HEADER
+      //
+      // CONTOH:
+      // 23028224 / Alifi Fajar
+      // ============================================
+
+      const header = text(row.join(" "));
+
+      const match = header.match(/(\d{8})\s*\/\s*(.+)/);
+
+      if (match) {
+        const id = match[1].trim();
+
+        const name = match[2]
+
+          .replace(/TOTAL FOR/i, "")
+
+          .replace(/GRAND TOTAL/i, "")
+
+          .trim();
+
+        currentStaff = getStaff(
+          id,
+
+          name,
         );
 
+        currentArticle = "";
 
-        if(dateMatch){
+        continue;
+      }
 
-            currentDate = firstCell;
+      // ============================================
+      // ARTICLE DETECTOR
+      //
+      // MASTER SOURCE:
+      // articleCategory dari MSR
+      // ============================================
 
-            // PENTING:
-            // reset state antar tanggal
+      const possibleArticle = text(row[1]);
 
-            currentStaff = null;
+      const articleCandidate = possibleArticle.split("/")[0].trim();
 
-            currentArticle = "";
+      if (articleCandidate !== "" && articleCategory.has(articleCandidate)) {
+        currentArticle = articleCandidate;
 
-            continue;
+        continue;
+      }
 
-        }
+      // ============================================
+      // DETAIL TRANSACTION
+      //
+      // PRICE | INVOICE | SALES
+      // ============================================
 
+      const unitPrice = number(row[0]);
 
-        // ============================================
-        // UNIVERSAL STAFF HEADER
-        //
-        // CONTOH:
-        // 23028224 / Alifi Fajar
-        // ============================================
+      const invoice = text(row[1]);
 
-        const header = text(
+      const sales = number(row[2]);
+      if (currentDate === "08-06-2026" && text(row[1]) === "100037367") {
+        console.log(
+          "RAW INVOICE 100037367:",
 
-            row.join(" ")
-
-        );
-
-
-        const match = header.match(
-
-            /(\d{8})\s*\/\s*(.+)/
-
-        );
-
-
-        if(match){
-
-            const id = match[1].trim();
-
-
-            const name = match[2]
-
-                .replace(/TOTAL FOR/i, "")
-
-                .replace(/GRAND TOTAL/i, "")
-
-                .trim();
-
-
-            currentStaff = getStaff(
-
-                id,
-
-                name
-
-            );
-
-
-            currentArticle = "";
-
-            continue;
-
-        }
-
-
-        // ============================================
-        // ARTICLE DETECTOR
-        //
-        // MASTER SOURCE:
-        // articleCategory dari MSR
-        // ============================================
-
-        const possibleArticle = text(
-
-            row[1]
-
-        );
-
-
-        const articleCandidate =
-
-            possibleArticle
-
-                .split("/")[0]
-
-                .trim();
-
-
-        if(
-
-            articleCandidate !== "" &&
-
-            articleCategory.has(
-
-                articleCandidate
-
-            )
-
-        ){
-
-            currentArticle = articleCandidate;
-
-            continue;
-
-        }
-
-
-        // ============================================
-        // DETAIL TRANSACTION
-        //
-        // PRICE | INVOICE | SALES
-        // ============================================
-
-        const unitPrice = number(
-
-            row[0]
-
-        );
-
-
-        const invoice = text(
-
-            row[1]
-
-        );
-
-
-        const sales = number(
-
-            row[2]
-
-        );
-        if(
-    currentDate === "08-06-2026" &&
-    text(row[1]) === "100037367"
-){
-
-    console.log(
-
-        "RAW INVOICE 100037367:",
-
-        {
-
+          {
             rowIndex: i,
 
             rawRow: [...row],
 
-            currentStaff:
-                currentStaff?.name || "UNKNOWN",
+            currentStaff: currentStaff?.name || "UNKNOWN",
 
             currentArticle,
 
-            parsedUnitPrice:
-                unitPrice,
+            parsedUnitPrice: unitPrice,
 
-            parsedInvoice:
-                invoice,
+            parsedInvoice: invoice,
 
-            parsedSales:
-                sales
-
-        }
-
-    );
-
-}
-
-
-        // ============================================
-        // VALID INVOICE
-        // ============================================
-
-        if(invoice === ""){
-
-            continue;
-
-        }
-
-
-        if(!/^\d{6,}$/.test(invoice)){
-
-            continue;
-
-        }
-
-
-        if(unitPrice <= 0){
-
-            continue;
-
-        }
-
-
-        // ============================================
-        // QTY
-        // ============================================
-
-        // ============================================
-// QTY
-// SIGNED QTY SUPPORT
-//
-// SALES POSITIF  => QTY POSITIF
-// SALES NEGATIF  => QTY NEGATIF (RETURN)
-//
-// Jangan pernah mengubah return menjadi +1.
-// ============================================
-
-let qty = Math.round(
-
-    sales / unitPrice
-
-);
-
-
-// ============================================
-// ZERO QTY FALLBACK
-//
-// Hanya digunakan jika hasil pembagian
-// sales / unitPrice membulat menjadi 0.
-//
-// Tanda QTY mengikuti tanda SALES.
-// ============================================
-
-if(qty === 0){
-
-    qty = sales < 0
-
-        ? -1
-
-        : 1;
-
-}
-
-        // ============================================
-        // GET INVOICE OBJECT
-        // ============================================
-
-        const inv = getInvoice(
-
-            invoice
-
+            parsedSales: sales,
+          },
         );
+      }
 
+      // ============================================
+      // VALID INVOICE
+      // ============================================
 
-        // ============================================
-        // DATE RESOLUTION
-        //
-        // PRIORITAS:
-        // 1. Tanggal Salesperson Wise
-        // 2. Tanggal Daily Cash
-        // ============================================
+      if (invoice === "") {
+        continue;
+      }
 
-        const transactionDate =
+      if (!/^\d{6,}$/.test(invoice)) {
+        continue;
+      }
 
-            currentDate ||
+      if (unitPrice <= 0) {
+        continue;
+      }
 
-            inv.date ||
+      // ============================================
+      // QTY
+      // ============================================
 
-            "";
+      // ============================================
+      // QTY
+      // SIGNED QTY SUPPORT
+      //
+      // SALES POSITIF  => QTY POSITIF
+      // SALES NEGATIF  => QTY NEGATIF (RETURN)
+      //
+      // Jangan pernah mengubah return menjadi +1.
+      // ============================================
 
+      let qty = Math.round(sales / unitPrice);
 
-        // Jika invoice dari Daily Cash belum punya tanggal,
-        // isi dari Salesperson Wise.
+      // ============================================
+      // ZERO QTY FALLBACK
+      //
+      // Hanya digunakan jika hasil pembagian
+      // sales / unitPrice membulat menjadi 0.
+      //
+      // Tanda QTY mengikuti tanda SALES.
+      // ============================================
 
-        if(!inv.date && transactionDate){
+      if (qty === 0) {
+        qty = sales < 0 ? -1 : 1;
+      }
 
-            inv.date = transactionDate;
+      // ============================================
+      // GET INVOICE OBJECT
+      // ============================================
 
-        }
+      const inv = getInvoice(invoice);
 
+      // ============================================
+      // DATE RESOLUTION
+      //
+      // PRIORITAS:
+      // 1. Tanggal Salesperson Wise
+      // 2. Tanggal Daily Cash
+      // ============================================
 
-        // ============================================
-        // STAFF RESOLUTION
-        // ============================================
+      const transactionDate = currentDate || inv.date || "";
 
-        if(!inv.isO2O){
+      // Jika invoice dari Daily Cash belum punya tanggal,
+      // isi dari Salesperson Wise.
 
-            inv.staff = currentStaff;
+      if (!inv.date && transactionDate) {
+        inv.date = transactionDate;
+      }
 
-        }
+      // ============================================
+      // STAFF RESOLUTION
+      // ============================================
 
+      if (!inv.isO2O) {
+        inv.staff = currentStaff;
+      }
 
-        const transactionStaff =
+      const transactionStaff = inv.isO2O ? inv.staff : currentStaff;
 
-            inv.isO2O
+      // ============================================
+      // PUSH ITEM TO INVOICE
+      // ============================================
 
-                ? inv.staff
+      inv.items.push({
+        article: currentArticle,
 
-                : currentStaff;
+        qty,
 
+        date: transactionDate,
+      });
 
-        // ============================================
-        // PUSH ITEM TO INVOICE
-        // ============================================
+      // ============================================
+      // PUSH TRANSACTION
+      // ============================================
 
-        inv.items.push({
+      transactions.push({
+        date: transactionDate,
 
-            article: currentArticle,
+        staff: transactionStaff,
 
-            qty,
+        invoice,
 
-            date: transactionDate
+        article: currentArticle,
 
-        });
+        qty,
 
+        sales,
 
-        // ============================================
-        // PUSH TRANSACTION
-        // ============================================
+        unitPrice,
 
-        transactions.push({
+        isO2O: inv.isO2O,
 
-            date: transactionDate,
+        isNonMD: isNonMD(currentArticle),
+      });
 
-            staff: transactionStaff,
+      // ============================================
+      // SHARED INVOICE
+      // ============================================
 
-            invoice,
+      registerSharedInvoice(
+        invoice,
 
-            article: currentArticle,
-
-            qty,
-
-            sales,
-
-            unitPrice,
-
-            isO2O: inv.isO2O,
-
-            isNonMD: isNonMD(
-
-                currentArticle
-
-            )
-
-        });
-
-
-        // ============================================
-        // SHARED INVOICE
-        // ============================================
-
-        registerSharedInvoice(
-
-            invoice,
-
-            transactionStaff
-
-        );
-
+        transactionStaff,
+      );
     }
 
-
     console.log(
+      "SalesPerson Parsed:",
 
-        "SalesPerson Parsed:",
+      {
+        invoices: invoiceMap.size,
 
-        {
+        transactions: transactions.length,
 
-            invoices: invoiceMap.size,
+        dates: [
+          ...new Set(
+            transactions
 
-            transactions:
-                transactions.length,
+              .map((t) => t.date)
 
-            dates: [
-
-                ...new Set(
-
-                    transactions
-
-                        .map(t => t.date)
-
-                        .filter(Boolean)
-
-                )
-
-            ]
-
-        }
-
+              .filter(Boolean),
+          ),
+        ],
+      },
     );
+  }
+  // =====================================================
+  // PARSER MERCHANDISE SALES REPORT
+  // =====================================================
 
-}
-    // =====================================================
-    // PARSER MERCHANDISE SALES REPORT
-    // =====================================================
+  function parseMSR(rows) {
+    articleMap.clear();
 
-    function parseMSR(rows){
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
 
-        articleMap.clear();
+      if (!row) continue;
 
-        for(let i=0;i<rows.length;i++){
+      // ============================================
+      // DIVISION
+      // ============================================
 
-            const row = rows[i];
+      const division = text(row[1]);
 
-            if(!row) continue;
+      if (!division) {
+        continue;
+      }
 
-            // ============================================
-            // DIVISION
-            // ============================================
+      if (
+        division.startsWith("TOTAL") ||
+        division.startsWith("GRAND") ||
+        division === "PRODUCT DIVISION"
+      ) {
+        continue;
+      }
+      // ============================================
+      // ARTICLE
+      // Kolom F
+      // ============================================
 
-            const division = text(row[1]);
+      const rawArticle = text(row[5]);
 
-if(!division){
-    continue;
-}
+      if (rawArticle === "") continue;
 
-if(
-    division.startsWith("TOTAL") ||
-    division.startsWith("GRAND") ||
-    division==="PRODUCT DIVISION"
-){
-    continue;
-}
-            // ============================================
-            // ARTICLE
-            // Kolom F
-            // ============================================
+      const article = rawArticle.split("/")[0].trim();
 
-            const rawArticle = text(row[5]);
+      // ============================================
+      // MSR TRANSACTION DATA
+      //
+      // row[4] = DATE
+      // row[6] = SIGNED QTY
+      // row[8] = SIGNED VALUE
+      // ============================================
 
-            if(rawArticle==="")
-                continue;
+      const date = normalizeDate(row[4]);
 
-            const article = rawArticle
+      const qty = number(row[6]);
 
-                .split("/")[0]
+      const value = number(row[8]);
 
-                .trim();
+      // ===============================
+      // ENGINE V2
+      // ===============================
 
-            // ============================================
-// MSR TRANSACTION DATA
-//
-// row[4] = DATE
-// row[6] = SIGNED QTY
-// row[8] = SIGNED VALUE
-// ============================================
+      articleCategory.set(
+        article,
 
-const date = normalizeDate(row[4]);
- 
-const qty = number(row[6]);
+        division,
+      );
 
-const value = number(row[8]);
-            
+      // ============================================
+      // STORE MSR TRANSACTION
+      //
+      // QTY dan VALUE disimpan apa adanya.
+      //
+      // SALE:
+      // qty   = +1
+      // value = +900000
+      //
+      // RETURN:
+      // qty   = -1
+      // value = -900000
+      // ============================================
 
-         // ===============================
-// ENGINE V2
-// ===============================
+      msrTransactions.push({
+        date,
 
-articleCategory.set(
+        article,
 
-    article,
+        division,
 
-    division
+        qty,
 
-);
+        value,
 
-// ============================================
-// STORE MSR TRANSACTION
-//
-// QTY dan VALUE disimpan apa adanya.
-//
-// SALE:
-// qty   = +1
-// value = +900000
-//
-// RETURN:
-// qty   = -1
-// value = -900000
-// ============================================
-
-msrTransactions.push({
-
-    date,
-
-    article,
-
-    division,
-
-    qty,
-
-    value,
-
-    isReturn: qty < 0 || value < 0
-
-});
-
-console.log(
-
-    article,
-
-    "=>",
-
-    division
-
-);
-
-console.log(
-    article,
-    articleCategory.get(article)
-);
-
-        }
+        isReturn: qty < 0 || value < 0,
+      });
 
       console.log(
+        article,
 
-    "Article Loaded :",
+        "=>",
 
-    articleCategory.size
+        division,
+      );
 
-);
+      console.log(article, articleCategory.get(article));
+    }
 
-    }   
+    console.log(
+      "Article Loaded :",
 
-console.log(
+      articleCategory.size,
+    );
+  }
 
+  console.log(
     "MSR AVAILABLE DATES:",
 
     [
+      ...new Set(
+        msrTransactions
 
-        ...new Set(
+          .map((item) => item.date)
 
-            msrTransactions
+          .filter(Boolean),
+      ),
+    ],
+  );
+  // =====================================================
+  // MATCH RETURN
+  //
+  // DAILY CASH RETURN:
+  // invoice + date + sales
+  //
+  // MSR RETURN:
+  // article + division + date + qty + value
+  //
+  // MATCH KEY:
+  // DATE + VALUE
+  // =====================================================
 
-                .map(item => item.date)
+  function matchReturns() {
+    // ============================================
+    // REMOVE PREVIOUS GENERATED RETURN TRANSACTIONS
+    // AGAR MATCH RETURNS IDEMPOTENT
+    // ============================================
 
-                .filter(Boolean)
-
-        )
-
-    ]
-
-);
-    // =====================================================
-// MATCH RETURN
-//
-// DAILY CASH RETURN:
-// invoice + date + sales
-//
-// MSR RETURN:
-// article + division + date + qty + value
-//
-// MATCH KEY:
-// DATE + VALUE
-// =====================================================
-
-function matchReturns(){
-
-// ============================================
-// REMOVE PREVIOUS GENERATED RETURN TRANSACTIONS
-// AGAR MATCH RETURNS IDEMPOTENT
-// ============================================
-
-for(let i = transactions.length - 1; i >= 0; i--){
-
-    if(transactions[i].isGeneratedReturn === true){
-
+    for (let i = transactions.length - 1; i >= 0; i--) {
+      if (transactions[i].isGeneratedReturn === true) {
         transactions.splice(i, 1);
-
+      }
     }
 
-}
+    // ============================================
+    // RESET PREVIOUS RETURN MATCH
+    // ============================================
 
-
-// ============================================
-// RESET PREVIOUS RETURN MATCH
-// ============================================
-
-invoiceMap.forEach(inv => {
-
-    if(inv.isReturn){
-
+    invoiceMap.forEach((inv) => {
+      if (inv.isReturn) {
         inv.returnMatch = null;
 
         inv.items = [];
-
-    }
-
-});
-
+      }
+    });
 
     // ============================================
     // GET DAILY CASH RETURNS
     // ============================================
 
-    const dailyReturns = [
-
-        ...invoiceMap.values()
-
-    ].filter(inv =>
-
-        inv.isReturn
-
-    );
-
+    const dailyReturns = [...invoiceMap.values()].filter((inv) => inv.isReturn);
 
     // ============================================
     // GET MSR RETURNS
     // ============================================
 
-    const msrReturns =
-
-        msrTransactions.filter(item =>
-
-            item.isReturn
-
-        );
-
+    const msrReturns = msrTransactions.filter((item) => item.isReturn);
 
     // ============================================
     // PREVENT ONE MSR ROW USED TWICE
@@ -1227,543 +830,338 @@ invoiceMap.forEach(inv => {
 
     const usedMSRIndexes = new Set();
 
-
     // ============================================
     // MATCH EACH DAILY CASH RETURN
     // ============================================
 
-    dailyReturns.forEach(inv => {
-
-        const matchIndex =
-
-            msrReturns.findIndex(
-
-                (item, index) => {
-
-                    if(usedMSRIndexes.has(index)){
-
-                        return false;
-
-                    }
-
-
-                    return (
-
-                        item.date === inv.date &&
-
-                        item.value === inv.sales
-
-                    );
-
-                }
-
-            );
-
-
-        // ========================================
-        // RETURN NOT FOUND
-        // ========================================
-
-        if(matchIndex === -1){
-
-            console.warn(
-
-                "UNMATCHED DAILY RETURN:",
-
-                {
-
-                    date: inv.date,
-
-                    invoice: inv.invoice,
-
-                    sales: inv.sales
-
-                }
-
-            );
-
-            return;
-
+    dailyReturns.forEach((inv) => {
+      const matchIndex = msrReturns.findIndex((item, index) => {
+        if (usedMSRIndexes.has(index)) {
+          return false;
         }
 
+        return item.date === inv.date && item.value === inv.sales;
+      });
 
-        // ========================================
-        // REGISTER MATCH
-        // ========================================
+      // ========================================
+      // RETURN NOT FOUND
+      // ========================================
 
-        usedMSRIndexes.add(matchIndex);
+      if (matchIndex === -1) {
+        console.warn(
+          "UNMATCHED DAILY RETURN:",
 
+          {
+            date: inv.date,
 
-        const item =
+            invoice: inv.invoice,
 
-            msrReturns[matchIndex];
+            sales: inv.sales,
+          },
+        );
 
+        return;
+      }
 
-        // ========================================
-        // STORE RETURN ITEM ON INVOICE
-        // ========================================
+      // ========================================
+      // REGISTER MATCH
+      // ========================================
 
-        inv.items.push({
+      usedMSRIndexes.add(matchIndex);
 
-            article: item.article,
+      const item = msrReturns[matchIndex];
 
-            qty: item.qty,
+      // ========================================
+      // STORE RETURN ITEM ON INVOICE
+      // ========================================
 
-            date: item.date
+      inv.items.push({
+        article: item.article,
 
-        });
+        qty: item.qty,
 
+        date: item.date,
+      });
 
-        // ========================================
-        // STORE MATCH INFORMATION
-        // ========================================
+      // ========================================
+      // STORE MATCH INFORMATION
+      // ========================================
 
-        inv.returnMatch = {
+      inv.returnMatch = {
+        article: item.article,
 
-            article: item.article,
+        division: item.division,
 
-            division: item.division,
+        qty: item.qty,
 
-            qty: item.qty,
+        value: item.value,
+      };
 
-            value: item.value
+      // ========================================
+      // PUSH RETURN TRANSACTION
+      //
+      // RETURN MASUK KE SALES & QTY
+      // DENGAN NILAI NEGATIF
+      //
+      // TIDAK BOLEH MENAMBAH SM
+      // ========================================
 
-        };
+      transactions.push({
+        date: inv.date,
 
+        staff: null,
 
-// ========================================
-// PUSH RETURN TRANSACTION
-//
-// RETURN MASUK KE SALES & QTY
-// DENGAN NILAI NEGATIF
-//
-// TIDAK BOLEH MENAMBAH SM
-// ========================================
+        invoice: inv.invoice,
 
-transactions.push({
+        article: item.article,
 
-    date: inv.date,
+        qty: item.qty,
 
-    staff: null,
+        sales: item.value,
 
-    invoice: inv.invoice,
+        unitPrice: item.qty !== 0 ? Math.abs(item.value / item.qty) : 0,
 
-    article: item.article,
+        isO2O: false,
 
-    qty: item.qty,
+        isSale: false,
 
-    sales: item.value,
+        isReturn: true,
 
-    unitPrice:
+        isGeneratedReturn: true,
 
-        item.qty !== 0
-
-            ? Math.abs(
-                item.value / item.qty
-            )
-
-            : 0,
-
-    isO2O: false,
-
-    isSale: false,
-
-    isReturn: true,
-
-    isGeneratedReturn: true,
-
-    isNonMD:
-
-        isNonMD(item.article)
-
-});
-
-
+        isNonMD: isNonMD(item.article),
+      });
     });
-
 
     // ============================================
     // DEBUG RESULT
     // ============================================
 
-console.log(
+    console.log(
+      "RETURN MATCH RESULT:",
 
-    "RETURN MATCH RESULT:",
+      {
+        dailyReturns: dailyReturns.length,
 
-    {
+        msrReturns: msrReturns.length,
 
-        dailyReturns:
-            dailyReturns.length,
+        matched: usedMSRIndexes.size,
 
-        msrReturns:
-            msrReturns.length,
+        unmatchedDaily: dailyReturns.length - usedMSRIndexes.size,
 
-        matched:
-            usedMSRIndexes.size,
+        unmatchedMSR: msrReturns.length - usedMSRIndexes.size,
+      },
+    );
 
-        unmatchedDaily:
-            dailyReturns.length -
-            usedMSRIndexes.size,
+    console.log(
+      "GENERATED RETURN TRANSACTIONS:",
 
-        unmatchedMSR:
-            msrReturns.length -
-            usedMSRIndexes.size
+      transactions
 
-    }
+        .filter((t) => t.isGeneratedReturn === true)
 
-);
+        .map((t) => ({
+          date: t.date,
 
+          invoice: t.invoice,
 
-console.log(
+          article: t.article,
 
-    "GENERATED RETURN TRANSACTIONS:",
+          sales: t.sales,
 
-    transactions
+          qty: t.qty,
+        })),
+    );
+  }
 
-        .filter(t =>
-            t.isGeneratedReturn === true
-        )
+  // =====================================================
+  // GET DAILY CASH INVOICES BY DATE
+  // =====================================================
 
-        .map(t => ({
-
-            date: t.date,
-
-            invoice: t.invoice,
-
-            article: t.article,
-
-            sales: t.sales,
-
-            qty: t.qty
-
-        }))
-
-);
-}    
-
-    // =====================================================
-// GET DAILY CASH INVOICES BY DATE
-// =====================================================
-
-function getDailyInvoices(dateFilter = ""){
-
+  function getDailyInvoices(dateFilter = "") {
     const selectedDate = text(dateFilter);
 
-    return [
+    return [...invoiceMap.values()].filter((inv) => {
+      if (selectedDate !== "" && inv.date !== selectedDate) {
+        return false;
+      }
 
-        ...invoiceMap.values()
-
-    ].filter(inv => {
-
-        if(
-
-            selectedDate !== "" &&
-
-            inv.date !== selectedDate
-
-        ){
-
-            return false;
-
-        }
-
-        return true;
-
+      return true;
     });
+  }
 
-}
-    
-    // =====================================================
-// GENERATE SUMMARY
-// DATE FILTER SUPPORT
-//
-// generateSummary()
-// => seluruh bulan
-//
-// generateSummary("01-06-2026")
-// => hanya 1 tanggal
-// =====================================================
+  // =====================================================
+  // GENERATE SUMMARY
+  // DATE FILTER SUPPORT
+  //
+  // generateSummary()
+  // => seluruh bulan
+  //
+  // generateSummary("01-06-2026")
+  // => hanya 1 tanggal
+  // =====================================================
 
-// =====================================================
-// GENERATE SUMMARY
-// SUPPORT:
-// generateSummary()
-// generateSummary("01-07-2026")
-// generateSummary({ from:"01-07-2026", to:"10-07-2026" })
-// =====================================================
+  // =====================================================
+  // GENERATE SUMMARY
+  // SUPPORT:
+  // generateSummary()
+  // generateSummary("01-07-2026")
+  // generateSummary({ from:"01-07-2026", to:"10-07-2026" })
+  // =====================================================
 
-function generateSummary(dateFilter = ""){
-
+  function generateSummary(dateFilter = "") {
     const summary = new Map();
-
 
     // =====================================================
     // 1. STAFF PERFORMANCE
     // SOURCE = SALESPERSON WISE
     // =====================================================
 
-    transactions.forEach(t => {
+    transactions.forEach((t) => {
+      // FILTER DATE / DATE RANGE
 
+      if (!matchDateFilter(t.date, dateFilter)) {
+        return;
+      }
 
-        // FILTER DATE / DATE RANGE
+      // NON-MD TIDAK MASUK STAFF PERFORMANCE
 
-        if(!matchDateFilter(t.date, dateFilter)){
+      if (t.isNonMD) {
+        return;
+      }
 
-            return;
+      // RETURN TIDAK MASUK STAFF PERFORMANCE ROW
 
-        }
+      if (t.isReturn) {
+        return;
+      }
 
+      const staffName = t.staff ? t.staff.name : "UNKNOWN";
 
-        // NON-MD TIDAK MASUK STAFF PERFORMANCE
+      if (!summary.has(staffName)) {
+        summary.set(staffName, {
+          id: t.staff ? t.staff.id : "",
 
-        if(t.isNonMD){
+          staff: staffName,
 
-            return;
+          sales: 0,
 
-        }
+          sm: 0,
 
+          qty: 0,
 
-        // RETURN TIDAK MASUK STAFF PERFORMANCE ROW
+          categories: {},
 
-        if(t.isReturn){
+          invoices: new Set(),
+        });
+      }
 
-            return;
+      const row = summary.get(staffName);
 
-        }
+      row.sales += Number(t.sales || 0);
 
+      row.qty += Number(t.qty || 0);
 
-        const staffName =
+      // UNIQUE INVOICE PER STAFF
 
-            t.staff
+      row.invoices.add(t.invoice);
 
-                ? t.staff.name
+      // PRODUCT DIVISION
 
-                : "UNKNOWN";
+      const division = getCategory(t.article);
 
-
-        if(!summary.has(staffName)){
-
-            summary.set(staffName, {
-
-                id:
-
-                    t.staff
-
-                        ? t.staff.id
-
-                        : "",
-
-                staff: staffName,
-
-                sales: 0,
-
-                sm: 0,
-
-                qty: 0,
-
-                categories: {},
-
-                invoices: new Set()
-
-            });
-
-        }
-
-
-        const row =
-            summary.get(staffName);
-
-
-        row.sales +=
-            Number(t.sales || 0);
-
-
-        row.qty +=
-            Number(t.qty || 0);
-
-
-        // UNIQUE INVOICE PER STAFF
-
-        row.invoices.add(
-            t.invoice
-        );
-
-
-        // PRODUCT DIVISION
-
-        const division =
-            getCategory(t.article);
-
-
-        if(division){
-
-            row.categories[division] =
-
-                (row.categories[division] || 0)
-
-                +
-
-                Number(t.qty || 0);
-
-        }
-
+      if (division) {
+        row.categories[division] =
+          (row.categories[division] || 0) + Number(t.qty || 0);
+      }
     });
-
-
 
     // =====================================================
     // 2. FINALIZE STAFF SM
     // =====================================================
 
-    summary.forEach(row => {
+    summary.forEach((row) => {
+      row.sm = row.invoices.size;
 
-        row.sm =
-            row.invoices.size;
-
-
-        delete row.invoices;
-
+      delete row.invoices;
     });
-
-
 
     // =====================================================
     // 3. SELECT MSR BY DATE FILTER
     // =====================================================
 
-    const selectedMSR =
+    const selectedMSR = msrTransactions.filter((item) =>
+      matchDateFilter(
+        item.date,
 
-        msrTransactions.filter(item =>
-
-            matchDateFilter(
-
-                item.date,
-
-                dateFilter
-
-            )
-
-        );
-
-
+        dateFilter,
+      ),
+    );
 
     // =====================================================
     // 4. SPLIT MD / NON-MD
     // =====================================================
 
-    const mdMSR =
+    const mdMSR = selectedMSR.filter(
+      (item) => text(item.division) !== "NON-MD",
+    );
 
-        selectedMSR.filter(item =>
-
-            text(item.division) !== "NON-MD"
-
-        );
-
-
-    const nonMDMSR =
-
-        selectedMSR.filter(item =>
-
-            text(item.division) === "NON-MD"
-
-        );
-
-
+    const nonMDMSR = selectedMSR.filter(
+      (item) => text(item.division) === "NON-MD",
+    );
 
     // =====================================================
     // 5. MD SALES
     // =====================================================
 
-    const mdBaseSales =
+    const mdBaseSales = mdMSR.reduce(
+      (sum, item) => sum + Number(item.value || 0),
 
-        mdMSR.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Number(item.value || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =====================================================
     // 6. MD QTY
     // =====================================================
 
-    const mdBaseQty =
+    const mdBaseQty = mdMSR.reduce(
+      (sum, item) => sum + Number(item.qty || 0),
 
-        mdMSR.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Number(item.qty || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =====================================================
     // 7. NON-MD
     // =====================================================
 
-    const nonMDSales =
+    const nonMDSales = nonMDMSR.reduce(
+      (sum, item) => sum + Number(item.value || 0),
 
-        nonMDMSR.reduce(
+      0,
+    );
 
-            (sum, item) =>
+    const nonMDQty = nonMDMSR.reduce(
+      (sum, item) => sum + Number(item.qty || 0),
 
-                sum +
-
-                Number(item.value || 0),
-
-            0
-
-        );
-
-
-    const nonMDQty =
-
-        nonMDMSR.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Number(item.qty || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =====================================================
-// 8. FINAL TOTAL SALES & QTY
-//
-// mdMSR SUDAH EXCLUDE NON-MD.
-//
-// mdBaseSales dan mdBaseQty hanya berisi transaksi MD,
-// sehingga NON-MD TIDAK BOLEH dikurangi lagi.
-//
-// BUSINESS RULE:
-// FINAL SALES = NET MD SALES
-// FINAL QTY   = NET MD QTY
-// =====================================================
+    // 8. FINAL TOTAL SALES & QTY
+    //
+    // mdMSR SUDAH EXCLUDE NON-MD.
+    //
+    // mdBaseSales dan mdBaseQty hanya berisi transaksi MD,
+    // sehingga NON-MD TIDAK BOLEH dikurangi lagi.
+    //
+    // BUSINESS RULE:
+    // FINAL SALES = NET MD SALES
+    // FINAL QTY   = NET MD QTY
+    // =====================================================
 
-const finalSales =
-    mdBaseSales;
+    const finalSales = mdBaseSales;
 
-
-const finalQty =
-    mdBaseQty;
+    const finalQty = mdBaseQty;
 
     // =====================================================
     // 9. TOTAL PRODUCT DIVISION
@@ -1771,31 +1169,16 @@ const finalQty =
 
     const totalCategories = {};
 
+    mdMSR.forEach((item) => {
+      const division = text(item.division);
 
-    mdMSR.forEach(item => {
+      if (!division) {
+        return;
+      }
 
-        const division =
-            text(item.division);
-
-
-        if(!division){
-
-            return;
-
-        }
-
-
-        totalCategories[division] =
-
-            (totalCategories[division] || 0)
-
-            +
-
-            Number(item.qty || 0);
-
+      totalCategories[division] =
+        (totalCategories[division] || 0) + Number(item.qty || 0);
     });
-
-
 
     // =====================================================
     // 10. TOTAL SM
@@ -1803,230 +1186,163 @@ const finalQty =
     // SALE ONLY
     // =====================================================
 
-    const dailySaleInvoices =
-        new Set();
+    const dailySaleInvoices = new Set();
 
+    invoiceMap.forEach((inv) => {
+      if (!matchDateFilter(inv.date, dateFilter)) {
+        return;
+      }
 
-    invoiceMap.forEach(inv => {
+      if (!inv.isSale) {
+        return;
+      }
 
-
-        if(!matchDateFilter(inv.date, dateFilter)){
-
-            return;
-
-        }
-
-
-        if(!inv.isSale){
-
-            return;
-
-        }
-
-
-        dailySaleInvoices.add(
-            inv.invoice
-        );
-
+      dailySaleInvoices.add(inv.invoice);
     });
-
-
 
     // =====================================================
     // 11. TOTAL ROW
     // =====================================================
 
     const total = {
+      id: "",
 
-        id: "",
+      staff: "TOTAL",
 
-        staff: "TOTAL",
+      sales: finalSales,
 
-        sales: finalSales,
+      sm: dailySaleInvoices.size,
 
-        sm: dailySaleInvoices.size,
+      qty: finalQty,
 
-        qty: finalQty,
-
-        categories: totalCategories
-
+      categories: totalCategories,
     };
-
-
 
     // =====================================================
     // 12. DEBUG
     // =====================================================
 
-    const normalizedFilter =
-        normalizeDateFilter(dateFilter);
-
+    const normalizedFilter = normalizeDateFilter(dateFilter);
 
     console.log(
+      "GT SUMMARY RESULT:",
 
-        "GT SUMMARY RESULT:",
+      {
+        filter: normalizedFilter,
 
-        {
+        selectedMSRRows: selectedMSR.length,
 
-            filter:
-                normalizedFilter,
+        mdBaseSales,
 
-            selectedMSRRows:
-                selectedMSR.length,
+        mdBaseQty,
 
-            mdBaseSales,
+        nonMDSales,
 
-            mdBaseQty,
+        nonMDQty,
 
-            nonMDSales,
+        finalSales,
 
-            nonMDQty,
+        finalQty,
 
-            finalSales,
+        totalSM: dailySaleInvoices.size,
 
-            finalQty,
-
-            totalSM:
-                dailySaleInvoices.size,
-
-            categories:
-                totalCategories
-
-        }
-
+        categories: totalCategories,
+      },
     );
-
-
 
     // =====================================================
     // 13. RETURN SUMMARY
     // =====================================================
 
-    return [
+    return [...summary.values(), total];
+  }
 
-        ...summary.values(),
+  // =====================================================
+  // SHARED INVOICE
+  // =====================================================
 
-        total
+  // =====================================================
+  // SHARED INVOICE
+  // SUPPORT DATE FILTER
+  //
+  // getSharedInvoices()
+  // => seluruh bulan
+  //
+  // getSharedInvoices("01-06-2026")
+  // => shared MD invoice tanggal tersebut
+  // =====================================================
 
-    ];
+  // =====================================================
+  // SHARED INVOICE
+  // SUPPORT:
+  // getSharedInvoices()
+  // getSharedInvoices("01-07-2026")
+  // getSharedInvoices({
+  //     from:"01-07-2026",
+  //     to:"10-07-2026"
+  // })
+  // =====================================================
 
-}
-
-// =====================================================
-// SHARED INVOICE
-// =====================================================
-
-// =====================================================
-// SHARED INVOICE
-// SUPPORT DATE FILTER
-//
-// getSharedInvoices()
-// => seluruh bulan
-//
-// getSharedInvoices("01-06-2026")
-// => shared MD invoice tanggal tersebut
-// =====================================================
-
-// =====================================================
-// SHARED INVOICE
-// SUPPORT:
-// getSharedInvoices()
-// getSharedInvoices("01-07-2026")
-// getSharedInvoices({
-//     from:"01-07-2026",
-//     to:"10-07-2026"
-// })
-// =====================================================
-
-function getSharedInvoices(dateFilter = ""){
-
-    const invoiceStaffMap =
-        new Map();
-
+  function getSharedInvoices(dateFilter = "") {
+    const invoiceStaffMap = new Map();
 
     // =================================================
     // LOOP TRANSACTIONS
     // =================================================
 
-    transactions.forEach(t => {
+    transactions.forEach((t) => {
+      // =============================================
+      // FILTER DATE / CUSTOM DATE RANGE
+      // =============================================
 
+      if (!matchDateFilter(t.date, dateFilter)) {
+        return;
+      }
 
-        // =============================================
-        // FILTER DATE / CUSTOM DATE RANGE
-        // =============================================
+      // =============================================
+      // SKIP NON-MD
+      // =============================================
 
-        if(!matchDateFilter(t.date, dateFilter)){
+      if (t.isNonMD) {
+        return;
+      }
 
-            return;
+      // =============================================
+      // SKIP RETURN
+      // =============================================
 
-        }
+      if (t.isReturn) {
+        return;
+      }
 
+      // =============================================
+      // STAFF NAME
+      // =============================================
 
-        // =============================================
-        // SKIP NON-MD
-        // =============================================
+      const staffName = t.staff ? text(t.staff.name) : "UNKNOWN";
 
-        if(t.isNonMD){
+      // =============================================
+      // CREATE INVOICE STAFF SET
+      // =============================================
 
-            return;
+      if (!invoiceStaffMap.has(t.invoice)) {
+        invoiceStaffMap.set(
+          t.invoice,
 
-        }
+          new Set(),
+        );
+      }
 
+      // =============================================
+      // REGISTER STAFF
+      // =============================================
 
-        // =============================================
-        // SKIP RETURN
-        // =============================================
+      invoiceStaffMap
 
-        if(t.isReturn){
+        .get(t.invoice)
 
-            return;
-
-        }
-
-
-        // =============================================
-        // STAFF NAME
-        // =============================================
-
-        const staffName =
-
-            t.staff
-
-                ? text(t.staff.name)
-
-                : "UNKNOWN";
-
-
-        // =============================================
-        // CREATE INVOICE STAFF SET
-        // =============================================
-
-        if(!invoiceStaffMap.has(t.invoice)){
-
-            invoiceStaffMap.set(
-
-                t.invoice,
-
-                new Set()
-
-            );
-
-        }
-
-
-        // =============================================
-        // REGISTER STAFF
-        // =============================================
-
-        invoiceStaffMap
-
-            .get(t.invoice)
-
-            .add(staffName);
-
+        .add(staffName);
     });
-
-
 
     // =================================================
     // FIND SHARED INVOICES
@@ -2034,508 +1350,318 @@ function getSharedInvoices(dateFilter = ""){
 
     const result = [];
 
+    invoiceStaffMap.forEach((staffs, invoice) => {
+      if (staffs.size > 1) {
+        result.push({
+          invoice,
 
-    invoiceStaffMap.forEach(
-
-        (staffs, invoice) => {
-
-            if(staffs.size > 1){
-
-                result.push({
-
-                    invoice,
-
-                    staffs: [...staffs]
-
-                });
-
-            }
-
-        }
-
-    );
-
+          staffs: [...staffs],
+        });
+      }
+    });
 
     return result;
+  }
+  // =====================================================
+  // STAFF DETAIL
+  // =====================================================
 
-}
-// =====================================================
-// STAFF DETAIL
-// =====================================================
+  // =====================================================
+  // STAFF TRANSACTIONS
+  // SUPPORT DATE FILTER
+  //
+  // getStaffTransactions("ALIFI FAJAR")
+  // => seluruh bulan
+  //
+  // getStaffTransactions(
+  //     "ALIFI FAJAR",
+  //     "01-06-2026"
+  // )
+  // => hanya tanggal tersebut
+  // =====================================================
 
-// =====================================================
-// STAFF TRANSACTIONS
-// SUPPORT DATE FILTER
-//
-// getStaffTransactions("ALIFI FAJAR")
-// => seluruh bulan
-//
-// getStaffTransactions(
-//     "ALIFI FAJAR",
-//     "01-06-2026"
-// )
-// => hanya tanggal tersebut
-// =====================================================
+  // =====================================================
+  // STAFF TRANSACTIONS
+  // SUPPORT:
+  // getStaffTransactions("HANIFAH PRATAMI")
+  // getStaffTransactions("HANIFAH PRATAMI", "01-07-2026")
+  // getStaffTransactions(
+  //     "HANIFAH PRATAMI",
+  //     {
+  //         from:"01-07-2026",
+  //         to:"10-07-2026"
+  //     }
+  // )
+  // =====================================================
 
-// =====================================================
-// STAFF TRANSACTIONS
-// SUPPORT:
-// getStaffTransactions("HANIFAH PRATAMI")
-// getStaffTransactions("HANIFAH PRATAMI", "01-07-2026")
-// getStaffTransactions(
-//     "HANIFAH PRATAMI",
-//     {
-//         from:"01-07-2026",
-//         to:"10-07-2026"
-//     }
-// )
-// =====================================================
-
-function getStaffTransactions(
-
+  function getStaffTransactions(
     staffName,
 
-    dateFilter = ""
-
-){
-
+    dateFilter = "",
+  ) {
     // =================================================
     // NORMALIZE STAFF NAME
     // =================================================
 
-    let selectedStaff =
-        text(staffName);
-
+    let selectedStaff = text(staffName);
 
     // =================================================
     // O2O ALIAS
     // =================================================
 
-    if(selectedStaff === "🌐 O2O"){
-
-        selectedStaff = "O2O";
-
+    if (selectedStaff === "🌐 O2O") {
+      selectedStaff = "O2O";
     }
-
 
     // =================================================
     // FILTER TRANSACTIONS
     // =================================================
 
-    return transactions.filter(t => {
+    return transactions.filter((t) => {
+      // =============================================
+      // FILTER DATE / CUSTOM DATE RANGE
+      // =============================================
 
+      if (!matchDateFilter(t.date, dateFilter)) {
+        return false;
+      }
 
-        // =============================================
-        // FILTER DATE / CUSTOM DATE RANGE
-        // =============================================
+      // =============================================
+      // STAFF NAME
+      // =============================================
 
-        if(!matchDateFilter(t.date, dateFilter)){
+      const transactionStaff = t.staff ? text(t.staff.name) : "UNKNOWN";
 
-            return false;
+      if (transactionStaff !== selectedStaff) {
+        return false;
+      }
 
-        }
-
-
-        // =============================================
-        // STAFF NAME
-        // =============================================
-
-        const transactionStaff =
-
-            t.staff
-
-                ? text(t.staff.name)
-
-                : "UNKNOWN";
-
-
-        if(transactionStaff !== selectedStaff){
-
-            return false;
-
-        }
-
-
-        return true;
-
+      return true;
     });
+  }
 
-}
+  // =====================================================
+  // STAFF SUMMARY
+  // =====================================================
 
-// =====================================================
-// STAFF SUMMARY
-// =====================================================
+  // =====================================================
+  // STAFF SUMMARY
+  // SUPPORT DATE FILTER
+  //
+  // getStaffSummary("ALIFI FAJAR")
+  // => summary seluruh bulan
+  //
+  // getStaffSummary(
+  //     "ALIFI FAJAR",
+  //     "01-06-2026"
+  // )
+  // => summary tanggal tertentu
+  // =====================================================
 
-// =====================================================
-// STAFF SUMMARY
-// SUPPORT DATE FILTER
-//
-// getStaffSummary("ALIFI FAJAR")
-// => summary seluruh bulan
-//
-// getStaffSummary(
-//     "ALIFI FAJAR",
-//     "01-06-2026"
-// )
-// => summary tanggal tertentu
-// =====================================================
+  // =====================================================
+  // STAFF SUMMARY
+  // SUPPORT:
+  // getStaffSummary("HANIFAH PRATAMI")
+  // getStaffSummary("HANIFAH PRATAMI", "01-07-2026")
+  // getStaffSummary(
+  //     "HANIFAH PRATAMI",
+  //     {
+  //         from:"01-07-2026",
+  //         to:"10-07-2026"
+  //     }
+  // )
+  // =====================================================
 
-// =====================================================
-// STAFF SUMMARY
-// SUPPORT:
-// getStaffSummary("HANIFAH PRATAMI")
-// getStaffSummary("HANIFAH PRATAMI", "01-07-2026")
-// getStaffSummary(
-//     "HANIFAH PRATAMI",
-//     {
-//         from:"01-07-2026",
-//         to:"10-07-2026"
-//     }
-// )
-// =====================================================
-
-function getStaffSummary(
-
+  function getStaffSummary(
     staffName,
 
-    dateFilter = ""
-
-){
-
+    dateFilter = "",
+  ) {
     // =================================================
     // NORMALIZE STAFF NAME
     // =================================================
 
-    let selectedStaff =
-        text(staffName);
-
+    let selectedStaff = text(staffName);
 
     // =================================================
     // O2O ALIAS
     // =================================================
 
-    if(selectedStaff === "🌐 O2O"){
-
-        selectedStaff = "O2O";
-
+    if (selectedStaff === "🌐 O2O") {
+      selectedStaff = "O2O";
     }
-
 
     // =================================================
     // GENERATE SUMMARY
     // SUPPORT ALL / SINGLE DATE / CUSTOM RANGE
     // =================================================
 
-    const summary =
-        generateSummary(dateFilter);
-
+    const summary = generateSummary(dateFilter);
 
     // =================================================
     // FIND STAFF ROW
     // =================================================
 
-    const row = summary.find(item =>
-
-        text(item.staff) === selectedStaff
-
-    );
-
+    const row = summary.find((item) => text(item.staff) === selectedStaff);
 
     return row || null;
+  }
+  // =====================================================
+  // VALIDATION V4
+  // SOURCE RECONCILIATION + ATTRIBUTION CLASSIFICATION
+  //
+  // VALID SHARED:
+  // invoice digunakan >1 staff valid
+  //
+  // ATTRIBUTION ANOMALY:
+  // invoice digunakan UNKNOWN + staff valid
+  //
+  // getValidation()
+  // => seluruh bulan
+  //
+  // getValidation("04-06-2026")
+  // => tanggal tertentu
+  // =====================================================
 
-}
-// =====================================================
-// VALIDATION V4
-// SOURCE RECONCILIATION + ATTRIBUTION CLASSIFICATION
-//
-// VALID SHARED:
-// invoice digunakan >1 staff valid
-//
-// ATTRIBUTION ANOMALY:
-// invoice digunakan UNKNOWN + staff valid
-//
-// getValidation()
-// => seluruh bulan
-//
-// getValidation("04-06-2026")
-// => tanggal tertentu
-// =====================================================
+  // =====================================================
+  // VALIDATION V5
+  // SUPPORT:
+  // getValidation()
+  // getValidation("01-07-2026")
+  // getValidation({
+  //     from:"01-07-2026",
+  //     to:"10-07-2026"
+  // })
+  // =====================================================
 
-// =====================================================
-// VALIDATION V5
-// SUPPORT:
-// getValidation()
-// getValidation("01-07-2026")
-// getValidation({
-//     from:"01-07-2026",
-//     to:"10-07-2026"
-// })
-// =====================================================
-
-function getValidation(dateFilter = ""){
-
-
+  function getValidation(dateFilter = "") {
     // =================================================
     // FILTER TRANSACTIONS
     // =================================================
 
-    const filteredTransactions =
+    const filteredTransactions = transactions.filter((t) =>
+      matchDateFilter(
+        t.date,
 
-        transactions.filter(t =>
-
-            matchDateFilter(
-
-                t.date,
-
-                dateFilter
-
-            )
-
-        );
-
-
+        dateFilter,
+      ),
+    );
 
     // =================================================
     // DAILY CASH INVOICES
     // =================================================
 
-    const dailyInvoices =
+    const dailyInvoices = [...invoiceMap.values()].filter((inv) =>
+      matchDateFilter(
+        inv.date,
 
-        [...invoiceMap.values()]
-
-            .filter(inv =>
-
-                matchDateFilter(
-
-                    inv.date,
-
-                    dateFilter
-
-                )
-
-            );
-
-
+        dateFilter,
+      ),
+    );
 
     // =================================================
     // DAILY CASH SALE INVOICES
     // RETURN TIDAK MENAMBAH SM
     // =================================================
 
-    const dailyCashSaleInvoices =
+    const dailyCashSaleInvoices = dailyInvoices.filter((inv) => inv.isSale);
 
-        dailyInvoices.filter(inv =>
-
-            inv.isSale
-
-        );
-
-
-    const dailyCashSM =
-
-        dailyCashSaleInvoices.length;
-
-
+    const dailyCashSM = dailyCashSaleInvoices.length;
 
     // =================================================
     // DAILY CASH SALES
     // SALE + RETURN
     // =================================================
 
-    const dailyCashSales =
+    const dailyCashSales = dailyInvoices.reduce(
+      (sum, inv) => sum + Number(inv.sales || 0),
 
-        dailyInvoices.reduce(
-
-            (sum, inv) =>
-
-                sum +
-
-                Number(inv.sales || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // MD / NON-MD TRANSACTIONS
     // =================================================
 
-    const mdTransactions =
+    const mdTransactions = filteredTransactions.filter((t) => !t.isNonMD);
 
-        filteredTransactions.filter(t =>
-
-            !t.isNonMD
-
-        );
-
-
-    const nonMDTransactions =
-
-        filteredTransactions.filter(t =>
-
-            t.isNonMD
-
-        );
-
-
+    const nonMDTransactions = filteredTransactions.filter((t) => t.isNonMD);
 
     // =================================================
     // NON-MD SALES / QTY
     // =================================================
 
-    const nonMDSales =
+    const nonMDSales = nonMDTransactions.reduce(
+      (sum, t) => sum + Number(t.sales || 0),
 
-        nonMDTransactions.reduce(
+      0,
+    );
 
-            (sum, t) =>
+    const nonMDQty = nonMDTransactions.reduce(
+      (sum, t) => sum + Number(t.qty || 0),
 
-                sum +
-
-                Number(t.sales || 0),
-
-            0
-
-        );
-
-
-    const nonMDQty =
-
-        nonMDTransactions.reduce(
-
-            (sum, t) =>
-
-                sum +
-
-                Number(t.qty || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // ENGINE SUMMARY
     // =================================================
 
-    const summary =
+    const summary = generateSummary(dateFilter);
 
-        generateSummary(dateFilter);
+    const total = summary.find((row) => row.staff === "TOTAL");
 
+    const engineSales = Number(total?.sales || 0);
 
-    const total =
+    const engineQty = Number(total?.qty || 0);
 
-        summary.find(row =>
-
-            row.staff === "TOTAL"
-
-        );
-
-
-    const engineSales =
-
-        Number(total?.sales || 0);
-
-
-    const engineQty =
-
-        Number(total?.qty || 0);
-
-
-    const engineSM =
-
-        Number(total?.sm || 0);
-
-
+    const engineSM = Number(total?.sm || 0);
 
     // =================================================
     // STAFF ROWS
     // =================================================
 
-    const staffRows =
-
-        summary.filter(row =>
-
-            row.staff !== "TOTAL"
-
-        );
-
-
+    const staffRows = summary.filter((row) => row.staff !== "TOTAL");
 
     // =================================================
     // STAFF SM
     // SUM UNIQUE INVOICE PER STAFF
     // =================================================
 
-    const staffSM =
+    const staffSM = staffRows.reduce(
+      (sum, row) => sum + Number(row.sm || 0),
 
-        staffRows.reduce(
-
-            (sum, row) =>
-
-                sum +
-
-                Number(row.sm || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // BUILD INVOICE -> STAFF SET
     // MD SALE ONLY
     // =================================================
 
-    const invoiceStaffMap =
+    const invoiceStaffMap = new Map();
 
-        new Map();
+    mdTransactions.forEach((t) => {
+      if (t.isReturn) {
+        return;
+      }
 
+      const staffName = t.staff ? text(t.staff.name) : "UNKNOWN";
 
-    mdTransactions.forEach(t => {
+      if (!invoiceStaffMap.has(t.invoice)) {
+        invoiceStaffMap.set(
+          t.invoice,
 
+          new Set(),
+        );
+      }
 
-        if(t.isReturn){
+      invoiceStaffMap
 
-            return;
+        .get(t.invoice)
 
-        }
-
-
-        const staffName =
-
-            t.staff
-
-                ? text(t.staff.name)
-
-                : "UNKNOWN";
-
-
-        if(!invoiceStaffMap.has(t.invoice)){
-
-            invoiceStaffMap.set(
-
-                t.invoice,
-
-                new Set()
-
-            );
-
-        }
-
-
-        invoiceStaffMap
-
-            .get(t.invoice)
-
-            .add(staffName);
-
+        .add(staffName);
     });
-
-
 
     // =================================================
     // CLASSIFY ATTRIBUTION
@@ -2545,394 +1671,165 @@ function getValidation(dateFilter = ""){
 
     const attributionAnomalies = [];
 
+    invoiceStaffMap.forEach((staffSet, invoice) => {
+      const staffs = [...staffSet];
 
-    invoiceStaffMap.forEach(
+      if (staffs.length <= 1) {
+        return;
+      }
 
-        (staffSet, invoice) => {
+      const hasUnknown = staffs.includes("UNKNOWN");
 
+      const data = {
+        invoice,
 
-            const staffs =
+        staffs,
 
-                [...staffSet];
+        extraAttribution: staffs.length - 1,
+      };
 
-
-            if(staffs.length <= 1){
-
-                return;
-
-            }
-
-
-            const hasUnknown =
-
-                staffs.includes("UNKNOWN");
-
-
-            const data = {
-
-                invoice,
-
-                staffs,
-
-                extraAttribution:
-
-                    staffs.length - 1
-
-            };
-
-
-            if(hasUnknown){
-
-                attributionAnomalies.push(
-
-                    data
-
-                );
-
-            }
-
-            else{
-
-                validShared.push(
-
-                    data
-
-                );
-
-            }
-
-        }
-
-    );
-
-
+      if (hasUnknown) {
+        attributionAnomalies.push(data);
+      } else {
+        validShared.push(data);
+      }
+    });
 
     // =================================================
     // VALID SHARED METRICS
     // =================================================
 
-    const validSharedCount =
+    const validSharedCount = validShared.length;
 
-        validShared.length;
+    const validSharedExtraAttribution = validShared.reduce(
+      (sum, item) => sum + Number(item.extraAttribution || 0),
 
-
-    const validSharedExtraAttribution =
-
-        validShared.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Number(
-
-                    item.extraAttribution || 0
-
-                ),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // ATTRIBUTION ANOMALY METRICS
     // =================================================
 
-    const attributionAnomalyCount =
+    const attributionAnomalyCount = attributionAnomalies.length;
 
-        attributionAnomalies.length;
+    const anomalyExtraAttribution = attributionAnomalies.reduce(
+      (sum, item) => sum + Number(item.extraAttribution || 0),
 
-
-    const anomalyExtraAttribution =
-
-        attributionAnomalies.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Number(
-
-                    item.extraAttribution || 0
-
-                ),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // ALL SHARED
     // =================================================
 
-    const shared = [
+    const shared = [...validShared, ...attributionAnomalies];
 
-        ...validShared,
-
-        ...attributionAnomalies
-
-    ];
-
-
-    const sharedInvoiceCount =
-
-        shared.length;
-
+    const sharedInvoiceCount = shared.length;
 
     const sharedExtraAttribution =
-
-        validSharedExtraAttribution +
-
-        anomalyExtraAttribution;
-
-
+      validSharedExtraAttribution + anomalyExtraAttribution;
 
     // =================================================
     // DIFFERENCE
     // =================================================
 
-    const difference =
-
-        staffSM -
-
-        dailyCashSM;
-
-
+    const difference = staffSM - dailyCashSM;
 
     // =================================================
     // EXPECTED STAFF SM
     // =================================================
 
     const expectedStaffSM =
+      dailyCashSM + validSharedExtraAttribution + anomalyExtraAttribution;
 
-        dailyCashSM +
-
-        validSharedExtraAttribution +
-
-        anomalyExtraAttribution;
-
-
-    const expectedStaffSMMatch =
-
-        staffSM ===
-
-        expectedStaffSM;
-
-
+    const expectedStaffSMMatch = staffSM === expectedStaffSM;
 
     // =================================================
     // UNKNOWN TRANSACTIONS
     // MD SALE ONLY
     // =================================================
 
-    const unknownTransactionRows =
+    const unknownTransactionRows = mdTransactions.filter(
+      (t) => !t.isReturn && (!t.staff || text(t.staff.name) === "UNKNOWN"),
+    );
 
-        mdTransactions.filter(t =>
+    const unknownInvoiceSet = new Set(
+      unknownTransactionRows.map((t) => t.invoice),
+    );
 
-            !t.isReturn &&
+    const unknownSM = unknownInvoiceSet.size;
 
-            (
+    const unknownSales = unknownTransactionRows.reduce(
+      (sum, t) => sum + Number(t.sales || 0),
 
-                !t.staff ||
+      0,
+    );
 
-                text(t.staff.name) ===
+    const unknownQty = unknownTransactionRows.reduce(
+      (sum, t) => sum + Number(t.qty || 0),
 
-                "UNKNOWN"
-
-            )
-
-        );
-
-
-    const unknownInvoiceSet =
-
-        new Set(
-
-            unknownTransactionRows.map(t =>
-
-                t.invoice
-
-            )
-
-        );
-
-
-    const unknownSM =
-
-        unknownInvoiceSet.size;
-
-
-    const unknownSales =
-
-        unknownTransactionRows.reduce(
-
-            (sum, t) =>
-
-                sum +
-
-                Number(t.sales || 0),
-
-            0
-
-        );
-
-
-    const unknownQty =
-
-        unknownTransactionRows.reduce(
-
-            (sum, t) =>
-
-                sum +
-
-                Number(t.qty || 0),
-
-            0
-
-        );
-
-
+      0,
+    );
 
     // =================================================
     // TRANSACTION RECONCILIATION
     // =================================================
 
-    const transactionSales =
+    const transactionSales = mdTransactions.reduce(
+      (sum, t) => sum + Number(t.sales || 0),
 
-        mdTransactions.reduce(
+      0,
+    );
 
-            (sum, t) =>
+    const transactionQty = mdTransactions.reduce(
+      (sum, t) => sum + Number(t.qty || 0),
 
-                sum +
+      0,
+    );
 
-                Number(t.sales || 0),
+    const transactionSM = new Set(
+      mdTransactions
 
-            0
+        .filter((t) => !t.isReturn)
 
-        );
-
-
-    const transactionQty =
-
-        mdTransactions.reduce(
-
-            (sum, t) =>
-
-                sum +
-
-                Number(t.qty || 0),
-
-            0
-
-        );
-
-
-    const transactionSM =
-
-        new Set(
-
-            mdTransactions
-
-                .filter(t =>
-
-                    !t.isReturn
-
-                )
-
-                .map(t =>
-
-                    t.invoice
-
-                )
-
-        ).size;
-
-
+        .map((t) => t.invoice),
+    ).size;
 
     // =================================================
     // CORE RECONCILIATION
     // =================================================
 
-    const salesMatch =
+    const salesMatch = engineSales === transactionSales;
 
-        engineSales ===
+    const qtyMatch = engineQty === transactionQty;
 
-        transactionSales;
+    const smMatch = engineSM === transactionSM;
 
+    const sourceSMMatch = dailyCashSM === transactionSM;
 
-    const qtyMatch =
-
-        engineQty ===
-
-        transactionQty;
-
-
-    const smMatch =
-
-        engineSM ===
-
-        transactionSM;
-
-
-    const sourceSMMatch =
-
-        dailyCashSM ===
-
-        transactionSM;
-
-
-    const attributionMatch =
-
-        difference ===
-
-        sharedExtraAttribution;
-
-
+    const attributionMatch = difference === sharedExtraAttribution;
 
     // =================================================
     // GROSS SALES RECONCILIATION
     // =================================================
 
-    const reconstructedGrossSales =
+    const reconstructedGrossSales = engineSales + nonMDSales;
 
-        engineSales +
-
-        nonMDSales;
-
-
-    const grossReconciliation =
-
-        dailyCashSales ===
-
-        reconstructedGrossSales;
-
-
+    const grossReconciliation = dailyCashSales === reconstructedGrossSales;
 
     // =================================================
     // CORE VALID
     // =================================================
 
     const coreValid =
-
-        salesMatch &&
-
-        qtyMatch &&
-
-        smMatch &&
-
-        sourceSMMatch &&
-
-        attributionMatch &&
-
-        expectedStaffSMMatch &&
-
-        grossReconciliation;
-
-
+      salesMatch &&
+      qtyMatch &&
+      smMatch &&
+      sourceSMMatch &&
+      attributionMatch &&
+      expectedStaffSMMatch &&
+      grossReconciliation;
 
     // =================================================
     // STATUS
@@ -2942,549 +1839,322 @@ function getValidation(dateFilter = ""){
 
     let statusLabel;
 
+    if (!coreValid) {
+      status = "INVALID";
 
-    if(!coreValid){
+      statusLabel = "❌ INVALID";
+    } else if (
+      attributionAnomalyCount > 0 ||
+      unknownTransactionRows.length > 0
+    ) {
+      status = "WARNING";
 
-        status =
-            "INVALID";
+      statusLabel = "⚠ VALID WITH WARNING";
+    } else {
+      status = "VALID";
 
-
-        statusLabel =
-            "❌ INVALID";
-
+      statusLabel = "✅ VALID";
     }
-
-    else if(
-
-        attributionAnomalyCount > 0 ||
-
-        unknownTransactionRows.length > 0
-
-    ){
-
-        status =
-            "WARNING";
-
-
-        statusLabel =
-            "⚠ VALID WITH WARNING";
-
-    }
-
-    else{
-
-        status =
-            "VALID";
-
-
-        statusLabel =
-            "✅ VALID";
-
-    }
-
-
 
     // =================================================
     // FILTER INFORMATION
     // =================================================
 
-    const normalizedFilter =
+    const normalizedFilter = normalizeDateFilter(dateFilter);
 
-        normalizeDateFilter(
+    let filterLabel = "ALL DATES";
 
-            dateFilter
-
-        );
-
-
-    let filterLabel =
-
-        "ALL DATES";
-
-
-    if(
-
-        normalizedFilter.mode ===
-
-        "SINGLE_DATE"
-
-    ){
-
-        filterLabel =
-
-            normalizedFilter.date;
-
+    if (normalizedFilter.mode === "SINGLE_DATE") {
+      filterLabel = normalizedFilter.date;
+    } else if (normalizedFilter.mode === "CUSTOM_RANGE") {
+      filterLabel = `${normalizedFilter.from || "START"} - ${
+        normalizedFilter.to || "END"
+      }`;
     }
-
-
-    else if(
-
-        normalizedFilter.mode ===
-
-        "CUSTOM_RANGE"
-
-    ){
-
-        filterLabel =
-
-            `${
-
-                normalizedFilter.from ||
-
-                "START"
-
-            } - ${
-
-                normalizedFilter.to ||
-
-                "END"
-
-            }`;
-
-    }
-
-
 
     // =================================================
     // RETURN RESULT
     // =================================================
 
     return {
+      date: filterLabel,
 
-        date:
-            filterLabel,
+      filter: normalizedFilter,
 
-        filter:
-            normalizedFilter,
+      // DAILY CASH
 
+      dailyCashSM,
 
-        // DAILY CASH
+      dailyCashSales,
 
-        dailyCashSM,
+      // STAFF ATTRIBUTION
 
-        dailyCashSales,
+      staffSM,
 
+      difference,
 
-        // STAFF ATTRIBUTION
+      expectedStaffSM,
 
-        staffSM,
+      expectedStaffSMMatch,
 
-        difference,
+      // ENGINE
 
-        expectedStaffSM,
+      engineSales,
 
-        expectedStaffSMMatch,
+      engineSM,
 
+      engineQty,
 
-        // ENGINE
+      // VALID SHARED
 
-        engineSales,
+      validShared,
 
-        engineSM,
+      validSharedCount,
 
-        engineQty,
+      validSharedExtraAttribution,
 
+      // ATTRIBUTION ANOMALY
 
-        // VALID SHARED
+      attributionAnomalies,
 
-        validShared,
+      attributionAnomalyCount,
 
-        validSharedCount,
+      anomalyExtraAttribution,
 
-        validSharedExtraAttribution,
+      // ALL SHARED
 
+      shared,
 
-        // ATTRIBUTION ANOMALY
+      sharedInvoiceCount,
 
-        attributionAnomalies,
+      sharedExtraAttribution,
 
-        attributionAnomalyCount,
+      // UNKNOWN
 
-        anomalyExtraAttribution,
+      unknownTransactions: unknownTransactionRows.length,
 
+      unknownSM,
 
-        // ALL SHARED
+      unknownSales,
 
-        shared,
+      unknownQty,
 
-        sharedInvoiceCount,
+      // TRANSACTION RECONCILIATION
 
-        sharedExtraAttribution,
+      transactionSales,
 
+      transactionSM,
 
-        // UNKNOWN
+      transactionQty,
 
-        unknownTransactions:
+      // NON-MD
 
-            unknownTransactionRows.length,
+      nonMDSales,
 
-        unknownSM,
+      nonMDQty,
 
-        unknownSales,
+      reconstructedGrossSales,
 
-        unknownQty,
+      // VALIDATION FLAGS
 
+      salesMatch,
 
-        // TRANSACTION RECONCILIATION
+      qtyMatch,
 
-        transactionSales,
+      smMatch,
 
-        transactionSM,
+      sourceSMMatch,
 
-        transactionQty,
+      attributionMatch,
 
+      grossReconciliation,
 
-        // NON-MD
+      coreValid,
 
-        nonMDSales,
+      // STATUS
 
-        nonMDQty,
+      status,
 
-        reconstructedGrossSales,
-
-
-        // VALIDATION FLAGS
-
-        salesMatch,
-
-        qtyMatch,
-
-        smMatch,
-
-        sourceSMMatch,
-
-        attributionMatch,
-
-        grossReconciliation,
-
-        coreValid,
-
-
-        // STATUS
-
-        status,
-
-        statusLabel
-
+      statusLabel,
     };
+  }
+  // =====================================================
+  // GET AVAILABLE DATES
+  // =====================================================
 
-}
-// =====================================================
-// GET AVAILABLE DATES
-// =====================================================
-
-function getAvailableDates(){
-
+  function getAvailableDates() {
     const dates = new Set();
 
-
-    invoiceMap.forEach(inv => {
-
-        if(inv.date){
-
-            dates.add(inv.date);
-
-        }
-
+    invoiceMap.forEach((inv) => {
+      if (inv.date) {
+        dates.add(inv.date);
+      }
     });
 
-
-    transactions.forEach(t => {
-
-        if(t.date){
-
-            dates.add(t.date);
-
-        }
-
+    transactions.forEach((t) => {
+      if (t.date) {
+        dates.add(t.date);
+      }
     });
 
+    return [...dates].sort((a, b) => {
+      const [dayA, monthA, yearA] = a.split("-").map(Number);
 
-    return [...dates].sort((a,b) => {
+      const [dayB, monthB, yearB] = b.split("-").map(Number);
 
-        const [dayA, monthA, yearA] =
-            a.split("-").map(Number);
-
-        const [dayB, monthB, yearB] =
-            b.split("-").map(Number);
-
-
-        return (
-
-            new Date(yearA, monthA - 1, dayA)
-
-            -
-
-            new Date(yearB, monthB - 1, dayB)
-
-        );
-
+      return (
+        new Date(yearA, monthA - 1, dayA) - new Date(yearB, monthB - 1, dayB)
+      );
     });
+  }
 
-}
+  // =====================================================
+  // DAILY VALIDATION AUDIT
+  // =====================================================
 
+  function getDailyValidationAudit() {
+    return getAvailableDates().map((date) => {
+      const validation = getValidation(date);
 
+      return {
+        date,
 
-// =====================================================
-// DAILY VALIDATION AUDIT
-// =====================================================
+        dailyCashSM: validation.dailyCashSM,
 
-function getDailyValidationAudit(){
+        staffSM: validation.staffSM,
 
-    return getAvailableDates()
+        difference: validation.difference,
 
-        .map(date => {
+        validSharedCount: validation.validSharedCount,
 
-            const validation =
+        validSharedExtraAttribution: validation.validSharedExtraAttribution,
 
-                getValidation(date);
+        attributionAnomalyCount: validation.attributionAnomalyCount,
 
+        anomalyExtraAttribution: validation.anomalyExtraAttribution,
 
-            return {
+        unknownTransactions: validation.unknownTransactions,
 
-                date,
+        unknownSM: validation.unknownSM,
 
+        unknownSales: validation.unknownSales,
 
-                dailyCashSM:
+        unknownQty: validation.unknownQty,
 
-                    validation.dailyCashSM,
+        coreValid: validation.coreValid,
 
+        status: validation.status,
 
-                staffSM:
+        statusLabel: validation.statusLabel,
+      };
+    });
+  }
 
-                    validation.staffSM,
+  // =====================================================
+  // VALIDATION DETAIL BY DATE
+  // =====================================================
 
-
-                difference:
-
-                    validation.difference,
-
-
-                validSharedCount:
-
-                    validation.validSharedCount,
-
-
-                validSharedExtraAttribution:
-
-                    validation
-                        .validSharedExtraAttribution,
-
-
-                attributionAnomalyCount:
-
-                    validation
-                        .attributionAnomalyCount,
-
-
-                anomalyExtraAttribution:
-
-                    validation
-                        .anomalyExtraAttribution,
-
-
-                unknownTransactions:
-
-                    validation.unknownTransactions,
-
-
-                unknownSM:
-
-                    validation.unknownSM,
-
-
-                unknownSales:
-
-                    validation.unknownSales,
-
-
-                unknownQty:
-
-                    validation.unknownQty,
-
-
-                coreValid:
-
-                    validation.coreValid,
-
-
-                status:
-
-                    validation.status,
-
-
-                statusLabel:
-
-                    validation.statusLabel
-
-            };
-
-        });
-
-}
-
-
-
-// =====================================================
-// VALIDATION DETAIL BY DATE
-// =====================================================
-
-function getValidationDetail(date){
-
+  function getValidationDetail(date) {
     const selectedDate = text(date);
 
-    const validation =
-        getValidation(selectedDate);
-
+    const validation = getValidation(selectedDate);
 
     // ==========================================
     // STAFF PERFORMANCE PER DATE
     // ==========================================
 
-    const staffSummary =
-        generateSummary(selectedDate);
-
+    const staffSummary = generateSummary(selectedDate);
 
     const divisions = new Set(["ACCESSORIES", "BAGS", "APPAREL", "FOOTWEAR"]);
 
-
-    staffSummary.forEach(row => {
-
-        Object.keys(
-            row.categories || {}
-        ).forEach(division => {
-
-            divisions.add(division);
-
-        });
-
+    staffSummary.forEach((row) => {
+      Object.keys(row.categories || {}).forEach((division) => {
+        divisions.add(division);
+      });
     });
-
 
     // ==========================================
     // UNKNOWN TRANSACTIONS
     // ==========================================
 
-    const unknownTransactions =
-
-        transactions.filter(t =>
-
-            t.date === selectedDate &&
-
-            !t.isNonMD &&
-
-            (
-
-                !t.staff ||
-
-                text(t.staff.name) === "UNKNOWN"
-
-            )
-
-        );
-
+    const unknownTransactions = transactions.filter(
+      (t) =>
+        t.date === selectedDate &&
+        !t.isNonMD &&
+        (!t.staff || text(t.staff.name) === "UNKNOWN"),
+    );
 
     return {
+      date: selectedDate,
 
-        date:
-            selectedDate,
+      validation,
 
-        validation,
+      staffSummary,
 
-        staffSummary,
+      divisions: [...divisions],
 
-        divisions:
-            [...divisions],
+      validShared: validation.validShared || [],
 
-        validShared:
-            validation.validShared || [],
+      attributionAnomalies: validation.attributionAnomalies || [],
 
-        attributionAnomalies:
-            validation.attributionAnomalies || [],
-
-        unknownTransactions
-
+      unknownTransactions,
     };
+  }
 
-}
+  // =====================================================
+  // NORMALIZE DATE FILTER
+  // SUPPORT:
+  // ALL
+  // SINGLE DATE
+  // CUSTOM RANGE
+  // =====================================================
 
-
-// =====================================================
-// NORMALIZE DATE FILTER
-// SUPPORT:
-// ALL
-// SINGLE DATE
-// CUSTOM RANGE
-// =====================================================
-
-function normalizeDateFilter(dateFilter = ""){
-
+  function normalizeDateFilter(dateFilter = "") {
     // ==========================================
     // ALL DATES
     // ==========================================
 
-    if(
-        dateFilter === undefined ||
-        dateFilter === null ||
-        dateFilter === ""
-    ){
+    if (dateFilter === undefined || dateFilter === null || dateFilter === "") {
+      return {
+        mode: "ALL",
 
-        return {
+        date: "",
 
-            mode: "ALL",
+        from: "",
 
-            date: "",
-
-            from: "",
-
-            to: ""
-
-        };
-
+        to: "",
+      };
     }
-
 
     // ==========================================
     // SINGLE DATE
     // ==========================================
 
-    if(typeof dateFilter === "string"){
+    if (typeof dateFilter === "string") {
+      const date = normalizeDate(dateFilter);
 
-        const date =
-            normalizeDate(dateFilter);
-
-
-        if(!date){
-
-            return {
-
-                mode: "ALL",
-
-                date: "",
-
-                from: "",
-
-                to: ""
-
-            };
-
-        }
-
-
+      if (!date) {
         return {
+          mode: "ALL",
 
-            mode: "SINGLE_DATE",
+          date: "",
 
-            date,
+          from: "",
 
-            from: date,
-
-            to: date
-
+          to: "",
         };
+      }
 
+      return {
+        mode: "SINGLE_DATE",
+
+        date,
+
+        from: date,
+
+        to: date,
+      };
     }
-
 
     // ==========================================
     // CUSTOM RANGE
@@ -3494,291 +2164,160 @@ function normalizeDateFilter(dateFilter = ""){
     // { startDate, endDate }
     // ==========================================
 
-    if(
-        typeof dateFilter === "object" &&
-        !Array.isArray(dateFilter)
-    ){
+    if (typeof dateFilter === "object" && !Array.isArray(dateFilter)) {
+      const from = normalizeDate(
+        dateFilter.from || dateFilter.start || dateFilter.startDate || "",
+      );
 
-        const from =
+      const to = normalizeDate(
+        dateFilter.to || dateFilter.end || dateFilter.endDate || "",
+      );
 
-            normalizeDate(
+      // OBJECT KOSONG = ALL
 
-                dateFilter.from ||
-
-                dateFilter.start ||
-
-                dateFilter.startDate ||
-
-                ""
-
-            );
-
-
-        const to =
-
-            normalizeDate(
-
-                dateFilter.to ||
-
-                dateFilter.end ||
-
-                dateFilter.endDate ||
-
-                ""
-
-            );
-
-
-        // OBJECT KOSONG = ALL
-
-        if(!from && !to){
-
-            return {
-
-                mode: "ALL",
-
-                date: "",
-
-                from: "",
-
-                to: ""
-
-            };
-
-        }
-
-
-        // RANGE DENGAN TANGGAL SAMA
-        // DIANGGAP SINGLE DATE
-
-        if(
-            from &&
-            to &&
-            from === to
-        ){
-
-            return {
-
-                mode: "SINGLE_DATE",
-
-                date: from,
-
-                from,
-
-                to
-
-            };
-
-        }
-
-
+      if (!from && !to) {
         return {
+          mode: "ALL",
 
-            mode: "CUSTOM_RANGE",
+          date: "",
 
-            date: "",
+          from: "",
 
-            from,
-
-            to
-
+          to: "",
         };
+      }
 
-    }
+      // RANGE DENGAN TANGGAL SAMA
+      // DIANGGAP SINGLE DATE
 
+      if (from && to && from === to) {
+        return {
+          mode: "SINGLE_DATE",
 
-    return {
+          date: from,
 
-        mode: "ALL",
+          from,
+
+          to,
+        };
+      }
+
+      return {
+        mode: "CUSTOM_RANGE",
 
         date: "",
 
-        from: "",
+        from,
 
-        to: ""
+        to,
+      };
+    }
 
+    return {
+      mode: "ALL",
+
+      date: "",
+
+      from: "",
+
+      to: "",
     };
+  }
 
-}
+  // =====================================================
+  // DATE TO COMPARABLE NUMBER
+  // DD-MM-YYYY => YYYYMMDD
+  // =====================================================
 
+  function dateToComparableValue(value) {
+    const normalized = normalizeDate(value);
 
-// =====================================================
-// DATE TO COMPARABLE NUMBER
-// DD-MM-YYYY => YYYYMMDD
-// =====================================================
-
-function dateToComparableValue(value){
-
-    const normalized =
-        normalizeDate(value);
-
-
-    if(!normalized){
-
-        return null;
-
+    if (!normalized) {
+      return null;
     }
 
+    const parts = normalized.split("-");
 
-    const parts =
-        normalized.split("-");
-
-
-    if(parts.length !== 3){
-
-        return null;
-
+    if (parts.length !== 3) {
+      return null;
     }
 
+    const [day, month, year] = parts;
 
-    const [day, month, year] =
-        parts;
+    return Number(`${year}${month}${day}`);
+  }
 
+  // =====================================================
+  // MATCH DATE FILTER
+  // SUPPORT:
+  // ALL
+  // SINGLE DATE
+  // CUSTOM RANGE
+  // OPEN RANGE
+  // =====================================================
 
-    return Number(
-
-        `${year}${month}${day}`
-
-    );
-
-}
-
-
-// =====================================================
-// MATCH DATE FILTER
-// SUPPORT:
-// ALL
-// SINGLE DATE
-// CUSTOM RANGE
-// OPEN RANGE
-// =====================================================
-
-function matchDateFilter(
-
+  function matchDateFilter(
     transactionDate,
 
-    dateFilter = ""
-
-){
-
-    const filter =
-        normalizeDateFilter(dateFilter);
-
+    dateFilter = "",
+  ) {
+    const filter = normalizeDateFilter(dateFilter);
 
     // ==========================================
     // ALL DATES
     // ==========================================
 
-    if(filter.mode === "ALL"){
-
-        return true;
-
+    if (filter.mode === "ALL") {
+      return true;
     }
 
+    const normalizedTransactionDate = normalizeDate(transactionDate);
 
-    const normalizedTransactionDate =
-        normalizeDate(transactionDate);
-
-
-    if(!normalizedTransactionDate){
-
-        return false;
-
+    if (!normalizedTransactionDate) {
+      return false;
     }
-
 
     // ==========================================
     // SINGLE DATE
     // ==========================================
 
-    if(filter.mode === "SINGLE_DATE"){
-
-        return (
-
-            normalizedTransactionDate ===
-
-            filter.date
-
-        );
-
+    if (filter.mode === "SINGLE_DATE") {
+      return normalizedTransactionDate === filter.date;
     }
-
 
     // ==========================================
     // CUSTOM RANGE
     // ==========================================
 
-    const transactionValue =
+    const transactionValue = dateToComparableValue(normalizedTransactionDate);
 
-        dateToComparableValue(
+    if (transactionValue === null) {
+      return false;
+    }
 
-            normalizedTransactionDate
+    if (filter.from) {
+      const fromValue = dateToComparableValue(filter.from);
 
-        );
-
-
-    if(transactionValue === null){
-
+      if (fromValue !== null && transactionValue < fromValue) {
         return false;
-
+      }
     }
 
+    if (filter.to) {
+      const toValue = dateToComparableValue(filter.to);
 
-    if(filter.from){
-
-        const fromValue =
-
-            dateToComparableValue(
-
-                filter.from
-
-            );
-
-
-        if(
-            fromValue !== null &&
-            transactionValue < fromValue
-        ){
-
-            return false;
-
-        }
-
+      if (toValue !== null && transactionValue > toValue) {
+        return false;
+      }
     }
-
-
-    if(filter.to){
-
-        const toValue =
-
-            dateToComparableValue(
-
-                filter.to
-
-            );
-
-
-        if(
-            toValue !== null &&
-            transactionValue > toValue
-        ){
-
-            return false;
-
-        }
-
-    }
-
 
     return true;
+  }
+  // =====================================================
+  // PUBLIC API
+  // =====================================================
 
-}
-// =====================================================
-// PUBLIC API
-// =====================================================
-
-return {
-
+  return {
     invoiceMap,
     articleMap,
     staffMap,
@@ -3801,7 +2340,7 @@ return {
     parseSalesPerson,
     parseMSR,
 
-matchReturns,
+    matchReturns,
 
     generateSummary,
 
@@ -3814,8 +2353,6 @@ matchReturns,
 
     getAvailableDates,
     getDailyValidationAudit,
-    getValidationDetail
-
-};
-
+    getValidationDetail,
+  };
 })();

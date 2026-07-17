@@ -1,23 +1,15 @@
 const GTRuntime = (() => {
+  // =====================================================
+  // PRIVATE CONFIG
+  // =====================================================
 
-    // =====================================================
-    // PRIVATE CONFIG
-    // =====================================================
+  const PRODUCT_CODE_PARTS = [71, 84, 65, 83, 83];
 
-    const PRODUCT_CODE_PARTS = [
-        71, 84, 65, 83, 83
-    ];
+  const OWNER_ID_PARTS = [49, 57, 48, 48, 50, 51, 54, 57];
 
-    const OWNER_ID_PARTS = [
-        49, 57, 48, 48, 50, 51, 54, 57
-    ];
+  const BRAND_PARTS = [75, 65, 78, 71, 79, 68, 73, 78, 71, 46, 79, 82, 71];
 
-    const BRAND_PARTS = [
-        75, 65, 78, 71, 79, 68, 73, 78, 71, 46, 79, 82, 71
-    ];
-
-
-    /*
+  /*
     FREE ACCESS END DATE
 
     Saat ini:
@@ -29,16 +21,14 @@ const GTRuntime = (() => {
     day XOR 47
     */
 
-   const FREE_LIMIT = {
-
+  const FREE_LIMIT = {
     y: 2026 ^ 731,
 
     m: 11 ^ 29,
 
-    d: 29 ^ 47
-
-};
-    /*
+    d: 29 ^ 47,
+  };
+  /*
     VIP USER ID
 
     Untuk sementara ID milikmu:
@@ -50,52 +40,48 @@ const GTRuntime = (() => {
     hash VIP customer baru.
     */
 
-// =====================================================
-// PREMIUM ACCOUNT REGISTRY
-// HASH-ONLY PREMIUM ACCOUNT IDENTIFICATION
-//
-// Akun yang TIDAK terdaftar di sini akan masuk:
-// FREE_ACCESS  -> selama FREE_LIMIT masih aktif
-// FREE_EXPIRED -> setelah FREE_LIMIT berakhir
-// =====================================================
+  // =====================================================
+  // PREMIUM ACCOUNT REGISTRY
+  // HASH-ONLY PREMIUM ACCOUNT IDENTIFICATION
+  //
+  // Akun yang TIDAK terdaftar di sini akan masuk:
+  // FREE_ACCESS  -> selama FREE_LIMIT masih aktif
+  // FREE_EXPIRED -> setelah FREE_LIMIT berakhir
+  // =====================================================
 
-const PREMIUM_ACCOUNTS = new Map([
-
+  const PREMIUM_ACCOUNTS = new Map([
     [
-        "f96171bd",
-        {
-            name: "KANGODING.ORG",
-            plan: "VIP_LORD",
-            authority: "SOVEREIGN"
-        }
+      "f96171bd",
+      {
+        name: "KANGODING.ORG",
+        plan: "VIP_LORD",
+        authority: "SOVEREIGN",
+      },
     ],
 
     [
-        "a95c648c",
-        {
-            name: "EDSEN",
-            plan: "TEMEN CEO KANGODING.ORG WKWK",
-            authority: "PREMIUM"
-        }
+      "a95c648c",
+      {
+        name: "EDSEN",
+        plan: "TEMEN CEO KANGODING.ORG WKWK",
+        authority: "PREMIUM",
+      },
     ],
- [
-        "85c9f2b1",
-        {
-            name: "MBA WARI ANJAY",
-            plan: "VIP_LIFETIME",
-            authority: "PREMIUM"
-        }
-    ]
+    [
+      "85c9f2b1",
+      {
+        name: "MBA WARI ANJAY",
+        plan: "VIP_LIFETIME",
+        authority: "PREMIUM",
+      },
+    ],
+  ]);
 
+  // =====================================================
+  // PRIVATE STATE
+  // =====================================================
 
-]);
-
-    // =====================================================
-    // PRIVATE STATE
-    // =====================================================
-
-let state = {
-
+  let state = {
     booted: false,
 
     dead: false,
@@ -110,436 +96,231 @@ let state = {
 
     authority: "",
 
-    reason: ""
+    reason: "",
+  };
 
-};
+  let integrityTimer = null;
 
-    let integrityTimer = null;
+  let mutationTimer = null;
 
-    let mutationTimer = null;
+  // =====================================================
+  // DECODE ASCII
+  // =====================================================
 
+  function decode(parts) {
+    return String.fromCharCode(...parts);
+  }
 
-    // =====================================================
-    // DECODE ASCII
-    // =====================================================
+  function getProductCode() {
+    return decode(PRODUCT_CODE_PARTS);
+  }
 
-    function decode(parts){
+  function getOwnerId() {
+    return decode(OWNER_ID_PARTS);
+  }
 
-        return String.fromCharCode(...parts);
+  function getBrand() {
+    return decode(BRAND_PARTS);
+  }
 
+  // =====================================================
+  // NORMALIZE
+  // =====================================================
+
+  function text(value) {
+    return String(value ?? "")
+      .trim()
+      .toUpperCase();
+  }
+
+  // =====================================================
+  // HASH
+  // =====================================================
+
+  function hashValue(value) {
+    const input = text(value);
+
+    let hash = 0x811c9dc5;
+
+    for (let i = 0; i < input.length; i++) {
+      hash ^= input.charCodeAt(i);
+
+      hash = Math.imul(
+        hash,
+
+        0x01000193,
+      );
     }
 
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
 
-    function getProductCode(){
+  // =====================================================
+  // FREE ACCESS LIMIT
+  // =====================================================
 
-        return decode(PRODUCT_CODE_PARTS);
+  function getFreeLimit() {
+    return {
+      year: FREE_LIMIT.y ^ 731,
 
-    }
+      month: FREE_LIMIT.m ^ 29,
 
+      day: FREE_LIMIT.d ^ 47,
+    };
+  }
 
-    function getOwnerId(){
+  function getFreeLimitDate() {
+    const limit = getFreeLimit();
 
-        return decode(OWNER_ID_PARTS);
+    return new Date(
+      limit.year,
 
-    }
+      limit.month - 1,
 
+      limit.day,
 
-    function getBrand(){
+      23,
 
-        return decode(BRAND_PARTS);
+      59,
 
-    }
+      59,
 
-
-    // =====================================================
-    // NORMALIZE
-    // =====================================================
-
-    function text(value){
-
-        return String(value ?? "")
-            .trim()
-            .toUpperCase();
-
-    }
-
-
-    // =====================================================
-    // HASH
-    // =====================================================
-
-    function hashValue(value){
-
-        const input = text(value);
-
-        let hash = 0x811c9dc5;
-
-
-        for(let i = 0; i < input.length; i++){
-
-            hash ^= input.charCodeAt(i);
-
-            hash = Math.imul(
-
-                hash,
-
-                0x01000193
-
-            );
-
-        }
-
-
-        return (
-
-            hash >>> 0
-
-        )
-        .toString(16)
-        .padStart(8, "0");
-
-    }
-
-
-    // =====================================================
-    // FREE ACCESS LIMIT
-    // =====================================================
-
-    function getFreeLimit(){
-
-        return {
-
-            year:
-
-                FREE_LIMIT.y ^ 731,
-
-            month:
-
-                FREE_LIMIT.m ^ 29,
-
-            day:
-
-                FREE_LIMIT.d ^ 47
-
-        };
-
-    }
-
-
-    function getFreeLimitDate(){
-
-        const limit =
-
-            getFreeLimit();
-
-
-        return new Date(
-
-            limit.year,
-
-            limit.month - 1,
-
-            limit.day,
-
-            23,
-
-            59,
-
-            59,
-
-            999
-
-        );
-
-    }
-
-
-    // =====================================================
-    // EXTRACT USER ID
-    // DAILY CASH CELL A2
-    // =====================================================
-
-    function extractUserId(rows){
-
-        if(!Array.isArray(rows)){
-
-            return "";
-
-        }
-
-
-        return text(
-
-            rows?.[1]?.[0]
-
-        );
-
-    }
-
-
-    // =====================================================
-    // VIP CHECK
-    // =====================================================
-
-    function getPremiumAccount(userId){
-
-    const userHash =
-        hashValue(userId);
-
-
-    return (
-
-        PREMIUM_ACCOUNTS.get(userHash)
-
-        || null
-
+      999,
     );
+  }
 
-}
-    // =====================================================
-    // FREE ACCESS CHECK
-    // =====================================================
+  // =====================================================
+  // EXTRACT USER ID
+  // DAILY CASH CELL A2
+  // =====================================================
 
-    function isFreeActive(){
-
-        return (
-
-            Date.now() <=
-
-            getFreeLimitDate().getTime()
-
-        );
-
+  function extractUserId(rows) {
+    if (!Array.isArray(rows)) {
+      return "";
     }
 
+    return text(rows?.[1]?.[0]);
+  }
 
-    // =====================================================
-    // INTEGRITY CHECK
-    // =====================================================
+  // =====================================================
+  // VIP CHECK
+  // =====================================================
 
-    function checkIntegrity(){ return true;
+  function getPremiumAccount(userId) {
+    const userHash = hashValue(userId);
 
-        if(state.dead){
+    return PREMIUM_ACCOUNTS.get(userHash) || null;
+  }
+  // =====================================================
+  // FREE ACCESS CHECK
+  // =====================================================
 
-            return false;
+  function isFreeActive() {
+    return Date.now() <= getFreeLimitDate().getTime();
+  }
 
-        }
+  // =====================================================
+  // INTEGRITY CHECK
+  // =====================================================
 
+  function checkIntegrity() {
+    return true;
 
-        const ownerId =
+    if (state.dead) {
+      return false;
+    }
 
-            getOwnerId();
+    const ownerId = getOwnerId();
 
+    const brand = getBrand();
 
-        const brand =
+    const productCode = getProductCode();
 
-            getBrand();
+    const meta = document.querySelector('meta[name="gt-runtime"]');
 
+    const anchor = document.getElementById("gt-runtime-anchor");
 
-        const productCode =
+    const watermark = document.getElementById("KANGODING.ORGWatermark");
 
-            getProductCode();
+    const logo = document.querySelector("img.logo");
 
+    const metaValid =
+      meta && meta.content === `${brand}:${ownerId}:${productCode}`;
 
-        const meta =
+    const anchorValid =
+      anchor &&
+      anchor.dataset.owner === ownerId &&
+      anchor.dataset.product === productCode;
 
-            document.querySelector(
+    const watermarkText = text(watermark?.textContent);
 
-                'meta[name="gt-runtime"]'
-
-            );
-
-
-        const anchor =
-
-            document.getElementById(
-
-                "gt-runtime-anchor"
-
-            );
-
-
-        const watermark =
-
-    document.getElementById(
-
-        "KANGODING.ORGWatermark"
-
+    const watermarkValid = Boolean(
+      watermark &&
+      watermark.dataset.owner === ownerId &&
+      watermarkText.includes(brand) &&
+      watermarkText.includes(ownerId),
     );
+    const logoValid = logo && logo.getAttribute("src") === "img/logo.png";
 
-        const logo =
+    console.table({
+      metaValid,
 
-            document.querySelector(
+      anchorValid,
 
-                "img.logo"
+      watermarkValid,
 
-            );
+      logoValid,
 
+      metaContent: meta?.content || "NOT FOUND",
 
-        const metaValid =
+      anchorOwner: anchor?.dataset.owner || "NOT FOUND",
 
-            meta &&
+      anchorProduct: anchor?.dataset.product || "NOT FOUND",
 
-            meta.content ===
+      watermarkText,
 
-            `${brand}:${ownerId}:${productCode}`;
+      logoSrc: logo?.getAttribute("src") || "NOT FOUND",
+    });
 
+    return Boolean(metaValid && anchorValid && watermarkValid && logoValid);
+  }
 
-        const anchorValid =
+  // =====================================================
+  // DESTROY APPLICATION
+  // =====================================================
 
-            anchor &&
-
-            anchor.dataset.owner === ownerId &&
-
-            anchor.dataset.product === productCode;
-
-
-        const watermarkText =
-
-            text(
-
-                watermark?.textContent
-
-            );
-
-
-        const watermarkValid = Boolean(
-
-    watermark &&
-
-    watermark.dataset.owner === ownerId &&
-
-    watermarkText.includes(brand) &&
-
-    watermarkText.includes(ownerId)
-
-);
-        const logoValid =
-
-            logo &&
-
-            logo.getAttribute("src") ===
-
-            "img/logo.png";
-
-
-console.table({
-
-    metaValid,
-
-    anchorValid,
-
-    watermarkValid,
-
-    logoValid,
-
-    metaContent:
-        meta?.content || "NOT FOUND",
-
-    anchorOwner:
-        anchor?.dataset.owner || "NOT FOUND",
-
-    anchorProduct:
-        anchor?.dataset.product || "NOT FOUND",
-
-    watermarkText,
-
-    logoSrc:
-        logo?.getAttribute("src") || "NOT FOUND"
-
-});
-
-
-        return Boolean(
-
-            metaValid &&
-
-            anchorValid &&
-
-            watermarkValid &&
-
-            logoValid
-
-        );
-
+  function kill(reason) {
+    if (state.dead) {
+      return;
     }
 
+    state.dead = true;
 
-    // =====================================================
-    // DESTROY APPLICATION
-    // =====================================================
+    state.authorized = false;
 
-    function kill(reason){
+    state.reason = reason || "RUNTIME_FAILURE";
 
-        if(state.dead){
+    if (integrityTimer) {
+      clearInterval(integrityTimer);
+    }
 
-            return;
+    if (mutationTimer) {
+      clearTimeout(mutationTimer);
+    }
 
-        }
+    try {
+      if (typeof GTEngine !== "undefined") {
+        GTEngine.clear();
+      }
+    } catch (error) {
+      console.error(error);
+    }
 
+    window.summaryData = [];
 
-        state.dead = true;
+    window.divisionData = [];
 
-        state.authorized = false;
-
-        state.reason =
-
-            reason ||
-
-            "RUNTIME_FAILURE";
-
-
-        if(integrityTimer){
-
-            clearInterval(
-
-                integrityTimer
-
-            );
-
-        }
-
-
-        if(mutationTimer){
-
-            clearTimeout(
-
-                mutationTimer
-
-            );
-
-        }
-
-
-        try{
-
-            if(
-
-                typeof GTEngine !==
-
-                "undefined"
-
-            ){
-
-                GTEngine.clear();
-
-            }
-
-        }
-
-        catch(error){
-
-            console.error(error);
-
-        }
-
-
-        window.summaryData = [];
-
-        window.divisionData = [];
-
-
-        document.body.innerHTML = `
+    document.body.innerHTML = `
 
             <main class="gt-runtime-error">
 
@@ -580,208 +361,145 @@ console.table({
 
         `;
 
+    throw new Error("GT_RUNTIME_TERMINATED");
+  }
 
-        throw new Error(
+  // =====================================================
+  // ASSERT INTEGRITY
+  // =====================================================
 
-            "GT_RUNTIME_TERMINATED"
+  function assertIntegrity() {
+    if (!checkIntegrity()) {
+      kill("INTEGRITY_FAILURE");
 
-        );
-
+      return false;
     }
 
+    return true;
+  }
 
-    // =====================================================
-    // ASSERT INTEGRITY
-    // =====================================================
+  // =====================================================
+  // AUTHORIZE USER
+  // =====================================================
 
-    function assertIntegrity(){
-
-        if(!checkIntegrity()){
-
-            kill(
-
-                "INTEGRITY_FAILURE"
-
-            );
-
-            return false;
-
-        }
-
-
-        return true;
-
-    }
-
-
-    // =====================================================
-    // AUTHORIZE USER
-    // =====================================================
-
-    function authorize(rows){
-
+  function authorize(rows) {
     assertIntegrity();
 
-
-    const userId =
-        extractUserId(rows);
-
+    const userId = extractUserId(rows);
 
     // =============================================
     // USER ID NOT FOUND
     // =============================================
 
-    if(!userId){
+    if (!userId) {
+      state.authorized = false;
 
-        state.authorized = false;
+      state.userId = "";
 
-        state.userId = "";
+      state.plan = "NONE";
 
-        state.plan = "NONE";
+      state.accountName = "";
 
-        state.accountName = "";
+      state.authority = "";
 
-        state.authority = "";
+      state.reason = "USER_ID_NOT_FOUND";
 
-        state.reason =
-            "USER_ID_NOT_FOUND";
+      return {
+        ok: false,
 
+        userId: "",
 
-        return {
+        accountName: "",
 
-            ok: false,
+        plan: "NONE",
 
-            userId: "",
+        authority: "",
 
-            accountName: "",
-
-            plan: "NONE",
-
-            authority: "",
-
-            reason:
-                "USER_ID_NOT_FOUND"
-
-        };
-
+        reason: "USER_ID_NOT_FOUND",
+      };
     }
-
 
     // =============================================
     // PREMIUM ACCOUNT CHECK
     // HASH-ONLY LOOKUP
     // =============================================
 
-    const premiumAccount =
-        getPremiumAccount(userId);
+    const premiumAccount = getPremiumAccount(userId);
 
+    if (premiumAccount) {
+      state.authorized = true;
 
-    if(premiumAccount){
+      state.userId = userId;
 
-        state.authorized = true;
+      state.accountName = premiumAccount.name;
 
-        state.userId = userId;
+      state.plan = premiumAccount.plan;
 
-        state.accountName =
-            premiumAccount.name;
+      state.authority = premiumAccount.authority;
 
-        state.plan =
-            premiumAccount.plan;
+      state.reason = "";
 
-        state.authority =
-            premiumAccount.authority;
+      console.log(
+        "PREMIUM ACCOUNT AUTHORIZED:",
 
-        state.reason = "";
+        {
+          userHash: hashValue(userId),
 
+          accountName: premiumAccount.name,
 
-        console.log(
+          plan: premiumAccount.plan,
 
-            "PREMIUM ACCOUNT AUTHORIZED:",
+          authority: premiumAccount.authority,
+        },
+      );
 
-            {
+      return {
+        ok: true,
 
-                userHash:
-                    hashValue(userId),
+        userId,
 
-                accountName:
-                    premiumAccount.name,
+        accountName: premiumAccount.name,
 
-                plan:
-                    premiumAccount.plan,
+        plan: premiumAccount.plan,
 
-                authority:
-                    premiumAccount.authority
+        authority: premiumAccount.authority,
 
-            }
-
-        );
-
-
-        return {
-
-            ok: true,
-
-            userId,
-
-            accountName:
-                premiumAccount.name,
-
-            plan:
-                premiumAccount.plan,
-
-            authority:
-                premiumAccount.authority,
-
-            reason: ""
-
-        };
-
+        reason: "",
+      };
     }
-
 
     // =============================================
     // FREE ACCESS
     // HANYA UNTUK ACCOUNT NON-PREMIUM
     // =============================================
 
-    if(isFreeActive()){
+    if (isFreeActive()) {
+      state.authorized = true;
 
-        state.authorized = true;
+      state.userId = userId;
 
-        state.userId = userId;
+      state.accountName = "FREE USER";
 
-        state.accountName = "FREE USER";
+      state.plan = "FREE_ACCESS";
 
-        state.plan =
-            "FREE_ACCESS";
+      state.authority = "STANDARD";
 
-        state.authority =
-            "STANDARD";
+      state.reason = "";
 
-        state.reason = "";
+      return {
+        ok: true,
 
+        userId,
 
-        return {
+        accountName: "FREE USER",
 
-            ok: true,
+        plan: "FREE_ACCESS",
 
-            userId,
+        authority: "STANDARD",
 
-            accountName:
-                "FREE USER",
-
-            plan:
-                "FREE_ACCESS",
-
-            authority:
-                "STANDARD",
-
-            reason: ""
-
-        };
-
+        reason: "",
+      };
     }
-
 
     // =============================================
     // FREE EXPIRED
@@ -793,253 +511,142 @@ console.table({
 
     state.accountName = "FREE USER";
 
-    state.plan =
-        "FREE_EXPIRED";
+    state.plan = "FREE_EXPIRED";
 
-    state.authority =
-        "NONE";
+    state.authority = "NONE";
 
-    state.reason =
-        "FREE_ACCESS_EXPIRED";
-
+    state.reason = "FREE_ACCESS_EXPIRED";
 
     return {
+      ok: false,
 
-        ok: false,
+      userId,
 
-        userId,
+      accountName: "FREE USER",
 
-        accountName:
-            "FREE USER",
+      plan: "FREE_EXPIRED",
 
-        plan:
-            "FREE_EXPIRED",
+      authority: "NONE",
 
-        authority:
-            "NONE",
-
-        reason:
-            "FREE_ACCESS_EXPIRED"
-
+      reason: "FREE_ACCESS_EXPIRED",
     };
+  }
+  // =====================================================
+  // ENGINE ACCESS CHECK
+  // =====================================================
 
-}
-    // =====================================================
-    // ENGINE ACCESS CHECK
-    // =====================================================
+  function assertEngineAccess() {
+    assertIntegrity();
 
-    function assertEngineAccess(){
-
-        assertIntegrity();
-
-
-        if(
-
-            !state.authorized ||
-
-            state.dead
-
-        ){
-
-            throw new Error(
-
-                "ENGINE_ACCESS_DENIED"
-
-            );
-
-        }
-
-
-        return true;
-
+    if (!state.authorized || state.dead) {
+      throw new Error("ENGINE_ACCESS_DENIED");
     }
 
+    return true;
+  }
 
-    // =====================================================
-    // PRINT ACCESS CHECK
-    // =====================================================
+  // =====================================================
+  // PRINT ACCESS CHECK
+  // =====================================================
 
-    function assertPrintAccess(){
+  function assertPrintAccess() {
+    return assertEngineAccess();
+  }
 
-        return assertEngineAccess();
+  // =====================================================
+  // START RUNTIME WATCH
+  // =====================================================
 
+  function boot() {
+    if (state.booted) {
+      return;
     }
 
+    if (!checkIntegrity()) {
+      kill("BOOT_INTEGRITY_FAILURE");
 
-    // =====================================================
-    // START RUNTIME WATCH
-    // =====================================================
-
-    function boot(){
-
-        if(state.booted){
-
-            return;
-
-        }
-
-
-        if(!checkIntegrity()){
-
-            kill(
-
-                "BOOT_INTEGRITY_FAILURE"
-
-            );
-
-            return;
-
-        }
-
-
-        state.booted = true;
-
-
-        integrityTimer =
-
-            setInterval(() => {
-
-                if(
-
-                    !checkIntegrity()
-
-                ){
-
-                    kill(
-
-                        "RUNTIME_INTEGRITY_FAILURE"
-
-                    );
-
-                }
-
-            }, 2500);
-
-
-        const observer =
-
-            new MutationObserver(() => {
-
-                clearTimeout(
-
-                    mutationTimer
-
-                );
-
-
-                mutationTimer =
-
-                    setTimeout(() => {
-
-                        if(
-
-                            !checkIntegrity()
-
-                        ){
-
-                            kill(
-
-                                "DOM_INTEGRITY_FAILURE"
-
-                            );
-
-                        }
-
-                    }, 100);
-
-            });
-
-
-        observer.observe(
-
-            document.documentElement,
-
-            {
-
-                childList: true,
-
-                subtree: true,
-
-                attributes: true
-
-            }
-
-        );
-
+      return;
     }
 
+    state.booted = true;
 
-    // =====================================================
-    // STATUS
-    // =====================================================
+    integrityTimer = setInterval(() => {
+      if (!checkIntegrity()) {
+        kill("RUNTIME_INTEGRITY_FAILURE");
+      }
+    }, 2500);
 
-    function getStatus(){
+    const observer = new MutationObserver(() => {
+      clearTimeout(mutationTimer);
 
-    const freeLimit =
-        getFreeLimit();
+      mutationTimer = setTimeout(() => {
+        if (!checkIntegrity()) {
+          kill("DOM_INTEGRITY_FAILURE");
+        }
+      }, 100);
+    });
 
+    observer.observe(
+      document.documentElement,
+
+      {
+        childList: true,
+
+        subtree: true,
+
+        attributes: true,
+      },
+    );
+  }
+
+  // =====================================================
+  // STATUS
+  // =====================================================
+
+  function getStatus() {
+    const freeLimit = getFreeLimit();
 
     return {
+      booted: state.booted,
 
-        booted:
-            state.booted,
+      dead: state.dead,
 
-        dead:
-            state.dead,
+      authorized: state.authorized,
 
-        authorized:
-            state.authorized,
+      userId: state.userId,
 
-        userId:
-            state.userId,
+      accountName: state.accountName,
 
-        accountName:
-            state.accountName,
+      plan: state.plan,
 
-        plan:
-            state.plan,
+      authority: state.authority,
 
-        authority:
-            state.authority,
+      reason: state.reason,
 
-        reason:
-            state.reason,
+      freeLimit: {
+        year: freeLimit.year,
 
-        freeLimit: {
+        month: freeLimit.month,
 
-            year:
-                freeLimit.year,
-
-            month:
-                freeLimit.month,
-
-            day:
-                freeLimit.day
-
-        }
-
+        day: freeLimit.day,
+      },
     };
+  }
+  // =====================================================
+  // PUBLIC API
+  // =====================================================
 
-}
-    // =====================================================
-    // PUBLIC API
-    // =====================================================
+  return {
+    boot,
 
-    return {
+    authorize,
 
-        boot,
+    assertIntegrity,
 
-        authorize,
+    assertEngineAccess,
 
-        assertIntegrity,
+    assertPrintAccess,
 
-        assertEngineAccess,
-
-        assertPrintAccess,
-
-        getStatus
-
-    };
-
+    getStatus,
+  };
 })();
-

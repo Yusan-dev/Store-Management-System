@@ -4,173 +4,113 @@
 // UNIVERSAL PRODUCT DIVISION
 // =====================================================
 
-
 // =====================================================
 // FORMAT NUMBER
 // =====================================================
 
-function formatNumber(value){
-
-    return Number(value || 0)
-        .toLocaleString("id-ID");
-
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("id-ID");
 }
 
-
-function money(value){
-
-    return Number(value || 0)
-        .toLocaleString("id-ID");
-
+function money(value) {
+  return Number(value || 0).toLocaleString("id-ID");
 }
 
 // =====================================================
 // KPI HELPERS
 // =====================================================
 
-function calculateUPT(row){
+function calculateUPT(row) {
+  const qty = Number(row?.qty || 0);
+  const sm = Number(row?.sm || 0);
 
-    const qty = Number(row?.qty || 0);
-    const sm = Number(row?.sm || 0);
+  if (sm <= 0) {
+    return 0;
+  }
 
-    if(sm <= 0){
-        return 0;
-    }
-
-    return qty / sm;
-
+  return qty / sm;
 }
 
+function calculateATV(row) {
+  const sales = Number(row?.sales || 0);
+  const sm = Number(row?.sm || 0);
 
-function calculateATV(row){
+  if (sm <= 0) {
+    return 0;
+  }
 
-    const sales = Number(row?.sales || 0);
-    const sm = Number(row?.sm || 0);
-
-    if(sm <= 0){
-        return 0;
-    }
-
-    return sales / sm;
-
+  return sales / sm;
 }
 
+function calculateAUR(row) {
+  const sales = Number(row?.sales || 0);
+  const qty = Number(row?.qty || 0);
 
-function calculateAUR(row){
+  if (qty <= 0) {
+    return 0;
+  }
 
-    const sales = Number(row?.sales || 0);
-    const qty = Number(row?.qty || 0);
-
-    if(qty <= 0){
-        return 0;
-    }
-
-    return sales / qty;
-
+  return sales / qty;
 }
-
 
 // =====================================================
 // CALCULATE ALL STAFF KPI
 // =====================================================
 
-function calculateStaffKPI(row){
+function calculateStaffKPI(row) {
+  return {
+    upt: calculateUPT(row),
 
-    return {
+    atv: calculateATV(row),
 
-        upt: calculateUPT(row),
-
-        atv: calculateATV(row),
-
-        aur: calculateAUR(row)
-
-    };
-
+    aur: calculateAUR(row),
+  };
 }
-
 
 // =====================================================
 // FORMAT DECIMAL
 // =====================================================
 
-function formatDecimal(value, digits = 2){
-
-    return Number(value || 0)
-        .toLocaleString(
-            "id-ID",
-            {
-                minimumFractionDigits: digits,
-                maximumFractionDigits: digits
-            }
-        );
-
+function formatDecimal(value, digits = 2) {
+  return Number(value || 0).toLocaleString("id-ID", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 // =====================================================
 // RANKING HELPERS
 // =====================================================
 
-function getTop3(data, getValue){
+function getTop3(data, getValue) {
+  return [...data]
 
-    return [...data]
+    .filter((row) => {
+      const value = Number(getValue(row) || 0);
 
-        .filter(row => {
+      return value > 0;
+    })
 
-            const value =
-                Number(getValue(row) || 0);
+    .sort((a, b) => {
+      return Number(getValue(b) || 0) - Number(getValue(a) || 0);
+    })
 
-            return value > 0;
-
-        })
-
-        .sort((a, b) => {
-
-            return (
-
-                Number(getValue(b) || 0)
-
-                -
-
-                Number(getValue(a) || 0)
-
-            );
-
-        })
-
-        .slice(0, 3);
-
+    .slice(0, 3);
 }
 
+function renderTop3Ranking(ranking, getValue, formatter) {
+  if (!Array.isArray(ranking) || ranking.length === 0) {
+    return "-";
+  }
 
-function renderTop3Ranking(
-    ranking,
-    getValue,
-    formatter
-){
+  const medals = ["🥇", "🥈", "🥉"];
 
-    if(!Array.isArray(ranking) || ranking.length === 0){
+  return ranking
 
-        return "-";
+    .map((row, index) => {
+      const value = getValue(row);
 
-    }
-
-
-    const medals = [
-        "🥇",
-        "🥈",
-        "🥉"
-    ];
-
-
-    return ranking
-
-        .map((row, index) => {
-
-            const value =
-                getValue(row);
-
-
-            return `
+      return `
 
                 <div class="rank-item">
 
@@ -197,11 +137,9 @@ function renderTop3Ranking(
                 </div>
 
             `;
+    })
 
-        })
-
-        .join("");
-
+    .join("");
 }
 
 // =====================================================
@@ -209,84 +147,49 @@ function renderTop3Ranking(
 // =====================================================
 
 const tableSortState = {
+  key: null,
 
-    key: null,
-
-    direction: "desc"
-
+  direction: "desc",
 };
-
 
 // =====================================================
 // NORMALIZE STAFF NAME
 // =====================================================
 
-function displayStaffName(name){
-
-    const normalizedName = String(
-        name ?? ""
-    )
+function displayStaffName(name) {
+  const normalizedName = String(name ?? "")
     .trim()
     .toUpperCase();
 
+  if (normalizedName === "") {
+    return "UNKNOWN";
+  }
 
-    if(normalizedName === ""){
-
-        return "UNKNOWN";
-
-    }
-
-
-    return normalizedName;
-
+  return normalizedName;
 }
-
 
 // =====================================================
 // GET ACTIVE DIVISIONS
 // =====================================================
 
-function getActiveDivisions(summary, divisions){
+function getActiveDivisions(summary, divisions) {
+  if (Array.isArray(divisions) && divisions.length > 0) {
+    return [...divisions];
+  }
 
-    if(
+  const divisionSet = new Set(["ACCESSORIES", "BAGS", "APPAREL", "FOOTWEAR"]);
 
-        Array.isArray(divisions) &&
+  if (Array.isArray(window.divisionData) && window.divisionData.length > 0) {
+    window.divisionData.forEach((d) => divisionSet.add(d));
+  }
 
-        divisions.length > 0
-
-    ){
-
-        return [...divisions];
-
-    }
-
-    const divisionSet = new Set(["ACCESSORIES", "BAGS", "APPAREL", "FOOTWEAR"]);
-
-    if(
-        Array.isArray(window.divisionData) &&
-        window.divisionData.length > 0
-    ){
-        window.divisionData.forEach(d => divisionSet.add(d));
-    }
-
-
-    (summary || []).forEach(row => {
-
-        Object.keys(
-
-            row.categories || {}
-
-        ).forEach(division => {
-
-            divisionSet.add(division);
-
-        });
-
+  (summary || []).forEach((row) => {
+    Object.keys(row.categories || {}).forEach((division) => {
+      divisionSet.add(division);
     });
+  });
 
-
-    return [...divisionSet];
-
+  return [...divisionSet];
 }
 
 // =====================================================
@@ -295,274 +198,154 @@ function getActiveDivisions(summary, divisions){
 
 let activePerformanceDateFilter = "";
 
-
 // =====================================================
 // CONVERT HTML DATE
 // YYYY-MM-DD => DD-MM-YYYY
 // =====================================================
 
-function convertHTMLDateToEngineDate(value){
+function convertHTMLDateToEngineDate(value) {
+  if (!value) {
+    return "";
+  }
 
-    if(!value){
-        return "";
-    }
+  const parts = String(value).split("-");
 
-    const parts =
-        String(value).split("-");
+  if (parts.length !== 3) {
+    return "";
+  }
 
-    if(parts.length !== 3){
-        return "";
-    }
+  const [year, month, day] = parts;
 
-    const [year, month, day] = parts;
-
-    return `${day}-${month}-${year}`;
-
+  return `${day}-${month}-${year}`;
 }
-
 
 // =====================================================
 // GET ACTIVE PERFORMANCE FILTER
 // =====================================================
 
-function getActivePerformanceDateFilter(){
-
-    return activePerformanceDateFilter;
-
+function getActivePerformanceDateFilter() {
+  return activePerformanceDateFilter;
 }
-
 
 // =====================================================
 // GET PERFORMANCE FILTER LABEL
 // =====================================================
 
-function getPerformanceFilterLabel(filter){
+function getPerformanceFilterLabel(filter) {
+  const normalized = GTEngine.normalizeDateFilter(filter);
 
-    const normalized =
-        GTEngine.normalizeDateFilter(filter);
+  if (normalized.mode === "ALL") {
+    return "ALL PERIOD";
+  }
 
+  if (normalized.mode === "SINGLE_DATE") {
+    return normalized.date;
+  }
 
-    if(normalized.mode === "ALL"){
-
-        return "ALL PERIOD";
-
-    }
-
-
-    if(normalized.mode === "SINGLE_DATE"){
-
-        return normalized.date;
-
-    }
-
-
-    return `${
-        normalized.from || "START"
-    } → ${
-        normalized.to || "END"
-    }`;
-
+  return `${normalized.from || "START"} → ${normalized.to || "END"}`;
 }
-
 
 // =====================================================
 // APPLY PERFORMANCE DATE FILTER
 // =====================================================
 
-function applyPerformanceDateFilter(filter = ""){
+function applyPerformanceDateFilter(filter = "") {
+  if (!Array.isArray(window.summaryData) || window.summaryData.length === 0) {
+    alert("PROCESS SOURCE FILE TERLEBIH DAHULU.");
 
-    if(
-        !Array.isArray(window.summaryData) ||
-        window.summaryData.length === 0
-    ){
+    return;
+  }
 
-        alert(
-            "PROCESS SOURCE FILE TERLEBIH DAHULU."
-        );
+  activePerformanceDateFilter = filter;
 
-        return;
+  const summary = GTEngine.generateSummary(activePerformanceDateFilter);
 
-    }
+  const divisions = getActiveDivisions(
+    summary,
 
+    [],
+  );
 
-    activePerformanceDateFilter =
-        filter;
+  window.summaryData = summary;
 
+  window.divisionData = divisions;
 
-    const summary =
+  drawTable(
+    summary,
 
-        GTEngine.generateSummary(
+    divisions,
+  );
 
-            activePerformanceDateFilter
+  updateSummary(
+    summary,
 
-        );
+    divisions,
+  );
 
+  updatePerformanceFilterUI();
 
-    const divisions =
+  console.log(
+    "PERFORMANCE FILTER APPLIED:",
 
-        getActiveDivisions(
+    {
+      filter: GTEngine.normalizeDateFilter(activePerformanceDateFilter),
 
-            summary,
+      summary,
 
-            []
-
-        );
-
-
-    window.summaryData =
-        summary;
-
-
-    window.divisionData =
-        divisions;
-
-
-    drawTable(
-
-        summary,
-
-        divisions
-
-    );
-
-
-    updateSummary(
-
-        summary,
-
-        divisions
-
-    );
-
-
-    updatePerformanceFilterUI();
-
-
-    console.log(
-
-        "PERFORMANCE FILTER APPLIED:",
-
-        {
-            filter:
-                GTEngine.normalizeDateFilter(
-                    activePerformanceDateFilter
-                ),
-
-            summary,
-
-            divisions
-        }
-
-    );
-
+      divisions,
+    },
+  );
 }
-
 
 // =====================================================
 // UPDATE PERFORMANCE FILTER UI
 // =====================================================
 
-function updatePerformanceFilterUI(){
+function updatePerformanceFilterUI() {
+  const statusElement = document.getElementById("performanceFilterStatus");
 
-    const statusElement =
-        document.getElementById(
-            "performanceFilterStatus"
-        );
+  const infoElement = document.getElementById("performanceFilterInfo");
 
+  const normalized = GTEngine.normalizeDateFilter(activePerformanceDateFilter);
 
-    const infoElement =
-        document.getElementById(
-            "performanceFilterInfo"
-        );
+  const label = getPerformanceFilterLabel(activePerformanceDateFilter);
 
+  if (statusElement) {
+    statusElement.innerText = label;
 
-    const normalized =
+    statusElement.dataset.mode = normalized.mode;
+  }
 
-        GTEngine.normalizeDateFilter(
-
-            activePerformanceDateFilter
-
-        );
-
-
-    const label =
-
-        getPerformanceFilterLabel(
-
-            activePerformanceDateFilter
-
-        );
-
-
-    if(statusElement){
-
-        statusElement.innerText =
-            label;
-
-        statusElement.dataset.mode =
-            normalized.mode;
-
+  if (infoElement) {
+    if (normalized.mode === "ALL") {
+      infoElement.innerText = "CURRENT SUMMARY • ALL AVAILABLE DATES";
+    } else if (normalized.mode === "SINGLE_DATE") {
+      infoElement.innerText = `CURRENT SUMMARY • ${normalized.date}`;
+    } else {
+      infoElement.innerText = `CURRENT SUMMARY • ${
+        normalized.from || "START"
+      } TO ${normalized.to || "END"}`;
     }
-
-
-    if(infoElement){
-
-        if(normalized.mode === "ALL"){
-
-            infoElement.innerText =
-                "CURRENT SUMMARY • ALL AVAILABLE DATES";
-
-        }
-
-        else if(normalized.mode === "SINGLE_DATE"){
-
-            infoElement.innerText =
-                `CURRENT SUMMARY • ${normalized.date}`;
-
-        }
-
-        else{
-
-            infoElement.innerText =
-                `CURRENT SUMMARY • ${
-                    normalized.from || "START"
-                } TO ${
-                    normalized.to || "END"
-                }`;
-
-        }
-
-    }
-
+  }
 }
-
 
 // =====================================================
 // PERFORMANCE DATE SELECT OPTIONS
 // ONLY DATES AVAILABLE FROM UPLOADED DATA
 // =====================================================
 
-function configurePerformanceDateLimits(){
+function configurePerformanceDateLimits() {
+  const fromInput = document.getElementById("performanceDateFrom");
 
-    const fromInput =
-        document.getElementById("performanceDateFrom");
+  const toInput = document.getElementById("performanceDateTo");
 
-    const toInput =
-        document.getElementById("performanceDateTo");
+  if (!fromInput || !toInput) {
+    return;
+  }
 
+  const availableDates = GTEngine.getAvailableDates();
 
-    if(!fromInput || !toInput){
-
-        return;
-
-    }
-
-
-    const availableDates =
-        GTEngine.getAvailableDates();
-
-
-    fromInput.innerHTML = `
+  fromInput.innerHTML = `
 
         <option value="">
             SELECT FROM DATE
@@ -570,8 +353,7 @@ function configurePerformanceDateLimits(){
 
     `;
 
-
-    toInput.innerHTML = `
+  toInput.innerHTML = `
 
         <option value="">
             SELECT TO DATE
@@ -579,81 +361,47 @@ function configurePerformanceDateLimits(){
 
     `;
 
+  if (!Array.isArray(availableDates) || availableDates.length === 0) {
+    fromInput.disabled = true;
 
-    if(
-        !Array.isArray(availableDates) ||
-        availableDates.length === 0
-    ){
+    toInput.disabled = true;
 
-        fromInput.disabled = true;
+    return;
+  }
 
-        toInput.disabled = true;
+  availableDates.forEach((date) => {
+    const inputDate = engineDateToInputDate(date);
 
-        return;
-
+    if (!inputDate) {
+      return;
     }
 
+    const fromOption = document.createElement("option");
 
-    availableDates.forEach(date => {
+    fromOption.value = inputDate;
 
-        const inputDate =
-            engineDateToInputDate(date);
+    fromOption.innerText = date;
 
+    fromInput.appendChild(fromOption);
 
-        if(!inputDate){
+    const toOption = document.createElement("option");
 
-            return;
+    toOption.value = inputDate;
 
-        }
+    toOption.innerText = date;
 
+    toInput.appendChild(toOption);
+  });
 
-        const fromOption =
-            document.createElement("option");
+  fromInput.disabled = false;
 
+  toInput.disabled = false;
 
-        fromOption.value =
-            inputDate;
+  console.log(
+    "PERFORMANCE AVAILABLE DATES:",
 
-        fromOption.innerText =
-            date;
-
-
-        fromInput.appendChild(
-            fromOption
-        );
-
-
-        const toOption =
-            document.createElement("option");
-
-
-        toOption.value =
-            inputDate;
-
-        toOption.innerText =
-            date;
-
-
-        toInput.appendChild(
-            toOption
-        );
-
-    });
-
-
-    fromInput.disabled = false;
-
-    toInput.disabled = false;
-
-
-    console.log(
-
-        "PERFORMANCE AVAILABLE DATES:",
-
-        availableDates
-
-    );
-
+    availableDates,
+  );
 }
 // =====================================================
 // ENGINE DATE -> HTML INPUT DATE
@@ -663,1472 +411,789 @@ function configurePerformanceDateLimits(){
 // 2026-07-01
 // =====================================================
 
-function engineDateToInputDate(value){
+function engineDateToInputDate(value) {
+  const match = String(value || "").match(/^(\d{2})-(\d{2})-(\d{4})$/);
 
-    const match =
-        String(value || "")
-            .match(
-                /^(\d{2})-(\d{2})-(\d{4})$/
-            );
+  if (!match) {
+    return "";
+  }
 
-
-    if(!match){
-
-        return "";
-
-    }
-
-
-    return (
-        match[3] +
-        "-" +
-        match[2] +
-        "-" +
-        match[1]
-    );
-
+  return match[3] + "-" + match[2] + "-" + match[1];
 }
 
 // =====================================================
 // INITIALIZE PERFORMANCE DATE RANGE UI
 // =====================================================
 
-function initializePerformanceDateRange(){
+function initializePerformanceDateRange() {
+  const fromInput = document.getElementById("performanceDateFrom");
 
-    const fromInput =
+  const toInput = document.getElementById("performanceDateTo");
 
-        document.getElementById(
+  const applyButton = document.getElementById("applyPerformanceDateRange");
 
-            "performanceDateFrom"
+  const resetButton = document.getElementById("resetPerformanceDateRange");
 
-        );
+  if (!fromInput || !toInput || !applyButton || !resetButton) {
+    console.warn("PERFORMANCE DATE RANGE UI NOT FOUND.");
 
+    return;
+  }
 
-    const toInput =
+  // =============================================
+  // PREVENT DUPLICATE EVENT REGISTRATION
+  // =============================================
 
-        document.getElementById(
+  if (applyButton.dataset.registered === "true") {
+    return;
+  }
 
-            "performanceDateTo"
+  // =============================================
+  // APPLY RANGE
+  // =============================================
 
-        );
+  applyButton.addEventListener(
+    "click",
 
+    () => {
+      const from = convertHTMLDateToEngineDate(fromInput.value);
 
-    const applyButton =
+      const to = convertHTMLDateToEngineDate(toInput.value);
 
-        document.getElementById(
+      // =====================================
+      // BOTH EMPTY
+      // =====================================
 
-            "applyPerformanceDateRange"
-
-        );
-
-
-    const resetButton =
-
-        document.getElementById(
-
-            "resetPerformanceDateRange"
-
-        );
-
-
-    if(
-
-        !fromInput ||
-
-        !toInput ||
-
-        !applyButton ||
-
-        !resetButton
-
-    ){
-
-        console.warn(
-
-            "PERFORMANCE DATE RANGE UI NOT FOUND."
-
-        );
+      if (!from && !to) {
+        alert("PILIH FROM DATE ATAU TO DATE.");
 
         return;
+      }
 
-    }
+      // =====================================
+      // SAME DATE
+      // SINGLE DATE FILTER
+      // =====================================
 
-
-    // =============================================
-    // PREVENT DUPLICATE EVENT REGISTRATION
-    // =============================================
-
-    if(
-
-        applyButton.dataset.registered ===
-
-        "true"
-
-    ){
+      if (from && to && from === to) {
+        applyPerformanceDateFilter(from);
 
         return;
+      }
 
-    }
+      // =====================================
+      // CUSTOM RANGE
+      // OPEN RANGE JUGA DIDUKUNG
+      // =====================================
 
+      applyPerformanceDateFilter({
+        from,
 
-    // =============================================
-    // APPLY RANGE
-    // =============================================
+        to,
+      });
+    },
+  );
 
-    applyButton.addEventListener(
+  // =============================================
+  // RESET
+  // =============================================
 
-        "click",
+  resetButton.addEventListener(
+    "click",
 
-        () => {
+    () => {
+      fromInput.value = "";
 
-            const from =
+      toInput.value = "";
 
-                convertHTMLDateToEngineDate(
+      applyPerformanceDateFilter("");
+    },
+  );
 
-                    fromInput.value
+  applyButton.dataset.registered = "true";
 
-                );
+  resetButton.dataset.registered = "true";
 
-
-            const to =
-
-                convertHTMLDateToEngineDate(
-
-                    toInput.value
-
-                );
-
-
-            // =====================================
-            // BOTH EMPTY
-            // =====================================
-
-            if(!from && !to){
-
-                alert(
-
-                    "PILIH FROM DATE ATAU TO DATE."
-
-                );
-
-                return;
-
-            }
-
-
-            // =====================================
-            // SAME DATE
-            // SINGLE DATE FILTER
-            // =====================================
-
-            if(
-
-                from &&
-
-                to &&
-
-                from === to
-
-            ){
-
-                applyPerformanceDateFilter(
-
-                    from
-
-                );
-
-                return;
-
-            }
-
-
-            // =====================================
-            // CUSTOM RANGE
-            // OPEN RANGE JUGA DIDUKUNG
-            // =====================================
-
-            applyPerformanceDateFilter({
-
-                from,
-
-                to
-
-            });
-
-        }
-
-    );
-
-
-    // =============================================
-    // RESET
-    // =============================================
-
-    resetButton.addEventListener(
-
-        "click",
-
-        () => {
-
-            fromInput.value = "";
-
-            toInput.value = "";
-
-
-            applyPerformanceDateFilter("");
-
-        }
-
-    );
-
-
-    applyButton.dataset.registered =
-        "true";
-
-
-    resetButton.dataset.registered =
-        "true";
-
-
-    updatePerformanceFilterUI();
-
+  updatePerformanceFilterUI();
 }
-
 
 // =====================================================
 // INITIALIZE AFTER DOM READY
 // =====================================================
 
 document.addEventListener(
+  "DOMContentLoaded",
 
-    "DOMContentLoaded",
-
-    initializePerformanceDateRange
-
+  initializePerformanceDateRange,
 );
 
 // =====================================================
 // UPDATE SUMMARY CARDS
 // =====================================================
 
-function updateSummary(summary, divisions){
+function updateSummary(summary, divisions) {
+  if (!Array.isArray(summary) || summary.length === 0) {
+    return;
+  }
 
-    if(
+  const total = summary.find((row) => row.staff === "TOTAL");
 
-        !Array.isArray(summary) ||
+  if (!total) {
+    return;
+  }
 
-        summary.length === 0
+  // O2O bukan staff store
 
-    ){
+  const staffOnly = summary.filter(
+    (row) =>
+      row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
+  );
+  document.getElementById("staffCount").innerText = staffOnly.length;
 
-        return;
+  document.getElementById("salesTotal").innerText = formatNumber(total.sales);
 
-    }
+  document.getElementById("smTotal").innerText = total.sm;
 
+  document.getElementById("qtyTotal").innerText = total.qty;
 
-    const total = summary.find(
+  const avgSales =
+    staffOnly.length > 0 ? Math.round(total.sales / staffOnly.length) : 0;
 
-        row => row.staff === "TOTAL"
+  document.getElementById("avgSales").innerText = formatNumber(avgSales);
 
-    );
+  const activeDivisions = getActiveDivisions(
+    summary,
 
+    divisions,
+  );
 
-    if(!total){
+  updateRanking(
+    summary,
 
-        return;
+    activeDivisions,
+  );
 
-    }
-
-
-    // O2O bukan staff store
-
-const staffOnly = summary.filter(row =>
-
-    row.staff !== "TOTAL" &&
-
-    row.staff !== "UNKNOWN" &&
-
-    row.staff !== "O2O"
-
-);
-    document
-        .getElementById("staffCount")
-        .innerText = staffOnly.length;
-
-
-    document
-        .getElementById("salesTotal")
-        .innerText = formatNumber(total.sales);
-
-
-    document
-        .getElementById("smTotal")
-        .innerText = total.sm;
-
-
-    document
-        .getElementById("qtyTotal")
-        .innerText = total.qty;
-
-
-    const avgSales =
-
-        staffOnly.length > 0
-
-        ? Math.round(
-
-            total.sales /
-
-            staffOnly.length
-
-        )
-
-        : 0;
-
-
-    document
-        .getElementById("avgSales")
-        .innerText = formatNumber(avgSales);
-
-
-    const activeDivisions =
-
-        getActiveDivisions(
-
-            summary,
-
-            divisions
-
-        );
-
-
-    updateRanking(
-
-        summary,
-
-        activeDivisions
-
-    );
-
-
-    updateValidation();
-
+  updateValidation();
 }
-
 
 // =====================================================
 // DRAW TABLE HEADER
 // =====================================================
 
-function drawTableHeader(divisions){
+function drawTableHeader(divisions) {
+  const thead = document.getElementById("tableHead");
 
-    const thead =
+  if (!thead) {
+    console.error("tableHead tidak ditemukan.");
 
-        document.getElementById("tableHead");
+    return;
+  }
 
+  thead.innerHTML = "";
 
-    if(!thead){
+  const tr = document.createElement("tr");
 
-        console.error(
+  // ==========================
+  // STATIC COLUMNS
+  // ==========================
 
-            "tableHead tidak ditemukan."
-
-        );
-
-        return;
-
-    }
-
-
-    thead.innerHTML = "";
-
-
-    const tr =
-
-        document.createElement("tr");
-
-
-    // ==========================
-    // STATIC COLUMNS
-    // ==========================
-
-    const staticColumns = [
-
+  const staticColumns = [
     {
-        key: "staff",
-        label: "STAFF"
+      key: "staff",
+      label: "STAFF",
     },
 
     {
-        key: "sales",
-        label: "SALES"
+      key: "sales",
+      label: "SALES",
     },
 
     {
-        key: "sm",
-        label: "SM"
+      key: "sm",
+      label: "SM",
     },
 
     {
-        key: "qty",
-        label: "QTY"
+      key: "qty",
+      label: "QTY",
     },
 
     {
-        key: "upt",
-        label: "UPT"
+      key: "upt",
+      label: "UPT",
     },
 
     {
-        key: "atv",
-        label: "ATV"
+      key: "atv",
+      label: "ATV",
     },
 
     {
-        key: "aur",
-        label: "AUR"
-    }
+      key: "aur",
+      label: "AUR",
+    },
+  ];
 
-];
+  staticColumns.forEach((column) => {
+    const th = document.createElement("th");
 
-    staticColumns.forEach(column => {
+    th.innerText = column.label;
 
-        const th =
+    th.dataset.sortKey = column.key;
 
-            document.createElement("th");
+    th.style.cursor = "pointer";
 
+    th.addEventListener(
+      "click",
 
-        th.innerText = column.label;
+      () => {
+        sortTable(column.key);
+      },
+    );
 
-        th.dataset.sortKey = column.key;
+    tr.appendChild(th);
+  });
 
-        th.style.cursor = "pointer";
+  // ==========================
+  // DYNAMIC DIVISIONS
+  // ==========================
 
+  divisions.forEach((division) => {
+    const th = document.createElement("th");
 
-        th.addEventListener(
+    th.innerText = division;
 
-            "click",
+    th.dataset.sortKey = division;
 
-            () => {
+    th.style.cursor = "pointer";
 
-                sortTable(column.key);
+    th.addEventListener(
+      "click",
 
-            }
+      () => {
+        sortTable(division);
+      },
+    );
 
-        );
+    tr.appendChild(th);
+  });
 
-
-        tr.appendChild(th);
-
-    });
-
-
-    // ==========================
-    // DYNAMIC DIVISIONS
-    // ==========================
-
-    divisions.forEach(division => {
-
-        const th =
-
-            document.createElement("th");
-
-
-        th.innerText = division;
-
-        th.dataset.sortKey = division;
-
-        th.style.cursor = "pointer";
-
-
-        th.addEventListener(
-
-            "click",
-
-            () => {
-
-                sortTable(division);
-
-            }
-
-        );
-
-
-        tr.appendChild(th);
-
-    });
-
-
-    thead.appendChild(tr);
-
+  thead.appendChild(tr);
 }
-
 
 // =====================================================
 // DRAW TABLE
 // =====================================================
 
-function drawTable(summary, divisions){
+function drawTable(summary, divisions) {
+  if (!Array.isArray(summary)) {
+    return;
+  }
 
-    if(!Array.isArray(summary)){
+  const activeDivisions = getActiveDivisions(
+    summary,
 
-        return;
+    divisions,
+  );
 
+  drawTableHeader(activeDivisions);
+
+  const tbody = document.getElementById("tableBody");
+
+  if (!tbody) {
+    console.error("tableBody tidak ditemukan.");
+
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  summary.forEach((row) => {
+    const tr = document.createElement("tr");
+
+    if (row.staff === "TOTAL") {
+      tr.classList.add("total-row");
     }
 
+    // ==========================
+    // STAFF
+    // ==========================
 
-    const activeDivisions =
+    const staffCell = document.createElement("td");
 
-        getActiveDivisions(
+    const staffName = displayStaffName(row.staff);
 
-            summary,
+    staffCell.innerText = staffName;
 
-            divisions
+    staffCell.style.fontWeight = "700";
 
-        );
+    if (
+      row.staff !== "TOTAL" &&
+      row.staff !== "UNKNOWN" &&
+      row.staff !== "O2O"
+    ) {
+      staffCell.style.cursor = "pointer";
 
+      staffCell.style.color = "#2563eb";
 
-    drawTableHeader(activeDivisions);
-
-
-    const tbody =
-
-        document.getElementById("tableBody");
-
-
-    if(!tbody){
-
-        console.error(
-
-            "tableBody tidak ditemukan."
-
-        );
-
-        return;
-
+      staffCell.onclick = () => {
+        if (typeof openStaffDetail === "function") {
+          openStaffDetail(staffName);
+        }
+      };
     }
 
+    tr.appendChild(staffCell);
 
-    tbody.innerHTML = "";
+    // ==========================
+    // SALES
+    // ==========================
 
+    const salesCell = document.createElement("td");
 
-    summary.forEach(row => {
+    salesCell.innerText = money(row.sales);
 
-        const tr =
+    tr.appendChild(salesCell);
 
-            document.createElement("tr");
+    // ==========================
+    // SM
+    // ==========================
 
+    const smCell = document.createElement("td");
 
-        if(row.staff === "TOTAL"){
+    smCell.innerText = row.sm || 0;
 
-            tr.classList.add(
+    tr.appendChild(smCell);
 
-                "total-row"
+    // ==========================
+    // QTY
+    // ==========================
 
-            );
+    const qtyCell = document.createElement("td");
 
-        }
+    qtyCell.innerText = row.qty || 0;
 
+    tr.appendChild(qtyCell);
 
-        // ==========================
-        // STAFF
-        // ==========================
+    // ==========================
+    // UPT
+    // ==========================
 
-        const staffCell =
+    const uptCell = document.createElement("td");
 
-            document.createElement("td");
+    uptCell.innerText = formatDecimal(calculateUPT(row), 2);
 
+    tr.appendChild(uptCell);
 
-        const staffName =
+    // ==========================
+    // ATV
+    // ==========================
 
-            displayStaffName(
+    const atvCell = document.createElement("td");
 
-                row.staff
+    atvCell.innerText = money(Math.round(calculateATV(row)));
 
-            );
+    tr.appendChild(atvCell);
 
+    // ==========================
+    // AUR
+    // ==========================
 
-        staffCell.innerText = staffName;
+    const aurCell = document.createElement("td");
 
-        staffCell.style.fontWeight = "700";
+    aurCell.innerText = money(Math.round(calculateAUR(row)));
 
+    tr.appendChild(aurCell);
 
-        if(
-    row.staff !== "TOTAL" &&
-    row.staff !== "UNKNOWN" &&
-    row.staff !== "O2O"
-){
+    // ==========================
+    // DYNAMIC DIVISIONS
+    // ==========================
 
-            staffCell.style.cursor = "pointer";
+    activeDivisions.forEach((division) => {
+      const td = document.createElement("td");
 
-            staffCell.style.color = "#2563eb";
+      td.innerText = row.categories?.[division] || 0;
 
-
-            staffCell.onclick = () => {
-
-                if(
-
-                    typeof openStaffDetail ===
-
-                    "function"
-
-                ){
-
-                    openStaffDetail(
-
-                        staffName
-
-                    );
-
-                }
-
-            };
-
-        }
-
-
-        tr.appendChild(staffCell);
-
-
-        // ==========================
-        // SALES
-        // ==========================
-
-        const salesCell =
-
-            document.createElement("td");
-
-
-        salesCell.innerText =
-
-            money(row.sales);
-
-
-        tr.appendChild(salesCell);
-
-
-        // ==========================
-        // SM
-        // ==========================
-
-        const smCell =
-
-            document.createElement("td");
-
-
-        smCell.innerText =
-
-            row.sm || 0;
-
-
-        tr.appendChild(smCell);
-
-
-        // ==========================
-        // QTY
-        // ==========================
-
-        const qtyCell =
-
-            document.createElement("td");
-
-
-        qtyCell.innerText =
-
-            row.qty || 0;
-
-
-        tr.appendChild(qtyCell);
-
-// ==========================
-// UPT
-// ==========================
-
-const uptCell =
-    document.createElement("td");
-
-
-uptCell.innerText =
-    formatDecimal(
-        calculateUPT(row),
-        2
-    );
-
-
-tr.appendChild(uptCell);
-
-
-// ==========================
-// ATV
-// ==========================
-
-const atvCell =
-    document.createElement("td");
-
-
-atvCell.innerText =
-    money(
-        Math.round(
-            calculateATV(row)
-        )
-    );
-
-
-tr.appendChild(atvCell);
-
-
-// ==========================
-// AUR
-// ==========================
-
-const aurCell =
-    document.createElement("td");
-
-
-aurCell.innerText =
-    money(
-        Math.round(
-            calculateAUR(row)
-        )
-    );
-
-
-tr.appendChild(aurCell);
-
-
-        // ==========================
-        // DYNAMIC DIVISIONS
-        // ==========================
-
-        activeDivisions.forEach(
-
-            division => {
-
-                const td =
-
-                    document.createElement("td");
-
-
-                td.innerText =
-
-                    row.categories?.[division] || 0;
-
-
-                tr.appendChild(td);
-
-            }
-
-        );
-
-
-        tbody.appendChild(tr);
-
+      tr.appendChild(td);
     });
 
+    tbody.appendChild(tr);
+  });
 }
-
 
 // =====================================================
 // UNIVERSAL TABLE SORT
 // =====================================================
 
-function sortTable(key){
+function sortTable(key) {
+  const summary = window.summaryData;
 
-    const summary =
+  if (!Array.isArray(summary) || summary.length === 0) {
+    console.warn("SUMMARY DATA TIDAK TERSEDIA");
 
-        window.summaryData;
+    return;
+  }
 
+  // ==========================
+  // SORT DIRECTION
+  // ==========================
 
-    if(
+  if (tableSortState.key === key) {
+    tableSortState.direction =
+      tableSortState.direction === "desc" ? "asc" : "desc";
+  } else {
+    tableSortState.key = key;
 
-        !Array.isArray(summary) ||
+    tableSortState.direction = key === "staff" ? "asc" : "desc";
+  }
 
-        summary.length === 0
+  // ==========================
+  // TOTAL SELALU DI BAWAH
+  // ==========================
 
-    ){
+  const totalRow = summary.find((row) => row.staff === "TOTAL");
 
-        console.warn(
+  const rows = summary.filter((row) => row.staff !== "TOTAL");
 
-            "SUMMARY DATA TIDAK TERSEDIA"
+  const divisions = getActiveDivisions(
+    summary,
 
-        );
+    window.divisionData,
+  );
 
-        return;
+  const isDivision = divisions.includes(key);
 
+  // ==========================
+  // GET SORT VALUE
+  // ==========================
+
+  function getSortValue(row) {
+    if (isDivision) {
+      return Number(row.categories?.[key] || 0);
     }
 
-
-    // ==========================
-    // SORT DIRECTION
-    // ==========================
-
-    if(tableSortState.key === key){
-
-        tableSortState.direction =
-
-            tableSortState.direction === "desc"
-
-            ? "asc"
-
-            : "desc";
-
+    if (key === "staff") {
+      return displayStaffName(row.staff);
     }
 
-    else{
-
-        tableSortState.key = key;
-
-
-        tableSortState.direction =
-
-            key === "staff"
-
-            ? "asc"
-
-            : "desc";
-
+    if (key === "upt") {
+      return calculateUPT(row);
     }
 
-
-    // ==========================
-    // TOTAL SELALU DI BAWAH
-    // ==========================
-
-    const totalRow =
-
-        summary.find(
-
-            row => row.staff === "TOTAL"
-
-        );
-
-
-    const rows =
-
-        summary.filter(
-
-            row => row.staff !== "TOTAL"
-
-        );
-
-
-    const divisions =
-
-        getActiveDivisions(
-
-            summary,
-
-            window.divisionData
-
-        );
-
-
-    const isDivision =
-
-        divisions.includes(key);
-
-
-    // ==========================
-    // GET SORT VALUE
-    // ==========================
-
-    function getSortValue(row){
-
-    if(isDivision){
-
-        return Number(
-            row.categories?.[key] || 0
-        );
-
+    if (key === "atv") {
+      return calculateATV(row);
     }
 
-
-    if(key === "staff"){
-
-        return displayStaffName(
-            row.staff
-        );
-
+    if (key === "aur") {
+      return calculateAUR(row);
     }
 
+    return Number(row[key] || 0);
+  }
 
-    if(key === "upt"){
+  // ==========================
+  // SORT
+  // ==========================
 
-        return calculateUPT(row);
+  rows.sort((a, b) => {
+    const valueA = getSortValue(a);
 
-    }
+    const valueB = getSortValue(b);
 
+    let comparison = 0;
 
-    if(key === "atv"){
+    if (key === "staff") {
+      comparison = String(valueA).localeCompare(
+        String(valueB),
 
-        return calculateATV(row);
-
-    }
-
-
-    if(key === "aur"){
-
-        return calculateAUR(row);
-
-    }
-
-
-    return Number(
-        row[key] || 0
-    );
-
-}
-
-
-    // ==========================
-    // SORT
-    // ==========================
-
-    rows.sort((a,b) => {
-
-        const valueA =
-
-            getSortValue(a);
-
-
-        const valueB =
-
-            getSortValue(b);
-
-
-        let comparison = 0;
-
-
-        if(key === "staff"){
-
-            comparison =
-
-                String(valueA)
-
-                .localeCompare(
-
-                    String(valueB),
-
-                    "id",
-
-                    {
-
-                        sensitivity: "base"
-
-                    }
-
-                );
-
-        }
-
-        else{
-
-            comparison =
-
-                valueA - valueB;
-
-        }
-
-
-        return (
-
-            tableSortState.direction === "asc"
-
-            ? comparison
-
-            : -comparison
-
-        );
-
-    });
-
-
-    const sortedSummary =
-
-        totalRow
-
-        ? [
-
-            ...rows,
-
-            totalRow
-
-        ]
-
-        : rows;
-
-
-    window.summaryData =
-
-        sortedSummary;
-
-
-    drawTable(
-
-        sortedSummary,
-
-        divisions
-
-    );
-
-
-    console.log(
-
-        "SORT SUCCESS:",
+        "id",
 
         {
+          sensitivity: "base",
+        },
+      );
+    } else {
+      comparison = valueA - valueB;
+    }
 
-            key,
+    return tableSortState.direction === "asc" ? comparison : -comparison;
+  });
 
-            direction:
-                tableSortState.direction,
+  const sortedSummary = totalRow ? [...rows, totalRow] : rows;
 
-            isDivision
+  window.summaryData = sortedSummary;
 
-        }
+  drawTable(
+    sortedSummary,
 
-    );
+    divisions,
+  );
 
+  console.log(
+    "SORT SUCCESS:",
+
+    {
+      key,
+
+      direction: tableSortState.direction,
+
+      isDivision,
+    },
+  );
 }
-
 
 // =====================================================
 // UPDATE RANKING
 // TOP 3 STAFF RANKING CONTROLLER
 // =====================================================
 
-function updateRanking(summary, divisions){
+function updateRanking(summary, divisions) {
+  if (!Array.isArray(summary)) {
+    return;
+  }
 
-    if(!Array.isArray(summary)){
+  const data = summary
 
-        return;
+    .filter(
+      (row) =>
+        row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
+    )
 
-    }
+    .map((row) => {
+      return {
+        ...row,
 
+        staff: displayStaffName(row.staff),
 
-    const data = summary
+        ...calculateStaffKPI(row),
+      };
+    });
 
-        .filter(row =>
+  // =================================================
+  // TOP 3 SALES
+  // =================================================
 
-            row.staff !== "TOTAL" &&
+  const topSalesElement = document.getElementById("topSales");
 
-            row.staff !== "UNKNOWN" &&
+  if (topSalesElement) {
+    const ranking = getTop3(
+      data,
 
-            row.staff !== "O2O"
-
-        )
-
-        .map(row => {
-
-            return {
-
-                ...row,
-
-                staff:
-                    displayStaffName(row.staff),
-
-                ...calculateStaffKPI(row)
-
-            };
-
-        });
-
-
-    // =================================================
-    // TOP 3 SALES
-    // =================================================
-
-    const topSalesElement =
-        document.getElementById("topSales");
-
-
-    if(topSalesElement){
-
-        const ranking =
-
-            getTop3(
-
-                data,
-
-                row =>
-                    Number(row.sales || 0)
-
-            );
-
-
-        topSalesElement.classList.add("rank-list");
-
-
-        topSalesElement.innerHTML =
-
-            renderTop3Ranking(
-
-                ranking,
-
-                row =>
-                    row.sales,
-
-                value =>
-                    `Rp ${money(value)}`
-
-            );
-
-    }
-
-
-    // =================================================
-    // TOP 3 QTY
-    // =================================================
-
-    const topQtyElement =
-        document.getElementById("topQty");
-
-
-    if(topQtyElement){
-
-        const ranking =
-
-            getTop3(
-
-                data,
-
-                row =>
-                    Number(row.qty || 0)
-
-            );
-
-
-        topQtyElement.classList.add("rank-list");
-
-
-        topQtyElement.innerHTML =
-
-            renderTop3Ranking(
-
-                ranking,
-
-                row =>
-                    row.qty,
-
-                value =>
-                    formatNumber(value)
-
-            );
-
-    }
-
-
-    // =================================================
-    // REMOVE ALL DYNAMIC RANKING CARDS
-    //
-    // SATU CONTROLLER YANG MEMBERSIHKAN CARD
-    // AGAR TIDAK DUPLIKASI SAAT PROCESS ULANG
-    // =================================================
-
-    const rankingContainer =
-        document.querySelector(".ranking");
-
-
-    if(rankingContainer){
-
-        rankingContainer
-
-            .querySelectorAll(
-                ".dynamic-kpi-rank, .dynamic-division-rank"
-            )
-
-            .forEach(card => {
-
-                card.remove();
-
-            });
-
-    }
-
-
-    // =================================================
-    // RENDER ORDER
-    //
-    // TOP SALES
-    // TOP QTY
-    // TOP UPT
-    // TOP ATV
-    // TOP AUR
-    // PRODUCT DIVISIONS
-    // =================================================
-
-    drawKPIRankings(data);
-
-    drawDivisionRankings(
-        data,
-        divisions
+      (row) => Number(row.sales || 0),
     );
 
+    topSalesElement.classList.add("rank-list");
+
+    topSalesElement.innerHTML = renderTop3Ranking(
+      ranking,
+
+      (row) => row.sales,
+
+      (value) => `Rp ${money(value)}`,
+    );
+  }
+
+  // =================================================
+  // TOP 3 QTY
+  // =================================================
+
+  const topQtyElement = document.getElementById("topQty");
+
+  if (topQtyElement) {
+    const ranking = getTop3(
+      data,
+
+      (row) => Number(row.qty || 0),
+    );
+
+    topQtyElement.classList.add("rank-list");
+
+    topQtyElement.innerHTML = renderTop3Ranking(
+      ranking,
+
+      (row) => row.qty,
+
+      (value) => formatNumber(value),
+    );
+  }
+
+  // =================================================
+  // REMOVE ALL DYNAMIC RANKING CARDS
+  //
+  // SATU CONTROLLER YANG MEMBERSIHKAN CARD
+  // AGAR TIDAK DUPLIKASI SAAT PROCESS ULANG
+  // =================================================
+
+  const rankingContainer = document.querySelector(".ranking");
+
+  if (rankingContainer) {
+    rankingContainer
+
+      .querySelectorAll(".dynamic-kpi-rank, .dynamic-division-rank")
+
+      .forEach((card) => {
+        card.remove();
+      });
+  }
+
+  // =================================================
+  // RENDER ORDER
+  //
+  // TOP SALES
+  // TOP QTY
+  // TOP UPT
+  // TOP ATV
+  // TOP AUR
+  // PRODUCT DIVISIONS
+  // =================================================
+
+  drawKPIRankings(data);
+
+  drawDivisionRankings(data, divisions);
 }
-
-
 
 // =====================================================
 // DRAW KPI RANKINGS
 // TOP 3 UPT / ATV / AUR
 // =====================================================
 
-function drawKPIRankings(data){
+function drawKPIRankings(data) {
+  const rankingContainer = document.querySelector(".ranking");
 
-    const rankingContainer =
-        document.querySelector(".ranking");
+  if (!rankingContainer) {
+    return;
+  }
 
+  const kpiConfig = [
+    {
+      key: "upt",
 
-    if(!rankingContainer){
+      title: "📈 TOP UPT",
 
-        return;
+      formatter: (value) => formatDecimal(value, 2),
+    },
 
-    }
+    {
+      key: "atv",
 
+      title: "💳 TOP ATV",
 
-    const kpiConfig = [
+      formatter: (value) => `Rp ${money(Math.round(value))}`,
+    },
 
-        {
+    {
+      key: "aur",
 
-            key: "upt",
+      title: "🏷️ TOP AUR",
 
-            title: "📈 TOP UPT",
+      formatter: (value) => `Rp ${money(Math.round(value))}`,
+    },
+  ];
 
-            formatter: value =>
-                formatDecimal(value, 2)
+  kpiConfig.forEach((config) => {
+    const ranking = getTop3(
+      data,
 
-        },
+      (row) => Number(row[config.key] || 0),
+    );
 
-        {
+    const card = document.createElement("div");
 
-            key: "atv",
+    card.className = "rank-card dynamic-kpi-rank";
 
-            title: "💳 TOP ATV",
+    const title = document.createElement("h3");
 
-            formatter: value =>
-                `Rp ${money(
-                    Math.round(value)
-                )}`
+    title.innerText = config.title;
 
-        },
+    const content = document.createElement("div");
 
-        {
+    content.className = "rank-list";
 
-            key: "aur",
+    content.innerHTML = renderTop3Ranking(
+      ranking,
 
-            title: "🏷️ TOP AUR",
+      (row) => row[config.key],
 
-            formatter: value =>
-                `Rp ${money(
-                    Math.round(value)
-                )}`
+      config.formatter,
+    );
 
-        }
+    card.appendChild(title);
 
-    ];
+    card.appendChild(content);
 
-
-    kpiConfig.forEach(config => {
-
-        const ranking =
-
-            getTop3(
-
-                data,
-
-                row =>
-                    Number(
-                        row[config.key] || 0
-                    )
-
-            );
-
-
-        const card =
-            document.createElement("div");
-
-
-        card.className =
-            "rank-card dynamic-kpi-rank";
-
-
-        const title =
-            document.createElement("h3");
-
-
-        title.innerText =
-            config.title;
-
-
-        const content =
-            document.createElement("div");
-
-
-        content.className =
-            "rank-list";
-
-
-        content.innerHTML =
-
-            renderTop3Ranking(
-
-                ranking,
-
-                row =>
-                    row[config.key],
-
-                config.formatter
-
-            );
-
-
-        card.appendChild(title);
-
-        card.appendChild(content);
-
-
-        rankingContainer.appendChild(card);
-
-    });
-
+    rankingContainer.appendChild(card);
+  });
 }
-
-
 
 // =====================================================
 // DRAW DYNAMIC DIVISION RANKINGS
 // TOP 3 STAFF PER PRODUCT DIVISION
 // =====================================================
 
-function drawDivisionRankings(data, divisions){
+function drawDivisionRankings(data, divisions) {
+  const rankingContainer = document.querySelector(".ranking");
 
-    const rankingContainer =
-        document.querySelector(".ranking");
+  if (!rankingContainer) {
+    return;
+  }
 
+  // =================================================
+  // HIDE OLD STATIC TOP FOOTWEAR CARD
+  // =================================================
 
-    if(!rankingContainer){
+  const oldTopFw = document.getElementById("topFw");
 
-        return;
+  if (oldTopFw) {
+    const oldCard = oldTopFw.closest(".rank-card");
 
+    if (oldCard) {
+      oldCard.style.display = "none";
     }
+  }
 
+  // =================================================
+  // SAFE DIVISION ARRAY
+  // =================================================
 
-    // =================================================
-    // HIDE OLD STATIC TOP FOOTWEAR CARD
-    // =================================================
+  const activeDivisions = Array.isArray(divisions) ? divisions : [];
 
-    const oldTopFw =
-        document.getElementById("topFw");
+  // =================================================
+  // CREATE TOP 3 PER DIVISION
+  // =================================================
 
+  activeDivisions.forEach((division) => {
+    const ranking = getTop3(
+      data,
 
-    if(oldTopFw){
+      (row) => Number(row.categories?.[division] || 0),
+    );
 
-        const oldCard =
-            oldTopFw.closest(".rank-card");
+    const card = document.createElement("div");
 
+    card.className = "rank-card dynamic-division-rank";
 
-        if(oldCard){
+    const title = document.createElement("h3");
 
-            oldCard.style.display = "none";
+    title.innerText = `TOP ${division}`;
 
-        }
+    const content = document.createElement("div");
 
-    }
+    content.className = "rank-list";
 
+    content.innerHTML = renderTop3Ranking(
+      ranking,
 
-    // =================================================
-    // SAFE DIVISION ARRAY
-    // =================================================
+      (row) => Number(row.categories?.[division] || 0),
 
-    const activeDivisions =
+      (value) => formatNumber(value),
+    );
 
-        Array.isArray(divisions)
+    card.appendChild(title);
 
-            ? divisions
+    card.appendChild(content);
 
-            : [];
-
-
-    // =================================================
-    // CREATE TOP 3 PER DIVISION
-    // =================================================
-
-    activeDivisions.forEach(division => {
-
-        const ranking =
-
-            getTop3(
-
-                data,
-
-                row =>
-
-                    Number(
-
-                        row.categories?.[division]
-
-                        || 0
-
-                    )
-
-            );
-
-
-        const card =
-            document.createElement("div");
-
-
-        card.className =
-            "rank-card dynamic-division-rank";
-
-
-        const title =
-            document.createElement("h3");
-
-
-        title.innerText =
-            `TOP ${division}`;
-
-
-        const content =
-            document.createElement("div");
-
-
-        content.className =
-            "rank-list";
-
-
-        content.innerHTML =
-
-            renderTop3Ranking(
-
-                ranking,
-
-                row =>
-
-                    Number(
-
-                        row.categories?.[division]
-
-                        || 0
-
-                    ),
-
-                value =>
-                    formatNumber(value)
-
-            );
-
-
-        card.appendChild(title);
-
-        card.appendChild(content);
-
-
-        rankingContainer.appendChild(card);
-
-    });
-
+    rankingContainer.appendChild(card);
+  });
 }
 // =====================================================
 // VALIDATION
@@ -2139,257 +1204,154 @@ function drawDivisionRankings(data, divisions){
 // ENGINE BUSINESS RULE RENDERER
 // =====================================================
 
-function updateValidation(){
+function updateValidation() {
+  const v = GTEngine.getValidation(getActivePerformanceDateFilter());
 
-    const v = GTEngine.getValidation(
+  // ============================================
+  // ELEMENTS
+  // ============================================
+
+  const dailyCashElement = document.getElementById("valDailySM");
 
-    getActivePerformanceDateFilter()
+  const staffSMElement = document.getElementById("valStaffSM");
+
+  const diffElement = document.getElementById("valSMDiff");
 
-);
+  const statusElement = document.getElementById("valSMStatus");
 
+  const reasonElement = document.getElementById("valReason");
 
-    // ============================================
-    // ELEMENTS
-    // ============================================
+  // ============================================
+  // BASIC VALUES
+  // ============================================
 
-    const dailyCashElement =
-        document.getElementById("valDailySM");
+  if (dailyCashElement) {
+    dailyCashElement.innerText = v.dailyCashSM;
+  }
 
-    const staffSMElement =
-        document.getElementById("valStaffSM");
+  if (staffSMElement) {
+    staffSMElement.innerText = v.staffSM;
+  }
 
-    const diffElement =
-        document.getElementById("valSMDiff");
+  if (diffElement) {
+    diffElement.innerText =
+      v.difference > 0 ? `+${v.difference}` : String(v.difference);
+  }
 
-    const statusElement =
-        document.getElementById("valSMStatus");
+  // ============================================
+  // CLASSIFY SHARED INVOICES
+  //
+  // VALID SHARED:
+  // STAFF A + STAFF B
+  //
+  // ATTRIBUTION ANOMALY:
+  // UNKNOWN + STAFF
+  // ============================================
 
-    const reasonElement =
-        document.getElementById("valReason");
+  const validShared = v.shared.filter(
+    (item) => !item.staffs.includes("UNKNOWN"),
+  );
 
+  const attributionAnomalies = v.shared.filter((item) =>
+    item.staffs.includes("UNKNOWN"),
+  );
 
-    // ============================================
-    // BASIC VALUES
-    // ============================================
+  // ============================================
+  // VALID SHARED EXTRA ATTRIBUTION
+  // ============================================
 
-    if(dailyCashElement){
+  const validSharedExtra = validShared.reduce(
+    (sum, item) =>
+      sum +
+      Math.max(
+        0,
 
-        dailyCashElement.innerText =
-            v.dailyCashSM;
+        item.staffs.length - 1,
+      ),
 
-    }
+    0,
+  );
 
+  // ============================================
+  // UNKNOWN EXTRA ATTRIBUTION
+  //
+  // UNKNOWN + STAFF PADA INVOICE SAMA
+  // JUGA MENAMBAH STAFF SM SEBESAR +1
+  // ============================================
 
-    if(staffSMElement){
+  const unknownExtraAttribution = attributionAnomalies.reduce(
+    (sum, item) =>
+      sum +
+      Math.max(
+        0,
 
-        staffSMElement.innerText =
-            v.staffSM;
+        item.staffs.length - 1,
+      ),
 
-    }
+    0,
+  );
 
+  // ============================================
+  // EXPECTED STAFF SM
+  // ============================================
 
-    if(diffElement){
+  const expectedStaffSM =
+    v.dailyCashSM + validSharedExtra + unknownExtraAttribution;
 
-        diffElement.innerText =
+  const staffAttributionMatch = v.staffSM === expectedStaffSM;
 
-            v.difference > 0
+  // ============================================
+  // CORE RECONCILIATION
+  // ============================================
 
-                ? `+${v.difference}`
+  const coreValid =
+    v.salesMatch &&
+    v.qtyMatch &&
+    v.smMatch &&
+    v.grossReconciliation &&
+    staffAttributionMatch;
 
-                : String(v.difference);
+  // ============================================
+  // FINAL UI STATUS
+  // ============================================
 
-    }
+  let finalStatus = "";
 
+  let finalStatusType = "";
 
-    // ============================================
-    // CLASSIFY SHARED INVOICES
-    //
-    // VALID SHARED:
-    // STAFF A + STAFF B
-    //
-    // ATTRIBUTION ANOMALY:
-    // UNKNOWN + STAFF
-    // ============================================
+  if (!coreValid) {
+    finalStatus = "❌ INVALID";
 
-    const validShared =
+    finalStatusType = "INVALID";
+  } else if (v.unknownTransactions > 0 || attributionAnomalies.length > 0) {
+    finalStatus = "⚠ VALID WITH WARNING";
 
-        v.shared.filter(item =>
+    finalStatusType = "WARNING";
+  } else {
+    finalStatus = "✅ VALID";
 
-            !item.staffs.includes("UNKNOWN")
+    finalStatusType = "VALID";
+  }
 
-        );
+  if (statusElement) {
+    statusElement.innerText = finalStatus;
+  }
 
+  // ============================================
+  // BUILD REASON
+  // ============================================
 
-    const attributionAnomalies =
+  if (!reasonElement) {
+    return;
+  }
 
-        v.shared.filter(item =>
+  let reason = "";
 
-            item.staffs.includes("UNKNOWN")
+  // ============================================
+  // ATTRIBUTION SUMMARY
+  // ============================================
 
-        );
-
-
-    // ============================================
-    // VALID SHARED EXTRA ATTRIBUTION
-    // ============================================
-
-    const validSharedExtra =
-
-        validShared.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Math.max(
-
-                    0,
-
-                    item.staffs.length - 1
-
-                ),
-
-            0
-
-        );
-
-
-    // ============================================
-    // UNKNOWN EXTRA ATTRIBUTION
-    //
-    // UNKNOWN + STAFF PADA INVOICE SAMA
-    // JUGA MENAMBAH STAFF SM SEBESAR +1
-    // ============================================
-
-    const unknownExtraAttribution =
-
-        attributionAnomalies.reduce(
-
-            (sum, item) =>
-
-                sum +
-
-                Math.max(
-
-                    0,
-
-                    item.staffs.length - 1
-
-                ),
-
-            0
-
-        );
-
-
-    // ============================================
-    // EXPECTED STAFF SM
-    // ============================================
-
-    const expectedStaffSM =
-
-        v.dailyCashSM +
-
-        validSharedExtra +
-
-        unknownExtraAttribution;
-
-
-    const staffAttributionMatch =
-
-        v.staffSM === expectedStaffSM;
-
-
-    // ============================================
-    // CORE RECONCILIATION
-    // ============================================
-
-    const coreValid =
-
-        v.salesMatch &&
-
-        v.qtyMatch &&
-
-        v.smMatch &&
-
-        v.grossReconciliation &&
-
-        staffAttributionMatch;
-
-
-    // ============================================
-    // FINAL UI STATUS
-    // ============================================
-
-    let finalStatus = "";
-
-    let finalStatusType = "";
-
-
-    if(!coreValid){
-
-        finalStatus =
-            "❌ INVALID";
-
-        finalStatusType =
-            "INVALID";
-
-    }
-
-    else if(
-
-        v.unknownTransactions > 0 ||
-
-        attributionAnomalies.length > 0
-
-    ){
-
-        finalStatus =
-            "⚠ VALID WITH WARNING";
-
-        finalStatusType =
-            "WARNING";
-
-    }
-
-    else{
-
-        finalStatus =
-            "✅ VALID";
-
-        finalStatusType =
-            "VALID";
-
-    }
-
-
-    if(statusElement){
-
-        statusElement.innerText =
-            finalStatus;
-
-    }
-
-
-    // ============================================
-    // BUILD REASON
-    // ============================================
-
-    if(!reasonElement){
-
-        return;
-
-    }
-
-
-    let reason = "";
-
-
-    // ============================================
-    // ATTRIBUTION SUMMARY
-    // ============================================
-
-    reason += `
+  reason += `
 
         <b>ATTRIBUTION RECONCILIATION</b>
 
@@ -2421,14 +1383,12 @@ function updateValidation(){
 
     `;
 
+  // ============================================
+  // VALID SHARED INVOICES
+  // ============================================
 
-    // ============================================
-    // VALID SHARED INVOICES
-    // ============================================
-
-    if(validShared.length > 0){
-
-        reason += `
+  if (validShared.length > 0) {
+    reason += `
 
             <br><br>
 
@@ -2439,10 +1399,8 @@ function updateValidation(){
 
         `;
 
-
-        validShared.forEach(item => {
-
-            reason += `
+    validShared.forEach((item) => {
+      reason += `
 
                 <br><br>
 
@@ -2453,19 +1411,15 @@ function updateValidation(){
                 ${item.staffs.join(" / ")}
 
             `;
+    });
+  }
 
-        });
+  // ============================================
+  // ATTRIBUTION ANOMALIES
+  // ============================================
 
-    }
-
-
-    // ============================================
-    // ATTRIBUTION ANOMALIES
-    // ============================================
-
-    if(attributionAnomalies.length > 0){
-
-        reason += `
+  if (attributionAnomalies.length > 0) {
+    reason += `
 
             <br><br>
 
@@ -2475,10 +1429,8 @@ function updateValidation(){
 
         `;
 
-
-        attributionAnomalies.forEach(item => {
-
-            reason += `
+    attributionAnomalies.forEach((item) => {
+      reason += `
 
                 <br><br>
 
@@ -2489,19 +1441,15 @@ function updateValidation(){
                 ${item.staffs.join(" / ")}
 
             `;
+    });
+  }
 
-        });
+  // ============================================
+  // UNKNOWN TRANSACTION SUMMARY
+  // ============================================
 
-    }
-
-
-    // ============================================
-    // UNKNOWN TRANSACTION SUMMARY
-    // ============================================
-
-    if(v.unknownTransactions > 0){
-
-        reason += `
+  if (v.unknownTransactions > 0) {
+    reason += `
 
             <br><br>
 
@@ -2530,75 +1478,36 @@ function updateValidation(){
             ${v.unknownQty}
 
         `;
+  }
 
-    }
+  // ============================================
+  // CORE ERROR LIST
+  // ============================================
 
+  const errors = [];
 
-    // ============================================
-    // CORE ERROR LIST
-    // ============================================
+  if (!v.salesMatch) {
+    errors.push("MD SALES RECONCILIATION FAILED");
+  }
 
-    const errors = [];
+  if (!v.qtyMatch) {
+    errors.push("MD QTY RECONCILIATION FAILED");
+  }
 
+  if (!v.smMatch) {
+    errors.push("UNIQUE MD INVOICE RECONCILIATION FAILED");
+  }
 
-    if(!v.salesMatch){
+  if (!v.grossReconciliation) {
+    errors.push("GROSS SALES RECONCILIATION FAILED");
+  }
 
-        errors.push(
+  if (!staffAttributionMatch) {
+    errors.push("STAFF SM ATTRIBUTION FAILED");
+  }
 
-            "MD SALES RECONCILIATION FAILED"
-
-        );
-
-    }
-
-
-    if(!v.qtyMatch){
-
-        errors.push(
-
-            "MD QTY RECONCILIATION FAILED"
-
-        );
-
-    }
-
-
-    if(!v.smMatch){
-
-        errors.push(
-
-            "UNIQUE MD INVOICE RECONCILIATION FAILED"
-
-        );
-
-    }
-
-
-    if(!v.grossReconciliation){
-
-        errors.push(
-
-            "GROSS SALES RECONCILIATION FAILED"
-
-        );
-
-    }
-
-
-    if(!staffAttributionMatch){
-
-        errors.push(
-
-            "STAFF SM ATTRIBUTION FAILED"
-
-        );
-
-    }
-
-
-    if(errors.length > 0){
-
-        reason += `
+  if (errors.length > 0) {
+    reason += `
 
             <br><br>
 
@@ -2609,35 +1518,23 @@ function updateValidation(){
             ${errors.join("<br>")}
 
         `;
+  }
 
-    }
+  // ============================================
+  // CLEAN VALID RESULT
+  // ============================================
 
-
-    // ============================================
-    // CLEAN VALID RESULT
-    // ============================================
-
-    if(
-
-        finalStatusType === "VALID" &&
-
-        validShared.length === 0
-
-    ){
-
-        reason += `
+  if (finalStatusType === "VALID" && validShared.length === 0) {
+    reason += `
 
             <br><br>
 
             No shared invoice or staff attribution anomaly detected.
 
         `;
+  }
 
-    }
-
-
-    reasonElement.innerHTML = reason;
-
+  reasonElement.innerHTML = reason;
 }
 
 // =====================================================
@@ -2647,81 +1544,53 @@ function updateValidation(){
 
 let selectedDailyAuditDate = "";
 
-
 // =====================================================
 // INITIALIZE DAILY AUDIT
 // DIPANGGIL SETELAH PROCESS SELESAI
 // =====================================================
 
-function updateDailyValidation(){
+function updateDailyValidation() {
+  const selector = document.getElementById("dailyAuditDate");
 
-    const selector =
-        document.getElementById("dailyAuditDate");
+  const workspace = document.getElementById("dailyAuditWorkspace");
 
-    const workspace =
-        document.getElementById("dailyAuditWorkspace");
+  const statusElement = document.getElementById("dailyAuditStatus");
 
-    const statusElement =
-        document.getElementById("dailyAuditStatus");
+  if (!selector || !workspace) {
+    console.warn("Daily Audit UI element tidak ditemukan.");
 
+    return;
+  }
 
-    if(!selector || !workspace){
+  // ============================================
+  // GET AVAILABLE DATES
+  // SOURCE OF TRUTH = DAILY CASH
+  // ============================================
 
-        console.warn(
-            "Daily Audit UI element tidak ditemukan."
-        );
+  const dates = [
+    ...new Set(
+      [...GTEngine.invoiceMap.values()]
 
-        return;
+        .map((inv) => inv.date)
 
-    }
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => {
+    const [dayA, monthA, yearA] = a.split("-").map(Number);
 
+    const [dayB, monthB, yearB] = b.split("-").map(Number);
 
-    // ============================================
-    // GET AVAILABLE DATES
-    // SOURCE OF TRUTH = DAILY CASH
-    // ============================================
+    return (
+      new Date(yearA, monthA - 1, dayA) - new Date(yearB, monthB - 1, dayB)
+    );
+  });
 
-    const dates = [
+  // ============================================
+  // EMPTY STATE
+  // ============================================
 
-        ...new Set(
-
-            [...GTEngine.invoiceMap.values()]
-
-                .map(inv => inv.date)
-
-                .filter(Boolean)
-
-        )
-
-    ].sort((a, b) => {
-
-        const [dayA, monthA, yearA] =
-            a.split("-").map(Number);
-
-        const [dayB, monthB, yearB] =
-            b.split("-").map(Number);
-
-
-        return (
-
-            new Date(yearA, monthA - 1, dayA)
-
-            -
-
-            new Date(yearB, monthB - 1, dayB)
-
-        );
-
-    });
-
-
-    // ============================================
-    // EMPTY STATE
-    // ============================================
-
-    if(dates.length === 0){
-
-        selector.innerHTML = `
+  if (dates.length === 0) {
+    selector.innerHTML = `
 
             <option value="">
 
@@ -2731,8 +1600,7 @@ function updateDailyValidation(){
 
         `;
 
-
-        workspace.innerHTML = `
+    workspace.innerHTML = `
 
             <div class="daily-audit-empty">
 
@@ -2742,173 +1610,93 @@ function updateDailyValidation(){
 
         `;
 
-
-        if(statusElement){
-
-            statusElement.innerText = "-";
-
-        }
-
-
-        return;
-
+    if (statusElement) {
+      statusElement.innerText = "-";
     }
 
+    return;
+  }
 
-    // ============================================
-    // REBUILD SELECTOR
-    // ============================================
+  // ============================================
+  // REBUILD SELECTOR
+  // ============================================
 
-    const previousDate =
-        selectedDailyAuditDate;
+  const previousDate = selectedDailyAuditDate;
 
+  selector.innerHTML = "";
 
-    selector.innerHTML = "";
+  dates.forEach((date) => {
+    const option = document.createElement("option");
 
+    option.value = date;
 
-    dates.forEach(date => {
+    option.innerText = date;
 
-        const option =
-            document.createElement("option");
+    selector.appendChild(option);
+  });
 
+  // ============================================
+  // KEEP SELECTED DATE IF STILL AVAILABLE
+  // DEFAULT = FIRST WARNING / INVALID
+  // OTHERWISE LATEST DATE
+  // ============================================
 
-        option.value = date;
+  const issueDate = dates.find((date) => {
+    const validation = GTEngine.getValidation(date);
 
-        option.innerText = date;
+    return validation.status === "WARNING" || validation.status === "INVALID";
+  });
 
+  if (previousDate && dates.includes(previousDate)) {
+    selectedDailyAuditDate = previousDate;
+  } else if (issueDate) {
+    selectedDailyAuditDate = issueDate;
+  } else {
+    selectedDailyAuditDate = dates[dates.length - 1];
+  }
 
-        selector.appendChild(option);
+  selector.value = selectedDailyAuditDate;
 
-    });
+  // ============================================
+  // REGISTER CHANGE EVENT ONCE
+  // ============================================
 
+  if (selector.dataset.auditRegistered !== "true") {
+    selector.addEventListener(
+      "change",
 
-    // ============================================
-    // KEEP SELECTED DATE IF STILL AVAILABLE
-    // DEFAULT = FIRST WARNING / INVALID
-    // OTHERWISE LATEST DATE
-    // ============================================
+      (event) => {
+        selectedDailyAuditDate = event.target.value;
 
-    const issueDate =
-
-        dates.find(date => {
-
-            const validation =
-                GTEngine.getValidation(date);
-
-
-            return (
-
-                validation.status === "WARNING" ||
-
-                validation.status === "INVALID"
-
-            );
-
-        });
-
-
-    if(
-
-        previousDate &&
-
-        dates.includes(previousDate)
-
-    ){
-
-        selectedDailyAuditDate =
-            previousDate;
-
-    }
-
-    else if(issueDate){
-
-        selectedDailyAuditDate =
-            issueDate;
-
-    }
-
-    else{
-
-        selectedDailyAuditDate =
-            dates[dates.length - 1];
-
-    }
-
-
-    selector.value =
-        selectedDailyAuditDate;
-
-
-    // ============================================
-    // REGISTER CHANGE EVENT ONCE
-    // ============================================
-
-    if(selector.dataset.auditRegistered !== "true"){
-
-        selector.addEventListener(
-
-            "change",
-
-            event => {
-
-                selectedDailyAuditDate =
-                    event.target.value;
-
-
-                renderDailyAudit(
-
-                    selectedDailyAuditDate
-
-                );
-
-            }
-
-        );
-
-
-        selector.dataset.auditRegistered =
-            "true";
-
-    }
-
-
-    // ============================================
-    // INITIAL RENDER
-    // ============================================
-
-    renderDailyAudit(
-
-        selectedDailyAuditDate
-
+        renderDailyAudit(selectedDailyAuditDate);
+      },
     );
 
+    selector.dataset.auditRegistered = "true";
+  }
+
+  // ============================================
+  // INITIAL RENDER
+  // ============================================
+
+  renderDailyAudit(selectedDailyAuditDate);
 }
-
-
 
 // =====================================================
 // RENDER DAILY AUDIT
 // =====================================================
 
-function renderDailyAudit(date){
+function renderDailyAudit(date) {
+  const workspace = document.getElementById("dailyAuditWorkspace");
 
-    const workspace =
-        document.getElementById("dailyAuditWorkspace");
+  const statusElement = document.getElementById("dailyAuditStatus");
 
-    const statusElement =
-        document.getElementById("dailyAuditStatus");
+  if (!workspace) {
+    return;
+  }
 
-
-    if(!workspace){
-
-        return;
-
-    }
-
-
-    if(!date){
-
-        workspace.innerHTML = `
+  if (!date) {
+    workspace.innerHTML = `
 
             <div class="daily-audit-empty">
 
@@ -2918,146 +1706,86 @@ function renderDailyAudit(date){
 
         `;
 
-        return;
+    return;
+  }
 
-    }
+  // ============================================
+  // GET ENGINE DATA
+  // ============================================
 
+  const validation = GTEngine.getValidation(date);
 
-    // ============================================
-    // GET ENGINE DATA
-    // ============================================
+  const summary = GTEngine.generateSummary(date);
 
-    const validation =
-        GTEngine.getValidation(date);
+  const divisions = getActiveDivisions(
+    summary,
 
+    window.divisionData,
+  );
 
-    const summary =
-        GTEngine.generateSummary(date);
+  // ============================================
+  // BUILD DETAIL OBJECT
+  // ============================================
 
+  const detail = {
+    date,
 
-    const divisions =
-        getActiveDivisions(
+    validation,
 
-            summary,
+    staffSummary: summary,
 
-            window.divisionData
+    divisions,
+  };
 
-        );
+  // ============================================
+  // STATUS
+  // ============================================
 
+  if (statusElement) {
+    statusElement.innerText = validation.statusLabel;
 
-    // ============================================
-    // BUILD DETAIL OBJECT
-    // ============================================
+    statusElement.dataset.status = validation.status;
+  }
 
-    const detail = {
+  // ============================================
+  // RENDER
+  // ============================================
 
-        date,
+  let html = "";
 
-        validation,
+  html += buildDailyAuditKPI(detail);
 
-        staffSummary:
-            summary,
+  html += buildDailyStaffPerformance(detail);
 
-        divisions
+  html += buildDailyValidationDetail(detail);
 
-    };
-
-
-    // ============================================
-    // STATUS
-    // ============================================
-
-    if(statusElement){
-
-        statusElement.innerText =
-            validation.statusLabel;
-
-        statusElement.dataset.status =
-            validation.status;
-
-    }
-
-
-    // ============================================
-    // RENDER
-    // ============================================
-
-    let html = "";
-
-
-    html += buildDailyAuditKPI(detail);
-
-
-    html += buildDailyStaffPerformance(detail);
-
-
-    html += buildDailyValidationDetail(detail);
-
-
-    workspace.innerHTML = html;
-
+  workspace.innerHTML = html;
 }
-
-
 
 // =====================================================
 // BUILD DAILY KPI
 // =====================================================
 
-function buildDailyAuditKPI(detail){
+function buildDailyAuditKPI(detail) {
+  const summary = detail.staffSummary || [];
 
-    const summary =
-        detail.staffSummary || [];
+  const validation = detail.validation;
 
+  const total = summary.find((row) => row.staff === "TOTAL");
 
-    const validation =
-        detail.validation;
+  const staffRows = summary.filter(
+    (row) =>
+      row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
+  );
 
+  const totalSales = total?.sales || 0;
 
-    const total =
-        summary.find(row =>
+  const totalQty = total?.qty || 0;
 
-            row.staff === "TOTAL"
+  const avgSales =
+    staffRows.length > 0 ? Math.round(totalSales / staffRows.length) : 0;
 
-        );
-
-
-    const staffRows =
-        summary.filter(row =>
-
-            row.staff !== "TOTAL" &&
-
-            row.staff !== "UNKNOWN" &&
-
-            row.staff !== "O2O"
-
-        );
-
-
-    const totalSales =
-        total?.sales || 0;
-
-
-    const totalQty =
-        total?.qty || 0;
-
-
-    const avgSales =
-
-        staffRows.length > 0
-
-            ? Math.round(
-
-                totalSales /
-
-                staffRows.length
-
-            )
-
-            : 0;
-
-
-    return `
+  return `
 
         <div class="daily-performance-cards">
 
@@ -3121,9 +1849,7 @@ function buildDailyAuditKPI(detail){
                 <strong>
 
                     ${
-                        validation.difference > 0
-                            ? "+"
-                            : ""
+                      validation.difference > 0 ? "+" : ""
                     }${validation.difference}
 
                 </strong>
@@ -3160,28 +1886,19 @@ function buildDailyAuditKPI(detail){
         </div>
 
     `;
-
 }
-
-
 
 // =====================================================
 // BUILD DAILY STAFF PERFORMANCE
 // =====================================================
 
-function buildDailyStaffPerformance(detail){
+function buildDailyStaffPerformance(detail) {
+  const summary = detail.staffSummary || [];
 
-    const summary =
-        detail.staffSummary || [];
+  const divisions = detail.divisions || [];
 
-
-    const divisions =
-        detail.divisions || [];
-
-
-    if(summary.length === 0){
-
-        return `
+  if (summary.length === 0) {
+    return `
 
             <section class="daily-audit-section">
 
@@ -3204,11 +1921,9 @@ function buildDailyStaffPerformance(detail){
             </section>
 
         `;
+  }
 
-    }
-
-
-    let html = `
+  let html = `
 
         <section class="daily-audit-section">
 
@@ -3257,10 +1972,8 @@ function buildDailyStaffPerformance(detail){
 <th>AUR</th>
     `;
 
-
-    divisions.forEach(division => {
-
-        html += `
+  divisions.forEach((division) => {
+    html += `
 
             <th>
 
@@ -3269,11 +1982,9 @@ function buildDailyStaffPerformance(detail){
             </th>
 
         `;
+  });
 
-    });
-
-
-    html += `
+  html += `
 
                         </tr>
 
@@ -3284,21 +1995,13 @@ function buildDailyStaffPerformance(detail){
 
     `;
 
+  summary.forEach((row) => {
+    const isTotal = row.staff === "TOTAL";
 
-    summary.forEach(row => {
-
-        const isTotal =
-            row.staff === "TOTAL";
-
-
-        html += `
+    html += `
 
         
-            <tr class="${
-                isTotal
-                    ? "daily-staff-total-row"
-                    : ""
-            }">
+            <tr class="${isTotal ? "daily-staff-total-row" : ""}">
 
                 <td>
 
@@ -3329,67 +2032,46 @@ function buildDailyStaffPerformance(detail){
 
 <td>
 
-    ${formatDecimal(
-        calculateUPT(row),
-        2
-    )}
+    ${formatDecimal(calculateUPT(row), 2)}
 
 </td>
 
 
 <td>
 
-    Rp ${money(
-        Math.round(
-            calculateATV(row)
-        )
-    )}
+    Rp ${money(Math.round(calculateATV(row)))}
 
 </td>
 
 
 <td>
 
-    Rp ${money(
-        Math.round(
-            calculateAUR(row)
-        )
-    )}
+    Rp ${money(Math.round(calculateAUR(row)))}
 
 </td>
 
         `;
 
-        
-
-        divisions.forEach(division => {
-
-            html += `
+    divisions.forEach((division) => {
+      html += `
 
                 <td>
 
-                    ${
-                        row.categories?.[division]
-                        || 0
-                    }
+                    ${row.categories?.[division] || 0}
 
                 </td>
 
             `;
+    });
 
-        });
-
-
-        html += `
+    html += `
 
             </tr>
 
         `;
+  });
 
-    });
-
-
-    html += `
+  html += `
 
                     </tbody>
 
@@ -3402,81 +2084,42 @@ function buildDailyStaffPerformance(detail){
 
     `;
 
-
-    return html;
-
+  return html;
 }
-
-
 
 // =====================================================
 // BUILD DAILY VALIDATION DETAIL
 // =====================================================
 
-function buildDailyValidationDetail(detail){
+function buildDailyValidationDetail(detail) {
+  const v = detail.validation;
 
-    const v =
-        detail.validation;
+  const validShared = Array.isArray(v.validShared)
+    ? v.validShared
+    : (v.shared || []).filter((item) => !item.staffs.includes("UNKNOWN"));
 
+  const anomalies = Array.isArray(v.attributionAnomalies)
+    ? v.attributionAnomalies
+    : (v.shared || []).filter((item) => item.staffs.includes("UNKNOWN"));
 
-    const validShared =
-        Array.isArray(v.validShared)
+  const unknownTransactions = GTEngine.transactions.filter((t) => {
+    if (t.date !== detail.date) {
+      return false;
+    }
 
-            ? v.validShared
+    if (t.isNonMD) {
+      return false;
+    }
 
-            : (v.shared || []).filter(item =>
+    return (
+      !t.staff ||
+      String(t.staff.name || "")
+        .trim()
+        .toUpperCase() === "UNKNOWN"
+    );
+  });
 
-                !item.staffs.includes("UNKNOWN")
-
-            );
-
-
-    const anomalies =
-        Array.isArray(v.attributionAnomalies)
-
-            ? v.attributionAnomalies
-
-            : (v.shared || []).filter(item =>
-
-                item.staffs.includes("UNKNOWN")
-
-            );
-
-
-    const unknownTransactions =
-
-        GTEngine.transactions.filter(t => {
-
-            if(t.date !== detail.date){
-
-                return false;
-
-            }
-
-
-            if(t.isNonMD){
-
-                return false;
-
-            }
-
-
-            return (
-
-                !t.staff ||
-
-                String(
-                    t.staff.name || ""
-                )
-                .trim()
-                .toUpperCase() === "UNKNOWN"
-
-            );
-
-        });
-
-
-    let html = `
+  let html = `
 
         <section class="daily-audit-section">
 
@@ -3587,14 +2230,12 @@ function buildDailyValidationDetail(detail){
 
     `;
 
+  // ============================================
+  // VALID SHARED
+  // ============================================
 
-    // ============================================
-    // VALID SHARED
-    // ============================================
-
-    if(validShared.length > 0){
-
-        html += `
+  if (validShared.length > 0) {
+    html += `
 
             <div class="daily-validation-group">
 
@@ -3606,10 +2247,8 @@ function buildDailyValidationDetail(detail){
 
         `;
 
-
-        validShared.forEach(item => {
-
-            html += `
+    validShared.forEach((item) => {
+      html += `
 
                 <div class="daily-validation-item">
 
@@ -3629,16 +2268,8 @@ function buildDailyValidationDetail(detail){
 
                         Extra Attribution:
                         +${
-
-                            item.extraAttribution
-
-                            ??
-
-                            Math.max(
-                                0,
-                                item.staffs.length - 1
-                            )
-
+                          item.extraAttribution ??
+                          Math.max(0, item.staffs.length - 1)
                         }
 
                     </small>
@@ -3646,26 +2277,21 @@ function buildDailyValidationDetail(detail){
                 </div>
 
             `;
+    });
 
-        });
-
-
-        html += `
+    html += `
 
             </div>
 
         `;
+  }
 
-    }
+  // ============================================
+  // ATTRIBUTION ANOMALY
+  // ============================================
 
-
-    // ============================================
-    // ATTRIBUTION ANOMALY
-    // ============================================
-
-    if(anomalies.length > 0){
-
-        html += `
+  if (anomalies.length > 0) {
+    html += `
 
             <div class="daily-validation-group">
 
@@ -3677,10 +2303,8 @@ function buildDailyValidationDetail(detail){
 
         `;
 
-
-        anomalies.forEach(item => {
-
-            html += `
+    anomalies.forEach((item) => {
+      html += `
 
                 <div class="
                     daily-validation-item
@@ -3702,26 +2326,21 @@ function buildDailyValidationDetail(detail){
                 </div>
 
             `;
+    });
 
-        });
-
-
-        html += `
+    html += `
 
             </div>
 
         `;
+  }
 
-    }
+  // ============================================
+  // UNKNOWN TRANSACTIONS
+  // ============================================
 
-
-    // ============================================
-    // UNKNOWN TRANSACTIONS
-    // ============================================
-
-    if(unknownTransactions.length > 0){
-
-        html += `
+  if (unknownTransactions.length > 0) {
+    html += `
 
             <div class="daily-validation-group">
 
@@ -3757,10 +2376,8 @@ function buildDailyValidationDetail(detail){
 
         `;
 
-
-        unknownTransactions.forEach(t => {
-
-            html += `
+    unknownTransactions.forEach((t) => {
+      html += `
 
                 <tr>
 
@@ -3791,11 +2408,9 @@ function buildDailyValidationDetail(detail){
                 </tr>
 
             `;
+    });
 
-        });
-
-
-        html += `
+    html += `
 
                         </tbody>
 
@@ -3807,25 +2422,18 @@ function buildDailyValidationDetail(detail){
             </div>
 
         `;
+  }
 
-    }
+  // ============================================
+  // CLEAN STATE
+  // ============================================
 
-
-    // ============================================
-    // CLEAN STATE
-    // ============================================
-
-    if(
-
-        validShared.length === 0 &&
-
-        anomalies.length === 0 &&
-
-        unknownTransactions.length === 0
-
-    ){
-
-        html += `
+  if (
+    validShared.length === 0 &&
+    anomalies.length === 0 &&
+    unknownTransactions.length === 0
+  ) {
+    html += `
 
             <div class="daily-validation-clean">
 
@@ -3845,19 +2453,15 @@ function buildDailyValidationDetail(detail){
             </div>
 
         `;
+  }
 
-    }
-
-
-    html += `
+  html += `
 
         </section>
 
     `;
 
-
-    return html;
-
+  return html;
 }
 
 // =====================================================
@@ -3865,161 +2469,91 @@ function buildDailyValidationDetail(detail){
 // SUMMARY + PERFORMANCE TABLE + KPI RANKING
 // =====================================================
 
-function printStaffPerformanceReport(){
+function printStaffPerformanceReport() {
+  if (!Array.isArray(window.summaryData) || window.summaryData.length === 0) {
+    alert("PROCESS DATA TERLEBIH DAHULU.");
 
-    if(
+    return;
+  }
 
-        !Array.isArray(window.summaryData) ||
+  // =================================================
+  // REPORT GENERATED TIME
+  // =================================================
 
-        window.summaryData.length === 0
+  const now = new Date();
 
-    ){
+  const generatedAt = now.toLocaleString(
+    "id-ID",
 
-        alert(
-            "PROCESS DATA TERLEBIH DAHULU."
-        );
+    {
+      day: "2-digit",
 
-        return;
+      month: "2-digit",
 
-    }
+      year: "numeric",
 
+      hour: "2-digit",
 
-    // =================================================
-    // REPORT GENERATED TIME
-    // =================================================
+      minute: "2-digit",
+    },
+  );
 
-    const now =
-        new Date();
+  document.body.dataset.printGeneratedAt = generatedAt;
 
+  // =================================================
+  // PRINT MODE
+  // =================================================
 
-    const generatedAt =
+  document.body.classList.add("staff-performance-print-mode");
 
-        now.toLocaleString(
+  // =================================================
+  // PRINT
+  // =================================================
 
-            "id-ID",
+  window.print();
 
-            {
+  // =================================================
+  // CLEANUP
+  // =================================================
 
-                day: "2-digit",
+  setTimeout(() => {
+    document.body.classList.remove("staff-performance-print-mode");
 
-                month: "2-digit",
-
-                year: "numeric",
-
-                hour: "2-digit",
-
-                minute: "2-digit"
-
-            }
-
-        );
-
-
-    document.body.dataset.printGeneratedAt =
-        generatedAt;
-
-
-    // =================================================
-    // PRINT MODE
-    // =================================================
-
-    document.body.classList.add(
-
-        "staff-performance-print-mode"
-
-    );
-
-
-    // =================================================
-    // PRINT
-    // =================================================
-
-    window.print();
-
-
-    // =================================================
-    // CLEANUP
-    // =================================================
-
-    setTimeout(() => {
-
-        document.body.classList.remove(
-
-            "staff-performance-print-mode"
-
-        );
-
-        delete document.body.dataset.printGeneratedAt;
-
-    }, 500);
-
+    delete document.body.dataset.printGeneratedAt;
+  }, 500);
 }
 
 // =====================================================
 // PRINT STAFF PERFORMANCE REPORT
 // =====================================================
 
-function printStaffPerformanceReport(){
+function printStaffPerformanceReport() {
+  if (!Array.isArray(window.summaryData) || window.summaryData.length === 0) {
+    alert("PROCESS DATA TERLEBIH DAHULU SEBELUM PRINT REPORT.");
 
-    if(
-        !Array.isArray(window.summaryData) ||
-        window.summaryData.length === 0
-    ){
+    return;
+  }
 
-        alert(
-            "PROCESS DATA TERLEBIH DAHULU SEBELUM PRINT REPORT."
-        );
+  const now = new Date();
 
-        return;
+  const generatedAt = now.toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
-    }
+  document.body.dataset.printGeneratedAt = generatedAt;
 
+  document.body.classList.add("staff-performance-print-mode");
 
-    const now =
-        new Date();
+  const cleanupPrintMode = () => {
+    document.body.classList.remove("staff-performance-print-mode");
 
+    window.removeEventListener("afterprint", cleanupPrintMode);
+  };
 
-    const generatedAt =
-        now.toLocaleString(
-            "id-ID",
-            {
-                dateStyle:"medium",
-                timeStyle:"short"
-            }
-        );
+  window.addEventListener("afterprint", cleanupPrintMode);
 
-
-    document.body.dataset.printGeneratedAt =
-        generatedAt;
-
-
-    document.body.classList.add(
-        "staff-performance-print-mode"
-    );
-
-
-    const cleanupPrintMode = () => {
-
-        document.body.classList.remove(
-            "staff-performance-print-mode"
-        );
-
-        window.removeEventListener(
-            "afterprint",
-            cleanupPrintMode
-        );
-
-    };
-
-
-    window.addEventListener(
-        "afterprint",
-        cleanupPrintMode
-    );
-
-
-    window.print();
-
+  window.print();
 }
 
 // =====================================================
@@ -4028,236 +2562,153 @@ function printStaffPerformanceReport(){
 // ISOLATED PRINT ROOT
 // =====================================================
 
+function escapePrintHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
 
-function escapePrintHTML(value){
+    .replaceAll("<", "&lt;")
 
-    return String(value ?? "")
+    .replaceAll(">", "&gt;")
 
-        .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
 
-        .replaceAll("<", "&lt;")
-
-        .replaceAll(">", "&gt;")
-
-        .replaceAll('"', "&quot;")
-
-        .replaceAll("'", "&#039;");
-
+    .replaceAll("'", "&#039;");
 }
-
-
 
 // =====================================================
 // GET PRINT LICENSE INFORMATION
 // =====================================================
 
-function getPrintLicenseInfo(){
+function getPrintLicenseInfo() {
+  const status = GTRuntime.getStatus();
 
-    const status =
-        GTRuntime.getStatus();
+  let planLabel = "NOT AUTHORIZED";
 
+  let accessLabel = "ACCESS DENIED";
 
-    let planLabel =
-        "NOT AUTHORIZED";
+  if (status.plan === "VIP_LIFETIME") {
+    planLabel = "VIP LIFETIME";
 
+    accessLabel = "AUTHORIZED • PERMANENT ACCESS";
+  } else if (status.plan === "FREE_ACCESS") {
+    planLabel = "FREE ACCESS";
 
-    let accessLabel =
-        "ACCESS DENIED";
+    const freeLimit = status.freeLimit;
 
+    if (freeLimit) {
+      const limitDate = new Date(
+        freeLimit.year,
 
-    if(status.plan === "VIP_LIFETIME"){
+        freeLimit.month - 1,
 
-        planLabel =
-            "VIP LIFETIME";
+        freeLimit.day,
+      );
 
-        accessLabel =
-            "AUTHORIZED • PERMANENT ACCESS";
+      const formattedDate = limitDate
+        .toLocaleDateString(
+          "id-ID",
 
+          {
+            day: "2-digit",
+
+            month: "long",
+
+            year: "numeric",
+          },
+        )
+        .toUpperCase();
+
+      accessLabel = `ACTIVE UNTIL ${formattedDate}`;
+    } else {
+      accessLabel = "AUTHORIZED";
     }
+  } else if (status.plan === "FREE_EXPIRED") {
+    planLabel = "FREE ACCESS";
 
+    accessLabel = "ACCESS EXPIRED";
+  }
 
-    else if(status.plan === "FREE_ACCESS"){
+  return {
+    userId: status.userId || "-",
 
-        planLabel =
-            "FREE ACCESS";
+    plan: planLabel,
 
-
-        const freeLimit =
-            status.freeLimit;
-
-
-        if(freeLimit){
-
-            const limitDate =
-
-                new Date(
-
-                    freeLimit.year,
-
-                    freeLimit.month - 1,
-
-                    freeLimit.day
-
-                );
-
-
-            const formattedDate =
-
-                limitDate.toLocaleDateString(
-
-                    "id-ID",
-
-                    {
-
-                        day: "2-digit",
-
-                        month: "long",
-
-                        year: "numeric"
-
-                    }
-
-                )
-                .toUpperCase();
-
-
-            accessLabel =
-
-                `ACTIVE UNTIL ${formattedDate}`;
-
-        }
-
-        else{
-
-            accessLabel =
-                "AUTHORIZED";
-
-        }
-
-    }
-
-
-    else if(status.plan === "FREE_EXPIRED"){
-
-        planLabel =
-            "FREE ACCESS";
-
-        accessLabel =
-            "ACCESS EXPIRED";
-
-    }
-
-
-    return {
-
-        userId:
-            status.userId || "-",
-
-        plan:
-            planLabel,
-
-        access:
-            accessLabel
-
-    };
-
+    access: accessLabel,
+  };
 }
 
 // =====================================================
 // BUILD PRINT SUMMARY
 // =====================================================
 
-function buildPrintSummary(summary){
+function buildPrintSummary(summary) {
+  const total = summary.find((row) => row.staff === "TOTAL");
 
-    const total = summary.find(
-        row => row.staff === "TOTAL"
-    );
+  if (!total) {
+    return "";
+  }
 
+  const staffOnly = summary.filter(
+    (row) =>
+      row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
+  );
 
-    if(!total){
+  const avgSales =
+    staffOnly.length > 0
+      ? Math.round(Number(total.sales || 0) / staffOnly.length)
+      : 0;
 
-        return "";
+  const licenseInfo = getPrintLicenseInfo();
 
-    }
-
-
-    const staffOnly = summary.filter(row =>
-
-        row.staff !== "TOTAL" &&
-
-        row.staff !== "UNKNOWN" &&
-
-        row.staff !== "O2O"
-
-    );
-
-
-    const avgSales =
-
-        staffOnly.length > 0
-
-            ? Math.round(
-                Number(total.sales || 0) /
-                staffOnly.length
-            )
-
-            : 0;
-
-
-    const licenseInfo =
-    getPrintLicenseInfo();
-
-
-const cards = [
-
+  const cards = [
     {
-        label:"TOTAL STAFF",
-        value:staffOnly.length
+      label: "TOTAL STAFF",
+      value: staffOnly.length,
     },
 
     {
-        label:"TOTAL SALES",
-        value:`Rp ${money(total.sales)}`
+      label: "TOTAL SALES",
+      value: `Rp ${money(total.sales)}`,
     },
 
     {
-        label:"TOTAL SM",
-        value:formatNumber(total.sm)
+      label: "TOTAL SM",
+      value: formatNumber(total.sm),
     },
 
     {
-        label:"TOTAL QTY",
-        value:formatNumber(total.qty)
+      label: "TOTAL QTY",
+      value: formatNumber(total.qty),
     },
 
     {
-        label:"AVG SALES / STAFF",
-        value:`Rp ${money(avgSales)}`
+      label: "AVG SALES / STAFF",
+      value: `Rp ${money(avgSales)}`,
     },
 
     {
-        label:"ACCOUNT ID",
-        value:licenseInfo.userId
+      label: "ACCOUNT ID",
+      value: licenseInfo.userId,
     },
 
     {
-        label:"LICENSE PLAN",
-        value:licenseInfo.plan
+      label: "LICENSE PLAN",
+      value: licenseInfo.plan,
     },
 
     {
-        label:"ACCESS STATUS",
-        value:licenseInfo.access
-    }
+      label: "ACCESS STATUS",
+      value: licenseInfo.access,
+    },
+  ];
 
-];
-
-
-    return `
+  return `
 
         <div class="print-summary">
 
-            ${cards.map(card => `
+            ${cards
+              .map(
+                (card) => `
 
                 <div class="print-summary-card">
 
@@ -4271,71 +2722,60 @@ const cards = [
 
                 </div>
 
-            `).join("")}
+            `,
+              )
+              .join("")}
 
         </div>
 
     `;
-
 }
-
 
 // =====================================================
 // BUILD PRINT PERFORMANCE TABLE
 // =====================================================
 
-function buildPrintPerformanceTable(summary, divisions){
+function buildPrintPerformanceTable(summary, divisions) {
+  const headers = [
+    "STAFF",
+    "SALES",
+    "SM",
+    "QTY",
+    "UPT",
+    "ATV",
+    "AUR",
 
-    const headers = [
+    ...divisions,
+  ];
 
-        "STAFF",
-        "SALES",
-        "SM",
-        "QTY",
-        "UPT",
-        "ATV",
-        "AUR",
+  const rowsHTML = summary
+    .map((row) => {
+      const isTotal = row.staff === "TOTAL";
 
-        ...divisions
-
-    ];
-
-
-    const rowsHTML = summary.map(row => {
-
-        const isTotal =
-            row.staff === "TOTAL";
-
-
-        const divisionCells =
-
-            divisions.map(division => `
+      const divisionCells = divisions
+        .map(
+          (division) => `
 
                 <td>
 
-                    ${escapePrintHTML(
-                        row.categories?.[division] || 0
-                    )}
+                    ${escapePrintHTML(row.categories?.[division] || 0)}
 
                 </td>
 
-            `).join("");
+            `,
+        )
+        .join("");
 
-
-        return `
+      return `
 
             <tr class="${isTotal ? "total-row" : ""}">
 
                 <td>
-                    ${escapePrintHTML(
-                        displayStaffName(row.staff)
-                    )}
+                    ${escapePrintHTML(displayStaffName(row.staff))}
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(
-                        money(row.sales)
-                    )}
+                    Rp ${escapePrintHTML(money(row.sales))}
                 </td>
 
                 <td>
@@ -4347,32 +2787,15 @@ function buildPrintPerformanceTable(summary, divisions){
                 </td>
 
                 <td>
-                    ${escapePrintHTML(
-                        formatDecimal(
-                            calculateUPT(row),
-                            2
-                        )
-                    )}
+                    ${escapePrintHTML(formatDecimal(calculateUPT(row), 2))}
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(
-                        money(
-                            Math.round(
-                                calculateATV(row)
-                            )
-                        )
-                    )}
+                    Rp ${escapePrintHTML(money(Math.round(calculateATV(row))))}
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(
-                        money(
-                            Math.round(
-                                calculateAUR(row)
-                            )
-                        )
-                    )}
+                    Rp ${escapePrintHTML(money(Math.round(calculateAUR(row))))}
                 </td>
 
                 ${divisionCells}
@@ -4380,11 +2803,10 @@ function buildPrintPerformanceTable(summary, divisions){
             </tr>
 
         `;
+    })
+    .join("");
 
-    }).join("");
-
-
-    return `
+  return `
 
         <table class="print-performance-table">
 
@@ -4392,13 +2814,17 @@ function buildPrintPerformanceTable(summary, divisions){
 
                 <tr>
 
-                    ${headers.map(header => `
+                    ${headers
+                      .map(
+                        (header) => `
 
                         <th>
                             ${escapePrintHTML(header)}
                         </th>
 
-                    `).join("")}
+                    `,
+                      )
+                      .join("")}
 
                 </tr>
 
@@ -4414,155 +2840,99 @@ function buildPrintPerformanceTable(summary, divisions){
         </table>
 
     `;
-
 }
-
 
 // =====================================================
 // CREATE RANKING CONFIGURATION
 // =====================================================
 
-function getPrintRankingConfig(divisions){
+function getPrintRankingConfig(divisions) {
+  const config = [
+    {
+      title: "TOP SALES",
 
-    const config = [
+      getValue: (row) => Number(row.sales || 0),
 
-        {
-            title:"TOP SALES",
+      formatter: (value) => `Rp ${money(value)}`,
+    },
 
-            getValue:row =>
-                Number(row.sales || 0),
+    {
+      title: "TOP QTY",
 
-            formatter:value =>
-                `Rp ${money(value)}`
-        },
+      getValue: (row) => Number(row.qty || 0),
 
+      formatter: (value) => formatNumber(value),
+    },
 
-        {
-            title:"TOP QTY",
+    {
+      title: "TOP UPT",
 
-            getValue:row =>
-                Number(row.qty || 0),
+      getValue: (row) => calculateUPT(row),
 
-            formatter:value =>
-                formatNumber(value)
-        },
+      formatter: (value) => formatDecimal(value, 2),
+    },
 
+    {
+      title: "TOP ATV",
 
-        {
-            title:"TOP UPT",
+      getValue: (row) => calculateATV(row),
 
-            getValue:row =>
-                calculateUPT(row),
+      formatter: (value) => `Rp ${money(Math.round(value))}`,
+    },
 
-            formatter:value =>
-                formatDecimal(value, 2)
-        },
+    {
+      title: "TOP AUR",
 
+      getValue: (row) => calculateAUR(row),
 
-        {
-            title:"TOP ATV",
+      formatter: (value) => `Rp ${money(Math.round(value))}`,
+    },
+  ];
 
-            getValue:row =>
-                calculateATV(row),
+  divisions.forEach((division) => {
+    config.push({
+      title: `TOP ${division}`,
 
-            formatter:value =>
-                `Rp ${money(
-                    Math.round(value)
-                )}`
-        },
+      getValue: (row) => Number(row.categories?.[division] || 0),
 
-
-        {
-            title:"TOP AUR",
-
-            getValue:row =>
-                calculateAUR(row),
-
-            formatter:value =>
-                `Rp ${money(
-                    Math.round(value)
-                )}`
-        }
-
-    ];
-
-
-    divisions.forEach(division => {
-
-        config.push({
-
-            title:`TOP ${division}`,
-
-            getValue:row =>
-
-                Number(
-                    row.categories?.[division] || 0
-                ),
-
-            formatter:value =>
-                formatNumber(value)
-
-        });
-
+      formatter: (value) => formatNumber(value),
     });
+  });
 
-
-    return config;
-
+  return config;
 }
-
 
 // =====================================================
 // BUILD PRINT RANKING
 // =====================================================
 
-function buildPrintRanking(summary, divisions){
+function buildPrintRanking(summary, divisions) {
+  const staffData = summary.filter(
+    (row) =>
+      row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
+  );
 
-    const staffData = summary.filter(row =>
+  const medals = ["🥇", "🥈", "🥉"];
 
-        row.staff !== "TOTAL" &&
+  const config = getPrintRankingConfig(divisions);
 
-        row.staff !== "UNKNOWN" &&
-
-        row.staff !== "O2O"
-
-    );
-
-
-    const medals = [
-        "🥇",
-        "🥈",
-        "🥉"
-    ];
-
-
-    const config =
-        getPrintRankingConfig(divisions);
-
-
-    return `
+  return `
 
         <div class="print-ranking-grid">
 
-            ${config.map(item => {
+            ${config
+              .map((item) => {
+                const ranking = getTop3(
+                  staffData,
 
-
-                const ranking =
-
-                    getTop3(
-
-                        staffData,
-
-                        item.getValue
-
-                    );
-
+                  item.getValue,
+                );
 
                 const rankingHTML =
-
-                    ranking.length > 0
-
-                        ? ranking.map((row, index) => `
+                  ranking.length > 0
+                    ? ranking
+                        .map(
+                          (row, index) => `
 
                             <div class="print-ranking-item">
 
@@ -4576,7 +2946,7 @@ function buildPrintRanking(summary, divisions){
                                 <span class="print-ranking-staff">
 
                                     ${escapePrintHTML(
-                                        displayStaffName(row.staff)
+                                      displayStaffName(row.staff),
                                     )}
 
                                 </span>
@@ -4585,18 +2955,17 @@ function buildPrintRanking(summary, divisions){
                                 <strong class="print-ranking-value">
 
                                     ${escapePrintHTML(
-                                        item.formatter(
-                                            item.getValue(row)
-                                        )
+                                      item.formatter(item.getValue(row)),
                                     )}
 
                                 </strong>
 
                             </div>
 
-                        `).join("")
-
-                        : `
+                        `,
+                        )
+                        .join("")
+                    : `
 
                             <div class="print-ranking-item">
 
@@ -4605,7 +2974,6 @@ function buildPrintRanking(summary, divisions){
                             </div>
 
                         `;
-
 
                 return `
 
@@ -4627,88 +2995,55 @@ function buildPrintRanking(summary, divisions){
                     </div>
 
                 `;
-
-            }).join("")}
+              })
+              .join("")}
 
         </div>
 
     `;
-
 }
-
 
 // =====================================================
 // BUILD COMPLETE PRINT REPORT
 // =====================================================
 
-function buildStaffPerformancePrintReport(){
+function buildStaffPerformancePrintReport() {
+  const summary = window.summaryData;
 
-    const summary =
-    window.summaryData;
+  if (!Array.isArray(summary) || summary.length === 0) {
+    return false;
+  }
 
+  const printRoot = document.getElementById("printReportRoot");
 
-    if(
-        !Array.isArray(summary) ||
-        summary.length === 0
-    ){
+  if (!printRoot) {
+    console.error("printReportRoot tidak ditemukan.");
 
-        return false;
+    return false;
+  }
 
-    }
+  const divisions = getActiveDivisions(
+    summary,
 
+    window.divisionData,
+  );
 
-    const printRoot =
-        document.getElementById("printReportRoot");
+  const periodLabel = getPerformanceFilterLabel(
+    getActivePerformanceDateFilter(),
+  );
 
+  const generatedAt = new Date().toLocaleString(
+    "id-ID",
 
-    if(!printRoot){
+    {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+  );
 
-        console.error(
-            "printReportRoot tidak ditemukan."
-        );
+  const licenseInfo = getPrintLicenseInfo();
 
-        return false;
-
-    }
-
-
-    const divisions =
-
-        getActiveDivisions(
-
-            summary,
-
-            window.divisionData
-
-        );
-
-
-const periodLabel =
-
-    getPerformanceFilterLabel(
-
-        getActivePerformanceDateFilter()
-
-    );
-
-    const generatedAt =
-
-        new Date().toLocaleString(
-
-            "id-ID",
-
-            {
-                dateStyle:"medium",
-                timeStyle:"short"
-            }
-
-        );
-
-        const licenseInfo =
-    getPrintLicenseInfo();
-
-
-    printRoot.innerHTML = `
+  printRoot.innerHTML = `
 
         <main class="print-report">
 
@@ -4750,23 +3085,17 @@ const periodLabel =
 </span>
     <span>
         ACCOUNT ID •
-        ${escapePrintHTML(
-            licenseInfo.userId
-        )}
+        ${escapePrintHTML(licenseInfo.userId)}
     </span>
 
     <span>
         LICENSE •
-        ${escapePrintHTML(
-            licenseInfo.plan
-        )}
+        ${escapePrintHTML(licenseInfo.plan)}
     </span>
 
     <span>
         ACCESS •
-        ${escapePrintHTML(
-            licenseInfo.access
-        )}
+        ${escapePrintHTML(licenseInfo.access)}
     </span>
 
     <span>
@@ -4806,10 +3135,7 @@ const periodLabel =
                 </div>
 
 
-                ${buildPrintPerformanceTable(
-                    summary,
-                    divisions
-                )}
+                ${buildPrintPerformanceTable(summary, divisions)}
 
             </section>
 
@@ -4823,10 +3149,7 @@ const periodLabel =
                 </div>
 
 
-                ${buildPrintRanking(
-                    summary,
-                    divisions
-                )}
+                ${buildPrintRanking(summary, divisions)}
 
             </section>
 
@@ -4863,94 +3186,52 @@ const periodLabel =
 
     `;
 
-
-    return true;
-
+  return true;
 }
-
 
 // =====================================================
 // PRINT REPORT
 // =====================================================
 
-function printStaffPerformanceReport(){
+function printStaffPerformanceReport() {
+  GTRuntime.assertPrintAccess();
 
-    GTRuntime.assertPrintAccess();
+  const reportReady = buildStaffPerformancePrintReport();
 
+  if (!reportReady) {
+    alert("PROCESS DATA TERLEBIH DAHULU SEBELUM PRINT REPORT.");
 
-    const reportReady =
-        buildStaffPerformancePrintReport();
+    return;
+  }
 
-
-    if(!reportReady){
-
-        alert(
-            "PROCESS DATA TERLEBIH DAHULU SEBELUM PRINT REPORT."
-        );
-
-        return;
-
-    }
-
-
-    /*
+  /*
     Tunggu logo / image selesai load.
     Ini mencegah logo kosong saat print pertama.
     */
 
-    const printRoot =
-        document.getElementById("printReportRoot");
+  const printRoot = document.getElementById("printReportRoot");
 
+  const images = [...printRoot.querySelectorAll("img")];
 
-    const images =
-        [...printRoot.querySelectorAll("img")];
+  const imagePromises = images.map((image) => {
+    if (image.complete) {
+      return Promise.resolve();
+    }
 
+    return new Promise((resolve) => {
+      image.addEventListener("load", resolve, { once: true });
 
-    const imagePromises =
+      image.addEventListener("error", resolve, { once: true });
+    });
+  });
 
-        images.map(image => {
+  Promise.all(imagePromises)
 
-            if(image.complete){
-
-                return Promise.resolve();
-
-            }
-
-
-            return new Promise(resolve => {
-
-                image.addEventListener(
-                    "load",
-                    resolve,
-                    { once:true }
-                );
-
-
-                image.addEventListener(
-                    "error",
-                    resolve,
-                    { once:true }
-                );
-
-            });
-
+    .then(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
         });
-
-
-    Promise.all(imagePromises)
-
-        .then(() => {
-
-            requestAnimationFrame(() => {
-
-                requestAnimationFrame(() => {
-
-                    window.print();
-
-                });
-
-            });
-
-        });
-
+      });
+    });
 }

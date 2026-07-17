@@ -25,8 +25,8 @@ function printBrokenSize() {
   }
 
   const total = rows.length;
-  const broken = rows.filter(x => x.status === "BROKEN").length;
-  const notBroken = rows.filter(x => x.status === "NOT BROKEN").length;
+  const broken = rows.filter((x) => x.status === "BROKEN").length;
+  const notBroken = rows.filter((x) => x.status === "NOT BROKEN").length;
   const totalQty = rows.reduce((a, b) => a + (Number(b.totalQty) || 0), 0);
 
   let html = `
@@ -65,8 +65,8 @@ function printBrokenSize() {
   <div class="summary">
     <div>Total Artikel<br><strong>${total.toLocaleString()}</strong></div>
     <div>Total QTY<br><strong>${totalQty.toLocaleString()}</strong></div>
-    <div>Broken<br><strong style="color:red">${broken.toLocaleString()} (${(broken/total*100).toFixed(1)}%)</strong></div>
-    <div>Not Broken<br><strong style="color:green">${notBroken.toLocaleString()} (${(notBroken/total*100).toFixed(1)}%)</strong></div>
+    <div>Broken<br><strong style="color:red">${broken.toLocaleString()} (${((broken / total) * 100).toFixed(1)}%)</strong></div>
+    <div>Not Broken<br><strong style="color:green">${notBroken.toLocaleString()} (${((notBroken / total) * 100).toFixed(1)}%)</strong></div>
   </div>
   <table>
   <thead>
@@ -77,8 +77,13 @@ function printBrokenSize() {
   </thead>
   <tbody>`;
 
-  rows.forEach(r => {
-    const cls = r.status === "BROKEN" ? "broken" : r.status === "NOT BROKEN" ? "not-broken" : "";
+  rows.forEach((r) => {
+    const cls =
+      r.status === "BROKEN"
+        ? "broken"
+        : r.status === "NOT BROKEN"
+          ? "not-broken"
+          : "";
     html += `
     <tr>
       <td>${r.brand}</td><td>${r.category}</td><td>${r.artikel}</td><td>${r.desc}</td>
@@ -133,7 +138,7 @@ function printIL() {
   </tr></thead>
   <tbody>`;
 
-  rows.forEach(r => {
+  rows.forEach((r) => {
     const cls = r.ilRatio < 2 ? "bad" : r.ilRatio <= 4 ? "good" : "warn";
     html += `
     <tr>
