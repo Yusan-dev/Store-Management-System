@@ -393,7 +393,7 @@ function applyPerformanceDateFilter(filter = ""){
         const selectedStaff = staffFilterEl.value;
         summary = GTEngine.getStaffDailySummary(selectedStaff, activePerformanceDateFilter);
     } else {
-        summary = GTEngine.generateSummary(activePerformanceDateFilter);
+        summary = GTEngine.getAllStaffDailySummary(activePerformanceDateFilter);
     }
 
     const divisions = getActiveDivisions(summary, []);
