@@ -626,11 +626,22 @@ qtyEl.innerText=
 
 })
 
-const fwSku = rows.filter(x => (x.category || "").toUpperCase() === "FOOTWEAR").length;
-const fwQty = rows.filter(x => (x.category || "").toUpperCase() === "FOOTWEAR").reduce((a, b) => a + (Number(b.qty) || 0), 0);
-const fwSkuEl = document.getElementById("footwearSku");
-const fwQtyEl = document.getElementById("footwearQty");
-if(fwSkuEl) fwSkuEl.innerText = `${fwSku.toLocaleString()} SKU`;
-if(fwQtyEl) fwQtyEl.innerText = `${fwQty.toLocaleString()} PCS`;
+const uniqueCats = [...new Set(rows.map(x => (x.category || "").toUpperCase()))].filter(c => c !== "");
+const dynContainer = document.getElementById("dynamicCategories");
+if (dynContainer) {
+    let catHtml = "";
+    uniqueCats.forEach(cat => {
+        const catSku = rows.filter(x => (x.category || "").toUpperCase() === cat).length;
+        const catQty = rows.filter(x => (x.category || "").toUpperCase() === cat).reduce((a, b) => a + (Number(b.qty) || 0), 0);
+        catHtml += `
+            <div class="card">
+                <div class="label">${cat}</div>
+                <h2>${catSku.toLocaleString()} SKU</h2>
+                <small>${catQty.toLocaleString()} PCS</small>
+            </div>
+        `;
+    });
+    dynContainer.innerHTML = catHtml;
+}
 
 }

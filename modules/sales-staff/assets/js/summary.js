@@ -359,6 +359,12 @@ function populateStaffFilter(){
             staffs.push('O2O');
             const uniqueStaffs = [...new Set(staffs.sort())];
             
+            const staffListHash = uniqueStaffs.join(",");
+            if (staffFilterEl.dataset.lastStaffs === staffListHash) {
+                return; // Do not rebuild if staff list hasn't changed
+            }
+            staffFilterEl.dataset.lastStaffs = staffListHash;
+            
             const currentSelected = staffFilterEl.value;
             staffFilterEl.innerHTML = '<option value="ALL">ALL STAFF</option>';
             
@@ -1269,14 +1275,13 @@ function sortTable(key){
 // TOP 3 STAFF RANKING CONTROLLER
 // =====================================================
 
-function updateRanking(summary, divisions){
+function updateRanking(filteredSummary, filteredDivisions){
+    const summary = typeof GTEngine !== "undefined" ? GTEngine.generateSummary(getActivePerformanceDateFilter()) : filteredSummary;
+    const divisions = typeof getActiveDivisions !== "undefined" ? getActiveDivisions(summary, []) : filteredDivisions;
 
     if(!Array.isArray(summary)){
-
         return;
-
     }
-
 
     const data = summary
 
@@ -4582,3 +4587,142 @@ function buildPrintMonthlySummary(summary, divisions) {
         </table>
     `;
 }
+
+// =====================================================
+// EXPORT EXCEL
+// =====================================================
+function exportStaffPerformanceReportExcel() {
+    if(!Array.isArray(window.summaryData) || window.summaryData.length === 0){
+        alert("PROCESS DATA TERLEBIH DAHULU SEBELUM EXPORT EXCEL.");
+        return;
+    }
+    
+    // Ensure print DOM is built
+    buildStaffPerformancePrintReport();
+    
+    const periodLabel = getPerformanceFilterLabel(getActivePerformanceDateFilter());
+    const generatedAt = new Date().toLocaleString("id-ID", { dateStyle:"medium", timeStyle:"short" });
+    
+    let html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Print Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+    <style>
+        .title { font-size: 20px; font-weight: bold; background-color: #00ffff; }
+        .subtitle { font-size: 16px; font-weight: bold; }
+        .meta { font-style: italic; }
+        .th-bg { background-color: #f0f0f0; font-weight: bold; border: 1pt solid #000; text-align: center; }
+        .td-border { border: 1pt solid #000; }
+        .rank-title { font-weight: bold; background-color: #ffeb3b; border: 1pt solid #000; text-align: center; }
+        table { border-collapse: collapse; font-family: sans-serif; }
+    </style>
+    </head>
+    <body>
+    <table>
+        <tr><td colspan="5" class="title">KANGODING.ORG - GT AUTO SALES STAFF</td></tr>
+        <tr><td colspan="5" class="subtitle">SALES STAFF PERFORMANCE REPORT</td></tr>
+        <tr><td colspan="2" class="meta">PERIOD:</td><td colspan="3" class="meta">${periodLabel}</td></tr>
+        <tr><td colspan="2" class="meta">GENERATED:</td><td colspan="3" class="meta">${generatedAt}</td></tr>
+        <tr></tr>
+    `;
+    
+    // 2. Monthly Summary
+    html += `<tr><td colspan="5" class="title">MONTHLY SUMMARY</td></tr>`;
+    const monthlyTable = document.querySelector(".print-monthly-summary-table");
+    if (monthlyTable) {
+        let headersHTML = "";
+        monthlyTable.querySelectorAll("thead th").forEach(th => {
+            headersHTML += `<th class="th-bg">${th.innerText}</th>`;
+        });
+        html += `<tr>${headersHTML}</tr>`;
+        
+        monthlyTable.querySelectorAll("tbody tr").forEach(tr => {
+            let rowHTML = "";
+            tr.querySelectorAll("td").forEach(td => {
+                rowHTML += `<td class="td-border">${td.innerText}</td>`;
+            });
+            html += `<tr>${rowHTML}</tr>`;
+        });
+    }
+    html += `<tr></tr>`;
+    
+    // 3. Performance Table
+    html += `<tr><td colspan="5" class="title">SALES STAFF PERFORMANCE</td></tr>`;
+    const perfTable = document.querySelector(".print-performance-table");
+    if (perfTable) {
+        let headersHTML = "";
+        perfTable.querySelectorAll("thead th").forEach(th => {
+            headersHTML += `<th class="th-bg">${th.innerText}</th>`;
+        });
+        html += `<tr>${headersHTML}</tr>`;
+        
+        perfTable.querySelectorAll("tbody tr").forEach(tr => {
+            let rowHTML = "";
+            tr.querySelectorAll("td").forEach(td => {
+                rowHTML += `<td class="td-border">${td.innerText}</td>`;
+            });
+            html += `<tr>${rowHTML}</tr>`;
+        });
+    }
+    html += `<tr></tr>`;
+    
+    // 4. Ranking Cards
+    html += `<tr><td colspan="5" class="title">KPI & PRODUCT DIVISION RANKING</td></tr>`;
+    const rankingCards = document.querySelectorAll(".print-ranking-card");
+    let rankingGrid = [];
+    let currentCardIndex = 0;
+    
+    rankingCards.forEach(card => {
+        let title = card.querySelector("h3") ? card.querySelector("h3").innerText : "";
+        let items = card.querySelectorAll(".print-ranking-item");
+        let colOffset = (currentCardIndex % 3) * 4;
+        let rowOffset = Math.floor(currentCardIndex / 3) * 5;
+        
+        for(let r = 0; r < 5; r++) {
+            if(!rankingGrid[rowOffset + r]) rankingGrid[rowOffset + r] = [];
+        }
+        
+        rankingGrid[rowOffset][colOffset] = { text: title, isTitle: true };
+        
+        items.forEach((item, index) => {
+            let spans = item.querySelectorAll("span, strong");
+            let rank = spans[0] ? spans[0].innerText : "-";
+            let name = spans[1] ? spans[1].innerText : "-";
+            let val = spans[2] ? spans[2].innerText : "-";
+            
+            rankingGrid[rowOffset + 1 + index][colOffset] = { text: rank };
+            rankingGrid[rowOffset + 1 + index][colOffset + 1] = { text: name };
+            rankingGrid[rowOffset + 1 + index][colOffset + 2] = { text: val };
+        });
+        currentCardIndex++;
+    });
+    
+    rankingGrid.forEach(row => {
+        html += `<tr>`;
+        for (let i=0; i < row.length; i++) {
+            let cell = row[i];
+            if (!cell) {
+                html += `<td></td>`;
+            } else {
+                if (cell.isTitle) {
+                    html += `<td colspan="3" class="rank-title">${cell.text}</td>`;
+                    i += 2; // skip next 2 empty cells covered by colspan
+                } else {
+                    html += `<td class="td-border">${cell.text}</td>`;
+                }
+            }
+        }
+        html += `</tr>`;
+    });
+    
+    html += `</table></body></html>`;
+    
+    let blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Sales_Staff_Performance_Report.xls";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+

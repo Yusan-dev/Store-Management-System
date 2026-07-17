@@ -25,56 +25,11 @@ function extractVariant(desc){
     
     
     
-    function extractArtikel(
-    variant
-    ){
-    
-    if(
-    !variant
-    )
-    
-    return ""
-    
-    const map={
-    
-    7:4,
-    8:5,
-    9:6,
-    10:7,
-    11:8,
-    12:9,
-    13:10,
-    14:5,
-    15:6,
-    16:7,
-    17:8,
-    18:9
-    
-    }
-    
-    
-    
-    const len=
-    variant.length
-    
-    
-    const take=
-    (
-    map[len]
-    ||
-    6
-    )
-    +
-    5
-    
-    
-    return variant
-    .substring(
-    0,
-    take
-    )
-    
-    }
+function extractArtikel(variant) {
+    if (!variant) return "";
+    // User requested "CCR10001-001" which is exactly 12 characters.
+    return variant.trim().substring(0, 12);
+}
     
     
     

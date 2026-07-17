@@ -1,4 +1,4 @@
-let currentSort = null
+let currentSort = "category"
 let currentDirection = "asc"
 
 function sortTable(key){
