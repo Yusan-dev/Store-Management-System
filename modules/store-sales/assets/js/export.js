@@ -17,16 +17,16 @@ document.getElementById("export").addEventListener("click", function() {
 
     let html = clone.outerHTML;
 
-    const topArticlesElement = document.getElementById("topArticlesSection");
-    if (topArticlesElement) {
-        const topArticlesClone = topArticlesElement.cloneNode(true);
-        html += "<br><br>" + topArticlesClone.outerHTML;
-    }
-    
     const salesCategoryElement = document.getElementById("salesCategorySection");
     if (salesCategoryElement) {
         const salesCategoryClone = salesCategoryElement.cloneNode(true);
         html += "<br><br>" + salesCategoryClone.outerHTML;
+    }
+
+    const topArticlesElement = document.getElementById("topArticlesSection");
+    if (topArticlesElement) {
+        const topArticlesClone = topArticlesElement.cloneNode(true);
+        html += "<br><br>" + topArticlesClone.outerHTML;
     }
     
     let template = `

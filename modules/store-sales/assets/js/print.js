@@ -41,9 +41,9 @@ document.getElementById("print").addEventListener("click", function() {
         <p class="meta">${period} <br> GENERATED: ${generatedAt}</p>
         ${tableHtml}
         <br><br>
-        ${topArticlesHtml}
-        <br><br>
         ${salesCategoryHtml}
+        <br><br>
+        ${topArticlesHtml}
         <script>
             window.onload = () => { window.print(); window.close(); }
         </script>

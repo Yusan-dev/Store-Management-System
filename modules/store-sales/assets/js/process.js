@@ -205,10 +205,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const dTo = document.getElementById("performanceDateTo").value;
     const mode = dFrom && dTo ? "CUSTOM" : "ALL";
     const t = getTargets();
-    const discFilter =
-      document.getElementById("discountTypeFilter")?.value || "ALL";
-    const catFilter =
-      document.getElementById("categoryTypeFilter")?.value || "ALL";
+    
+    const discEls = document.querySelectorAll(".disc-filter:checked");
+    const activeDisc = new Set([...discEls].map(x => x.value));
+    
+    const catEls = document.querySelectorAll(".cat-filter:checked");
+    const activeCat = new Set([...catEls].map(x => x.value));
+
     renderDashboard(
       mode,
       dFrom,
@@ -216,10 +219,11 @@ document.addEventListener("DOMContentLoaded", () => {
       t.upt,
       t.atv,
       t.aur,
-      discFilter,
-      catFilter,
+      activeDisc,
+      activeCat,
     );
   };
+  window.reRender = reRender;
 
   const applyBtn = document.getElementById("applyPerformanceDateRange");
   if (applyBtn) applyBtn.addEventListener("click", reRender);
@@ -230,14 +234,18 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("performanceDateFrom").value = "";
       document.getElementById("performanceDateTo").value = "";
       const t = getTargets();
-      renderDashboard("ALL", null, null, t.upt, t.atv, t.aur, "ALL", "ALL");
+      
+      const discEls = document.querySelectorAll(".disc-filter:checked");
+      const activeDisc = new Set([...discEls].map(x => x.value));
+      
+      const catEls = document.querySelectorAll(".cat-filter:checked");
+      const activeCat = new Set([...catEls].map(x => x.value));
+
+      renderDashboard("ALL", null, null, t.upt, t.atv, t.aur, activeDisc, activeCat);
     });
 
-  const discFilterEl = document.getElementById("discountTypeFilter");
-  if (discFilterEl) discFilterEl.addEventListener("change", reRender);
-
-  const catFilterEl = document.getElementById("categoryTypeFilter");
-  if (catFilterEl) catFilterEl.addEventListener("change", reRender);
+  // Checkbox listeners are attached directly after rendering categories or in HTML for discount
+  document.querySelectorAll(".disc-filter").forEach(el => el.addEventListener("change", window.reRender));
 });
 
 function readExcel(file) {
@@ -469,15 +477,18 @@ function parseAllData(
       }
 
       const catKey = getCatKey(division);
+      const productDivision = String(row[3] || "UNKNOWN").trim().toUpperCase();
 
       if (!dataByDate[date].discountData) dataByDate[date].discountData = {};
       if (!dataByDate[date].discountData[catKey])
         dataByDate[date].discountData[catKey] = {};
-      if (!dataByDate[date].discountData[catKey][priceType]) {
-        dataByDate[date].discountData[catKey][priceType] = { qty: 0, sales: 0 };
+      if (!dataByDate[date].discountData[catKey][productDivision])
+        dataByDate[date].discountData[catKey][productDivision] = {};
+      if (!dataByDate[date].discountData[catKey][productDivision][priceType]) {
+        dataByDate[date].discountData[catKey][productDivision][priceType] = { qty: 0, sales: 0 };
       }
-      dataByDate[date].discountData[catKey][priceType].qty += qty;
-      dataByDate[date].discountData[catKey][priceType].sales += netAmt;
+      dataByDate[date].discountData[catKey][productDivision][priceType].qty += qty;
+      dataByDate[date].discountData[catKey][productDivision][priceType].sales += netAmt;
     }
 
     if (article) {
@@ -766,14 +777,51 @@ function renderDashboard(
     }
   }
 
-  // Generate Filter Dropdown Options
-  const categoryTypeFilter = document.getElementById("categoryTypeFilter");
-  if (categoryTypeFilter) {
-    let optHtml = `<option value="ALL">ALL CATEGORIES</option>`;
+  // Generate Filter Checkboxes Options
+  const categoryCheckboxes = document.getElementById("categoryCheckboxes");
+  if (categoryCheckboxes) {
+    let optHtml = ``;
     categories.forEach(cat => {
-      optHtml += `<option value="${cat}">${cat}</option>`;
+      optHtml += `<label><input type="checkbox" value="${cat}" checked class="cat-filter"> ${cat}</label>`;
     });
-    categoryTypeFilter.innerHTML = optHtml;
+    categoryCheckboxes.innerHTML = optHtml;
+    document.querySelectorAll(".cat-filter").forEach(el => el.addEventListener("change", window.reRender));
+  }
+
+  const discountCheckboxes = document.getElementById("discountCheckboxes");
+  if (discountCheckboxes) {
+    let allDiscTypes = new Set();
+    Object.values(window.storeData.dates).forEach(dateObj => {
+        if (dateObj.discountData) {
+            Object.values(dateObj.discountData).forEach(catObj => {
+                Object.keys(catObj).forEach(divOrPtype => {
+                    if (catObj[divOrPtype].qty !== undefined) {
+                        allDiscTypes.add(divOrPtype);
+                    } else {
+                        Object.keys(catObj[divOrPtype]).forEach(ptype => allDiscTypes.add(ptype));
+                    }
+                });
+            });
+        }
+    });
+    
+    // Sort price types
+    const sortedDiscTypes = Array.from(allDiscTypes).sort((a, b) => {
+      const order = (t) => {
+        if (t === "normal") return 0;
+        if (t === "FREEFALL") return 99;
+        return parseInt(t) || 50;
+      };
+      return order(a) - order(b);
+    });
+
+    let optHtml = ``;
+    sortedDiscTypes.forEach(disc => {
+      const label = disc === "normal" ? "NORMAL" : disc === "FREEFALL" ? "FREEFALL" : disc.toUpperCase();
+      optHtml += `<label><input type="checkbox" value="${disc}" checked class="disc-filter"> ${label}</label>`;
+    });
+    discountCheckboxes.innerHTML = optHtml;
+    document.querySelectorAll(".disc-filter").forEach(el => el.addEventListener("change", window.reRender));
   }
   let totalO2OSales = 0,
     totalO2OSM = 0,
@@ -1085,16 +1133,31 @@ function renderDashboard(
   // Render SALES BY DISCOUNT table (collapsible per kategori)
   // Sumber: discountData dari MSR (gesttechPrice logic)
   // ===================================
-  const discAgg = {}; // { ACC: { normal: {qty,sales}, freefall: {qty,sales}, "30%": {qty,sales}, ... }, BAG: {...}, ... }
+  const discAgg = {}; // { ACC: { MEN: { normal: {qty,sales}, ... }, WOMEN: ... } }
   selectedDates.forEach((d) => {
     const data = window.storeData.dates[d];
     if (data.discountData) {
       for (const cat in data.discountData) {
         if (!discAgg[cat]) discAgg[cat] = {};
-        for (const ptype in data.discountData[cat]) {
-          if (!discAgg[cat][ptype]) discAgg[cat][ptype] = { qty: 0, sales: 0 };
-          discAgg[cat][ptype].qty += data.discountData[cat][ptype].qty;
-          discAgg[cat][ptype].sales += data.discountData[cat][ptype].sales;
+        for (const divOrPtype in data.discountData[cat]) {
+          if (data.discountData[cat][divOrPtype].qty !== undefined) {
+            // Backward compatibility: old format (divOrPtype is priceType)
+            const ptype = divOrPtype;
+            const div = "UNKNOWN";
+            if (!discAgg[cat][div]) discAgg[cat][div] = {};
+            if (!discAgg[cat][div][ptype]) discAgg[cat][div][ptype] = { qty: 0, sales: 0 };
+            discAgg[cat][div][ptype].qty += data.discountData[cat][ptype].qty;
+            discAgg[cat][div][ptype].sales += data.discountData[cat][ptype].sales;
+          } else {
+            // New format (divOrPtype is division)
+            const div = divOrPtype;
+            if (!discAgg[cat][div]) discAgg[cat][div] = {};
+            for (const ptype in data.discountData[cat][div]) {
+              if (!discAgg[cat][div][ptype]) discAgg[cat][div][ptype] = { qty: 0, sales: 0 };
+              discAgg[cat][div][ptype].qty += data.discountData[cat][div][ptype].qty;
+              discAgg[cat][div][ptype].sales += data.discountData[cat][div][ptype].sales;
+            }
+          }
         }
       }
     }
@@ -1105,8 +1168,9 @@ function renderDashboard(
     catBody.innerHTML = "";
     let CATS = ["ACC", "BAG", "APP", "FTW"];
     if (catFilter !== "ALL") {
-      CATS = CATS.filter((c) => c === catFilter);
+      CATS = CATS.filter((c) => catFilter.has(c));
     }
+    
     const CAT_LABELS = {
       ACC: "ACCESSORIES",
       BAG: "BAG",
@@ -1124,31 +1188,40 @@ function renderDashboard(
       return types.sort((a, b) => order(a) - order(b));
     };
 
+    // Calculate Grand Total Sales for % contribution
+    let grandTotalSales = 0;
+    CATS.forEach((c) => {
+      if (discAgg[c]) {
+        Object.keys(discAgg[c]).forEach(div => {
+          Object.keys(discAgg[c][div]).forEach(ptype => {
+            if (discFilter !== "ALL" && !discFilter.has(ptype)) return;
+            grandTotalSales += discAgg[c][div][ptype].sales;
+          });
+        });
+      }
+    });
+
     CATS.forEach((cat) => {
-      let catData = discAgg[cat] || {};
-      let types = sortTypes(Object.keys(catData));
-
-      // Apply Discount Filter
-      if (discFilter !== "ALL") {
-        types = types.filter((t) => t === discFilter);
-      }
-      if (types.length === 0) {
-        if (discFilter !== "ALL") return; // Hidden by filter
-        catData = { "-": { qty: 0, sales: 0 } };
-        types = ["-"];
-      }
-
-      // Calculate category totals for header
-      let catTotalQty = 0,
-        catTotalSales = 0;
-      types.forEach((t) => {
-        catTotalQty += catData[t].qty;
-        catTotalSales += catData[t].sales;
+      let divData = discAgg[cat] || {};
+      
+      // Calculate category total across all divisions
+      let catTotalQty = 0;
+      let catTotalSales = 0;
+      
+      Object.keys(divData).forEach(div => {
+         Object.keys(divData[div]).forEach(ptype => {
+            if (discFilter !== "ALL" && !discFilter.has(ptype)) return;
+            catTotalQty += divData[div][ptype].qty;
+            catTotalSales += divData[div][ptype].sales;
+         });
       });
+      
+      if (catTotalQty === 0 && catTotalSales === 0) return; // Hidden by filter
 
       const groupId = "disc-group-" + cat;
 
       // Category header row (clickable)
+      const catContrib = grandTotalSales > 0 ? ((catTotalSales / grandTotalSales) * 100).toFixed(2) + "%" : "0.00%";
       catBody.innerHTML += `<tr class="disc-cat-header" onclick="toggleDiscGroup('${groupId}')"
                 style="background:#111; color:#fff; cursor:pointer; user-select:none;">
                 <td style="padding:10px; font-weight:bold; letter-spacing:1px;">
@@ -1157,39 +1230,63 @@ function renderDashboard(
                 <td style="padding:10px; font-weight:bold;">ALL TYPES</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(catTotalQty).toLocaleString("id-ID")}</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">Rp ${Math.round(catTotalSales).toLocaleString("id-ID")}</td>
+                <td style="padding:10px; text-align:right; font-weight:bold;">${catContrib}</td>
             </tr>`;
 
-      // Sub-rows per price type
-      types.forEach((ptype) => {
-        if (ptype === "-") return; // Don't render sub-row for empty category
-        const { qty, sales } = catData[ptype];
-        const isNormal = ptype === "normal";
-        const isFreefall = ptype === "FREEFALL";
-        const typeColor = isNormal
-          ? "#111"
-          : isFreefall
-            ? "#0066cc"
-            : "#d32f2f";
-        const typeLabel = isNormal
-          ? "NORMAL"
-          : isFreefall
-            ? "FREEFALL"
-            : ptype.toUpperCase();
+      // Render divisions
+      Object.keys(divData).sort().forEach(div => {
+         let types = sortTypes(Object.keys(divData[div]));
+         if (discFilter !== "ALL") {
+            types = types.filter((t) => discFilter.has(t));
+         }
+         if (types.length === 0) return;
+         
+         let divTotalQty = 0;
+         let divTotalSales = 0;
+         types.forEach((t) => {
+            divTotalQty += divData[div][t].qty;
+            divTotalSales += divData[div][t].sales;
+         });
+         
+         const divContrib = grandTotalSales > 0 ? ((divTotalSales / grandTotalSales) * 100).toFixed(2) + "%" : "0.00%";
 
-        catBody.innerHTML += `<tr class="disc-sub-row" data-group="${groupId}"
-                    style="border-left:4px solid ${typeColor};">
-                    <td style="padding:8px 8px 8px 24px; color:#555;"></td>
-                    <td style="padding:8px; font-weight:bold; color:${typeColor};">${typeLabel}</td>
-                    <td style="padding:8px; text-align:right;">${Math.round(qty).toLocaleString("id-ID")}</td>
-                    <td style="padding:8px; text-align:right; color:${typeColor};">Rp ${Math.round(sales).toLocaleString("id-ID")}</td>
+         // Division header row
+         catBody.innerHTML += `<tr class="disc-sub-row" data-group="${groupId}"
+                    style="background:#f5f5f5; border-bottom:1px solid #ddd;">
+                    <td style="padding:8px; padding-left:30px; font-size:12px; font-weight:bold; color:#555;">► ${div}</td>
+                    <td style="padding:8px; font-weight:bold; font-size:12px; color:#555;">ALL TYPES</td>
+                    <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">${Math.round(divTotalQty).toLocaleString("id-ID")}</td>
+                    <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">Rp ${Math.round(divTotalSales).toLocaleString("id-ID")}</td>
+                    <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">${divContrib}</td>
                 </tr>`;
+
+         // Sub-rows per price type
+         types.forEach((ptype) => {
+            const { qty, sales } = divData[div][ptype];
+            if (qty === 0 && sales === 0) return;
+            const isNormal = ptype === "normal";
+            const isFreefall = ptype === "FREEFALL";
+            const typeColor = isNormal ? "#111" : isFreefall ? "#0066cc" : "#d32f2f";
+            const typeLabel = isNormal ? "NORMAL" : isFreefall ? "FREEFALL" : ptype.toUpperCase();
+            
+            const typeContrib = grandTotalSales > 0 ? ((sales / grandTotalSales) * 100).toFixed(2) + "%" : "0.00%";
+
+            catBody.innerHTML += `<tr class="disc-sub-row" data-group="${groupId}"
+                        style="border-left:4px solid ${typeColor};">
+                        <td style="padding:8px; padding-left:50px; font-size:12px; font-weight:bold;"></td>
+                        <td style="padding:8px; font-weight:bold; font-size:12px; color:${typeColor};">${typeLabel}</td>
+                        <td style="padding:8px; text-align:right; font-size:12px;">${Math.round(qty).toLocaleString("id-ID")}</td>
+                        <td style="padding:8px; text-align:right; font-size:12px; color:${typeColor};">Rp ${Math.round(sales).toLocaleString("id-ID")}</td>
+                        <td style="padding:8px; text-align:right; font-size:12px; color:${typeColor};">${typeContrib}</td>
+                    </tr>`;
+         });
       });
     });
 
     // O2O row dihilangkan dari tabel kategori (Breakdown by Category and Type)
     if (catBody.innerHTML === "") {
       catBody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>';
+        '<tr><td colspan="5" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>';
     }
   }
 
