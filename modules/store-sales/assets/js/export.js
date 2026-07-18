@@ -1,7 +1,7 @@
 document.getElementById("export").addEventListener("click", function() {
     const tableElement = document.getElementById("tableBody");
-    if (!tableElement || tableElement.innerText.includes("BELUM ADA DATA")) {
-        alert("Tidak ada data untuk diexport. Silakan proses data terlebih dahulu.");
+    if (!tableElement || tableElement.innerText.includes("NO DATA AVAILABLE")) {
+        alert("No data to export. Please process data first.");
         return;
     }
 
@@ -16,6 +16,18 @@ document.getElementById("export").addEventListener("click", function() {
     });
 
     let html = clone.outerHTML;
+
+    const topArticlesElement = document.getElementById("topArticlesSection");
+    if (topArticlesElement) {
+        const topArticlesClone = topArticlesElement.cloneNode(true);
+        html += "<br><br>" + topArticlesClone.outerHTML;
+    }
+    
+    const salesCategoryElement = document.getElementById("salesCategorySection");
+    if (salesCategoryElement) {
+        const salesCategoryClone = salesCategoryElement.cloneNode(true);
+        html += "<br><br>" + salesCategoryClone.outerHTML;
+    }
     
     let template = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -57,3 +69,4 @@ document.getElementById("export").addEventListener("click", function() {
     a.click();
     document.body.removeChild(a);
 });
+

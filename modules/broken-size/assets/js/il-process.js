@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - IL-PROCESS.JS
+   SMS BROKEN SIZE - IL-PROCESS.JS
    Inventory Level calculation
    IL = Current Stock / Avg Monthly Sales
    
@@ -48,7 +48,7 @@ async function processIL(stockRows) {
     updateILSummary(ilData);
   } catch (err) {
     console.error("IL Error:", err);
-    alert("Gagal memproses IL: " + err.message);
+    alert("Failed memproses IL: " + err.message);
   }
 }
 
@@ -206,3 +206,5 @@ function updateILSummary(rows) {
     totalAvgSales.toLocaleString();
   document.getElementById("ilOverall").innerText = overallIL.toFixed(2);
 }
+
+

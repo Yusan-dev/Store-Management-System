@@ -155,7 +155,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>GT AUTO STOCK</title>
+<title>SMS AUTO STOCK</title>
 <style>
 @page { size: A4 landscape; margin: 10mm; }
 * { box-sizing: border-box; }
@@ -176,7 +176,7 @@ tr { break-inside: avoid; }
 <body>
 <div class="header">
   <div>
-    <div class="title">GT AUTO STOCK</div>
+    <div class="title">SMS AUTO STOCK</div>
     <div>Professional Stock Intelligence Dashboard</div>
   </div>
   <div class="meta">
@@ -194,7 +194,7 @@ tr { break-inside: avoid; }
   </thead>
   <tbody>${body}</tbody>
 </table>
-<div class="footer">KANGODING.ORG © 2026 - GT AUTO STOCK</div>
+<div class="footer">KANGODING.ORG © 2026 - SMS AUTO STOCK</div>
 </body>
 </html>`;
   }
@@ -247,7 +247,7 @@ tr { break-inside: avoid; }
       const data = rows();
 
       if (!data.length) {
-        alert("Tidak ada data");
+        alert("No data");
         return;
       }
 
@@ -274,7 +274,7 @@ tr { break-inside: avoid; }
       if (result?.ok) {
         alert(`PDF tersimpan:\n${result.filePath}`);
       } else if (!result?.canceled) {
-        alert(result?.error || "Gagal menyimpan PDF");
+        alert(result?.error || "Failed to save PDF");
       }
     };
 
@@ -285,7 +285,7 @@ tr { break-inside: avoid; }
     const data = rows();
 
     if (!data.length) {
-      alert("Tidak ada data");
+      alert("No data");
       return;
     }
 
@@ -341,7 +341,7 @@ tr { break-inside: avoid; }
 
       const result = await savePreset(name);
       if (!result?.ok) {
-        alert(result?.error || "Gagal menyimpan preset");
+        alert(result?.error || "Failed to save preset");
       }
       await refresh();
     };
@@ -383,3 +383,5 @@ tr { break-inside: avoid; }
     ensurePresetControls();
   });
 })();
+
+

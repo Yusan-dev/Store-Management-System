@@ -129,8 +129,7 @@ function updateLicenseStatusUI() {
     }
 
     if (infoElement) {
-      infoElement.innerText =
-        "ACTIVE UNTIL • " + formatLicenseDate(status.freeLimit);
+      infoElement.innerText = "";
     }
 
     return;
@@ -368,7 +367,7 @@ function readExcel(file) {
     };
 
     reader.onerror = () => {
-      reject(new Error("Gagal membaca file Excel."));
+      reject(new Error("Failed to read file Excel."));
     };
 
     reader.readAsArrayBuffer(file);
@@ -549,7 +548,7 @@ async function runProcess() {
         showExpiredAccessScreen();
       } else if (runtimeAccess.reason === "USER_ID_NOT_FOUND") {
         alert(
-          "USER ID TIDAK DITEMUKAN.\n\n" +
+          "USER ID NOT FOUND.\n\n" +
             "Pastikan User ID tersedia pada cell A2 Daily Cash Collection.",
         );
       } else {
@@ -714,3 +713,4 @@ async function runProcess() {
     }
   }
 }
+

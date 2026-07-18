@@ -500,7 +500,7 @@ function initializePerformanceDateRange() {
       // =====================================
 
       if (!from && !to) {
-        alert("PILIH FROM DATE ATAU TO DATE.");
+        alert("SELECT FROM DATE ATAU TO DATE.");
 
         return;
       }
@@ -620,7 +620,7 @@ function drawTableHeader(divisions) {
 
   const staticColumns = [];
   if (isDaily) {
-    staticColumns.push({ key: "date", label: "TANGGAL" });
+    staticColumns.push({ key: "date", label: "DATE" });
   }
   staticColumns.push({ key: "staff", label: "STAFF" });
   staticColumns.push({ key: "sales", label: "SALES" });
@@ -2507,7 +2507,7 @@ function getPrintLicenseInfo() {
         )
         .toUpperCase();
 
-      accessLabel = `ACTIVE UNTIL ${formattedDate}`;
+      accessLabel = ``;
     } else {
       accessLabel = "AUTHORIZED";
     }
@@ -2627,7 +2627,7 @@ function buildPrintSummary(summary) {
 function buildPrintPerformanceTable(summary, divisions) {
   const isDaily = summary.length > 0 && summary[0].date !== undefined;
   const headers = [];
-  if (isDaily) headers.push("TANGGAL");
+  if (isDaily) headers.push("DATE");
   headers.push(
     "STAFF",
     "SALES",
@@ -3095,7 +3095,7 @@ function drawMonthlySummaryTable(summary, divisions) {
     thead.innerHTML = "";
     const tr = document.createElement("tr");
     let staticColumns = [];
-    if (isDaily) staticColumns.push({ key: "date", label: "TANGGAL" });
+    if (isDaily) staticColumns.push({ key: "date", label: "DATE" });
     staticColumns.push({ key: "staff", label: "STAFF" });
     staticColumns.push({ key: "sales", label: "SALES" });
     staticColumns.push({ key: "sm", label: "SM" });
@@ -3193,7 +3193,7 @@ function buildPrintMonthlySummary(summary, divisions) {
   const isDaily = summary.length > 0 && summary[0].date !== undefined;
 
   let headers = [];
-  if (isDaily) headers.push("TANGGAL");
+  if (isDaily) headers.push("DATE");
   headers.push(
     "STAFF",
     "SALES",
@@ -3293,7 +3293,7 @@ function exportStaffPerformanceReportExcel() {
     </head>
     <body>
     <table>
-        <tr><td colspan="5" class="title">KANGODING.ORG - GT AUTO SALES STAFF</td></tr>
+        <tr><td colspan="5" class="title">KANGODING.ORG - SMS AUTO SALES STAFF</td></tr>
         <tr><td colspan="5" class="subtitle">SALES STAFF PERFORMANCE REPORT</td></tr>
         <tr><td colspan="2" class="meta">PERIOD:</td><td colspan="3" class="meta">${periodLabel}</td></tr>
         <tr><td colspan="2" class="meta">GENERATED:</td><td colspan="3" class="meta">${generatedAt}</td></tr>
@@ -3403,3 +3403,5 @@ function exportStaffPerformanceReportExcel() {
   link.click();
   document.body.removeChild(link);
 }
+
+

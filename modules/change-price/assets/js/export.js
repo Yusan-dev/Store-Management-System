@@ -7,7 +7,7 @@ document.getElementById("export").onclick = exportFiltered;
 function exportFiltered() {
   const rows = window.filteredData || [];
   if (!rows.length) {
-    alert("Tidak ada data");
+    alert("No data");
     return;
   }
 
@@ -21,7 +21,7 @@ function exportFiltered() {
   let html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
     <head>
-    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>GT CHANGE PRICE</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>SMS CHANGE PRICE</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
     <style>
         .title { font-size: 20px; font-weight: bold; background-color: #00ffff; }
         .meta { font-style: italic; }
@@ -34,7 +34,7 @@ function exportFiltered() {
     </head>
     <body>
     <table>
-        <tr><td colspan="10" class="title">KANGODING.ORG - GT CHANGE PRICE</td></tr>
+        <tr><td colspan="10" class="title">KANGODING.ORG - SMS CHANGE PRICE</td></tr>
         <tr><td colspan="10" class="meta">GENERATED: ${generatedAt}</td></tr>
         <tr></tr>
         <tr>
@@ -79,3 +79,5 @@ function exportFiltered() {
   link.click();
   document.body.removeChild(link);
 }
+
+

@@ -4,7 +4,7 @@ function printPDF() {
   const rows = window.filteredData || [];
 
   if (!rows.length) {
-    alert("Tidak ada data");
+    alert("No data");
 
     return;
   }
@@ -17,7 +17,7 @@ function printPDF() {
 
 <title>
 
-GT AUTO STOCK
+SMS AUTO STOCK
 
 </title>
 
@@ -166,7 +166,7 @@ class="header">
 <div
 class="title">
 
-GT AUTO STOCK
+SMS AUTO STOCK
 
 </div>
 
@@ -322,3 +322,5 @@ KANGODING.ORG © 2026
     400,
   );
 }
+
+

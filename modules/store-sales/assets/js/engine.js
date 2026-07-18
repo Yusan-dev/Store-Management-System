@@ -562,8 +562,8 @@ const GTEngine = (() => {
       // DATE RESOLUTION
       //
       // PRIORITAS:
-      // 1. Tanggal Salesperson Wise
-      // 2. Tanggal Daily Cash
+      // 1. Date Salesperson Wise
+      // 2. Date Daily Cash
       // ============================================
 
       const transactionDate = currentDate || inv.date || "";
@@ -2187,7 +2187,7 @@ const GTEngine = (() => {
         };
       }
 
-      // RANGE DENGAN TANGGAL SAMA
+      // RANGE DENGAN DATE SAMA
       // DIANGGAP SINGLE DATE
 
       if (from && to && from === to) {
@@ -2356,3 +2356,4 @@ const GTEngine = (() => {
     getValidationDetail,
   };
 })();
+

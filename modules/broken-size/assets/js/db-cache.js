@@ -1,5 +1,5 @@
 // MAA DASHBOARD GLOBAL CACHE
-// Menyimpan dan memulihkan file upload otomatis menggunakan IndexedDB
+// Saving dan memulihkan file upload otomatis menggunakan IndexedDB
 // sehingga user tidak perlu upload ulang setiap refresh/pindah halaman.
 (function () {
   const DB_NAME = "MAA_DASHBOARD_CACHE";
@@ -125,3 +125,4 @@
     setTimeout(loadFiles, 500);
   });
 })();
+

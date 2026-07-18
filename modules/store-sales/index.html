@@ -184,7 +184,7 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="10" id="emptyRowCell" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
+                <tr><td colspan="10" id="emptyRowCell" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>
             </tbody>
         </table>
     </div>
@@ -194,7 +194,7 @@
 <!-- CATEGORY BREAKDOWN CARDS -->
 <!-- ===================================== -->
 <section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
-    <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">RINGKASAN KATEGORI</h2>
+    <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">CATEGORY SUMMARY</h2>
     <div id="categoryCardsContainer" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
         <!-- Dynamic Cards will be injected here -->
         <div style="border:2px solid #111; padding:12px; background:#111; color:#fff;">
@@ -206,31 +206,31 @@
 </section>
 
 <!-- ===================================== -->
-<!-- SALES KATEGORI & DISCOUNT -->
+<!-- SALES CATEGORY & DISCOUNT -->
 <!-- ===================================== -->
-<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+<section id="salesCategorySection" class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
         <div>
-            <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0;">SALES KATEGORI &amp; DISCOUNT</h2>
+            <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0;">SALES CATEGORY &amp; DISCOUNT</h2>
             <div style="font-size:11px; color:#666; margin-top:4px;">Breakdown by Category and Type</div>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
             <select id="categoryTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
-                <option value="ALL">SEMUA KATEGORI</option>
+                <option value="ALL">ALL CATEGORIES</option>
                 <!-- Dynamic Options -->
             </select>
             <select id="discountTypeFilter" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff; cursor:pointer;">
-                <option value="ALL">SEMUA TIPE</option>
+                <option value="ALL">ALL TYPES</option>
                 <option value="normal">NORMAL</option>
-                <option value="DISKON 10%">DISKON 10%</option>
-                <option value="DISKON 20%">DISKON 20%</option>
-                <option value="DISKON 30%">DISKON 30%</option>
-                <option value="DISKON 40%">DISKON 40%</option>
-                <option value="DISKON 50%">DISKON 50%</option>
-                <option value="DISKON 60%">DISKON 60%</option>
-                <option value="DISKON 70%">DISKON 70%</option>
-                <option value="DISKON 80%">DISKON 80%</option>
-                <option value="DISKON 90%">DISKON 90%</option>
+                <option value="DISCOUNT 10%">DISCOUNT 10%</option>
+                <option value="DISCOUNT 20%">DISCOUNT 20%</option>
+                <option value="DISCOUNT 30%">DISCOUNT 30%</option>
+                <option value="DISCOUNT 40%">DISCOUNT 40%</option>
+                <option value="DISCOUNT 50%">DISCOUNT 50%</option>
+                <option value="DISCOUNT 60%">DISCOUNT 60%</option>
+                <option value="DISCOUNT 70%">DISCOUNT 70%</option>
+                <option value="DISCOUNT 80%">DISCOUNT 80%</option>
+                <option value="DISCOUNT 90%">DISCOUNT 90%</option>
                 <option value="FREEFALL">FREEFALL</option>
             </select>
         </div>
@@ -239,14 +239,14 @@
         <table class="report-table" id="tableCat" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
             <thead>
                 <tr style="border-bottom:2px solid #111; background:#f0f0f0;">
-                    <th style="padding:10px; text-align:left;">KATEGORI</th>
+                    <th style="padding:10px; text-align:left;">CATEGORY</th>
                     <th style="padding:10px; text-align:left;">TYPE</th>
                     <th style="padding:10px; text-align:right;">QTY</th>
                     <th style="padding:10px; text-align:right;">SALES (Rp)</th>
                 </tr>
             </thead>
             <tbody id="tableCatBody">
-                <tr><td colspan="4" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>
+                <tr><td colspan="4" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>
             </tbody>
         </table>
     </div>
@@ -255,7 +255,7 @@
 <!-- ===================================== -->
 <!-- TOP ARTICLES -->
 <!-- ===================================== -->
-<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
+<section id="topArticlesSection" class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
     <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">TOP 5 ARTIKEL</h2>
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px;">
         <div style="border:2px solid #111; padding:12px;">
@@ -353,10 +353,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <div class="loading-overlay" id="loading">
     <div class="cool-spinner"></div>
-    <div class="loading-text">MEMPROSES DATA...</div>
+    <div class="loading-text">PROCESSING DATA...</div>
 </div>
 
 <div id="printReportRoot"></div>
 <script src="assets/js/db-cache.js"></script>
 </body>
 </html>
+
+
+

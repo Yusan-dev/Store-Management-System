@@ -20,7 +20,7 @@ function printBrokenSize() {
   const rows = window.bsFilteredData || [];
 
   if (!rows.length) {
-    alert("Tidak ada data");
+    alert("No data");
     return;
   }
 
@@ -107,7 +107,7 @@ function printIL() {
   const rows = window.ilTableData || [];
 
   if (!rows.length) {
-    alert("Tidak ada data IL");
+    alert("No IL data");
     return;
   }
 
@@ -159,3 +159,4 @@ function printIL() {
   win.document.close();
   setTimeout(() => win.print(), 400);
 }
+

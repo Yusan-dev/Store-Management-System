@@ -3,7 +3,7 @@ document.getElementById("print").onclick = printData;
 function printData() {
   const rows = window.filteredData || [];
   if (!rows.length) {
-    alert("Tidak ada data untuk di print");
+    alert("No data untuk di print");
     return;
   }
 
@@ -34,7 +34,7 @@ function printData() {
     </style>
     </head>
     <body>
-        <h2>KANGODING.ORG - GT CHANGE PRICE</h2>
+        <h2>KANGODING.ORG - SMS CHANGE PRICE</h2>
         <p class="meta">GENERATED: ${generatedAt}</p>
         <table>
             <thead>
@@ -88,3 +88,5 @@ function printData() {
   win.document.write(html);
   win.document.close();
 }
+
+

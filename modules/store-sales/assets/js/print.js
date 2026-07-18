@@ -1,11 +1,15 @@
 document.getElementById("print").addEventListener("click", function() {
     const tableElement = document.getElementById("tableBody");
-    if (!tableElement || tableElement.innerText.includes("BELUM ADA DATA")) {
-        alert("Tidak ada data untuk diprint. Silakan proses data terlebih dahulu.");
+    if (!tableElement || tableElement.innerText.includes("NO DATA AVAILABLE")) {
+        alert("No data to print. Please process data first.");
         return;
     }
     
     const tableHtml = tableElement.parentElement.outerHTML;
+    const topArticlesElement = document.getElementById("topArticlesSection");
+    const topArticlesHtml = topArticlesElement ? topArticlesElement.outerHTML : "";
+    const salesCategoryElement = document.getElementById("salesCategorySection");
+    const salesCategoryHtml = salesCategoryElement ? salesCategoryElement.outerHTML : "";
     const now = new Date();
     const generatedAt = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
     const period = document.getElementById("performanceFilterInfo") ? document.getElementById("performanceFilterInfo").innerText : "STORE SALES";
@@ -27,6 +31,8 @@ document.getElementById("print").addEventListener("click", function() {
         @media print {
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
             th { background-color: #f0f0f0 !important; }
+            #topArticlesSection { page-break-inside: avoid; break-inside: avoid; }
+            #topArticlesSection > div > div { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
     </head>
@@ -34,6 +40,10 @@ document.getElementById("print").addEventListener("click", function() {
         <h2>MAA STORE SALES ACHIEVEMENT</h2>
         <p class="meta">${period} <br> GENERATED: ${generatedAt}</p>
         ${tableHtml}
+        <br><br>
+        ${topArticlesHtml}
+        <br><br>
+        ${salesCategoryHtml}
         <script>
             window.onload = () => { window.print(); window.close(); }
         </script>
@@ -45,3 +55,4 @@ document.getElementById("print").addEventListener("click", function() {
     win.document.write(html);
     win.document.close();
 });
+

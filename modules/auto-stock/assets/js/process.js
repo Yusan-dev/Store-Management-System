@@ -37,7 +37,7 @@ async function runProcess() {
     } catch (err) {
       hideLoading();
       console.error(err);
-      alert("Gagal membaca file");
+      alert("Failed to read file");
     }
   };
   reader.readAsBinaryString(file);
@@ -178,3 +178,4 @@ function updateSummary(rows) {
     dynContainer.innerHTML = catHtml;
   }
 }
+

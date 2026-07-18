@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - FILTER.JS
+   SMS BROKEN SIZE - FILTER.JS
    Filter system for broken size table
    ======================================== */
 
@@ -113,3 +113,4 @@ window.addEventListener("load", () => {
     searchEl.oninput = bsApplyFilter;
   }
 });
+

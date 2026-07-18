@@ -468,7 +468,7 @@ function initializePerformanceDateRange() {
       // =====================================
 
       if (!from && !to) {
-        alert("PILIH FROM DATE ATAU TO DATE.");
+        alert("SELECT FROM DATE ATAU TO DATE.");
 
         return;
       }
@@ -2621,7 +2621,7 @@ function getPrintLicenseInfo() {
         )
         .toUpperCase();
 
-      accessLabel = `ACTIVE UNTIL ${formattedDate}`;
+      accessLabel = ``;
     } else {
       accessLabel = "AUTHORIZED";
     }
@@ -3238,3 +3238,4 @@ function printStaffPerformanceReport() {
       });
     });
 }
+

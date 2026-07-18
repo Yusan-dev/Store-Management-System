@@ -38,10 +38,9 @@ function updateLicenseStatusUI() {
   }
   if (status.plan === "FREE_ACCESS") {
     if (planElement) planElement.innerText = "FREE ACCESS";
-    if (infoElement)
-      infoElement.innerText =
-        "ACTIVE UNTIL • " + formatLicenseDate(status.freeLimit);
-    return;
+    if (infoElement) {
+      infoElement.innerText = "";
+    }return;
   }
   if (status.plan === "FREE_EXPIRED") {
     if (planElement) planElement.innerText = "ACCESS EXPIRED";
@@ -139,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const targetAUR = document.getElementById("targetAUR").value;
 
     if (!targetStore || !targetUPT || !targetATV || !targetAUR) {
-      alert("Mohon lengkapi isian Target Store, UPT, ATV, dan AUR.");
+      alert("Please complete the fields Target Store, UPT, ATV, dan AUR.");
       return;
     }
 
@@ -447,23 +446,23 @@ function parseAllData(
         if (last4 === 0) {
           priceType = "FREEFALL";
         } else if (last3 === 100) {
-          priceType = "DISKON 10%";
+          priceType = "DISCOUNT 10%";
         } else if (last3 === 200) {
-          priceType = "DISKON 20%";
+          priceType = "DISCOUNT 20%";
         } else if (last3 === 300) {
-          priceType = "DISKON 30%";
+          priceType = "DISCOUNT 30%";
         } else if (last3 === 400) {
-          priceType = "DISKON 40%";
+          priceType = "DISCOUNT 40%";
         } else if (last3 === 500) {
-          priceType = "DISKON 50%";
+          priceType = "DISCOUNT 50%";
         } else if (last3 === 600) {
-          priceType = "DISKON 60%";
+          priceType = "DISCOUNT 60%";
         } else if (last3 === 700) {
-          priceType = "DISKON 70%";
+          priceType = "DISCOUNT 70%";
         } else if (last3 === 800) {
-          priceType = "DISKON 80%";
+          priceType = "DISCOUNT 80%";
         } else if (last3 === 900) {
-          priceType = "DISKON 90%";
+          priceType = "DISCOUNT 90%";
         } else {
           priceType = "normal";
         }
@@ -770,7 +769,7 @@ function renderDashboard(
   // Generate Filter Dropdown Options
   const categoryTypeFilter = document.getElementById("categoryTypeFilter");
   if (categoryTypeFilter) {
-    let optHtml = `<option value="ALL">SEMUA KATEGORI</option>`;
+    let optHtml = `<option value="ALL">ALL CATEGORIES</option>`;
     categories.forEach(cat => {
       optHtml += `<option value="${cat}">${cat}</option>`;
     });
@@ -897,12 +896,14 @@ function renderDashboard(
   const diffSales = totalSales - prorataTarget;
   const diffUPT = actualUPT - targetUPT;
   const diffAUR = actualAUR - targetAUR;
+  const diffATV = actualATV - targetATV;
 
   const colorSales = diffSales >= 0 ? "#16a34a" : "#dc2626";
   const colorUPT = diffUPT >= 0 ? "#16a34a" : "#dc2626";
   const colorAUR = diffAUR >= 0 ? "#16a34a" : "#dc2626";
+  const colorATV = diffATV >= 0 ? "#16a34a" : "#dc2626";
 
-  const pct = prorataTarget > 0 ? ((totalSales / prorataTarget) * 100).toFixed(1) : "-";
+  const pct = rawTargetStore > 0 ? ((totalSales / rawTargetStore) * 100).toFixed(1) : "-";
   const pctColor = parseFloat(pct) >= 100 ? "#16a34a" : "#dc2626";
 
   const tbody = document.getElementById("tableBody");
@@ -928,25 +929,25 @@ function renderDashboard(
                 <td style="font-weight:bold;">${formatMoney(totalO2OSales)}</td>
             </tr>
             <tr style="background:#f9f9f9;">
-                <td style="font-weight:bold;">TARGET (S/D HR KE-${lastDataDay})</td>
+                <td style="font-weight:bold;">TARGET (UP TO DAY-${lastDataDay})</td>
                 <td>-</td>
                 <td style="font-weight:bold;">${formatMoney(prorataTarget)}</td>
                 <td>-</td>
                 <td>-</td>
                 <td style="font-weight:bold;">${formatDec(targetUPT)}</td>
-                <td>-</td>
+                <td style="font-weight:bold;">${formatMoney(targetATV)}</td>
                 <td style="font-weight:bold;">${formatMoney(targetAUR)}</td>
                 ${catDashTds}
                 <td>-</td>
             </tr>
             <tr style="background:#fff3cd;">
-                <td style="font-weight:bold;">SELISIH</td>
+                <td style="font-weight:bold;">VARIANCE</td>
                 <td>-</td>
                 <td style="font-weight:bold; color:${colorSales};">${diffSales > 0 ? "+" : ""}${formatMoney(diffSales)}</td>
                 <td>-</td>
                 <td>-</td>
                 <td style="font-weight:bold; color:${colorUPT};">${diffUPT > 0 ? "+" : ""}${formatDec(diffUPT)}</td>
-                <td>-</td>
+                <td style="font-weight:bold; color:${colorATV};">${diffATV > 0 ? "+" : ""}${formatMoney(diffATV)}</td>
                 <td style="font-weight:bold; color:${colorAUR};">${diffAUR > 0 ? "+" : ""}${formatMoney(diffAUR)}</td>
                 ${catDashTds}
                 <td>-</td>
@@ -1153,7 +1154,7 @@ function renderDashboard(
                 <td style="padding:10px; font-weight:bold; letter-spacing:1px;">
                     ▼ ${CAT_LABELS[cat]}
                 </td>
-                <td style="padding:10px; font-weight:bold;">SEMUA TIPE</td>
+                <td style="padding:10px; font-weight:bold;">ALL TYPES</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(catTotalQty).toLocaleString("id-ID")}</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">Rp ${Math.round(catTotalSales).toLocaleString("id-ID")}</td>
             </tr>`;
@@ -1188,7 +1189,7 @@ function renderDashboard(
     // O2O row dihilangkan dari tabel kategori (Breakdown by Category and Type)
     if (catBody.innerHTML === "") {
       catBody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center; padding:20px;">BELUM ADA DATA</td></tr>';
+        '<tr><td colspan="4" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>';
     }
   }
 
@@ -1269,3 +1270,4 @@ function renderTopArticles(articleAgg) {
   const elFootwear = document.getElementById("topFootwear");
   if (elFootwear) elFootwear.innerHTML = renderList(topFootwear, false);
 }
+

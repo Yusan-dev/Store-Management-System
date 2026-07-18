@@ -63,7 +63,7 @@ function openStaffDetail(staff) {
   // =============================================
 
   if (data.length === 0) {
-    modalBody.innerHTML = "<p>Tidak ada data pada periode yang dipilih.</p>";
+    modalBody.innerHTML = "<p>No data pada periode yang dipilih.</p>";
 
     modal.classList.add("show");
 
@@ -311,7 +311,7 @@ function openStaffDetail(staff) {
   modalTitle.innerText = staff;
 
   if (data.length === 0) {
-    modalBody.innerHTML = "<p>Tidak ada data.</p>";
+    modalBody.innerHTML = "<p>No data.</p>";
 
     modal.classList.add("show");
 
@@ -374,3 +374,4 @@ function openStaffDetail(staff) {
 
   modal.classList.add("show");
 }
+

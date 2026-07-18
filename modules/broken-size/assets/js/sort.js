@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - SORT.JS
+   SMS BROKEN SIZE - SORT.JS
    Column sorting for broken size table
    ======================================== */
 
@@ -80,3 +80,4 @@ function renderBsSort() {
     }
   });
 }
+

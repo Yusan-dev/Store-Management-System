@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - TABS.JS
+   SMS BROKEN SIZE - TABS.JS
    Tab switching between Broken Size & IL
    ======================================== */
 
@@ -26,3 +26,4 @@ window.addEventListener("load", () => {
     });
   });
 });
+

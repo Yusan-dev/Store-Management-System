@@ -30,7 +30,7 @@ function readExcel(file) {
         reject(err);
       }
     };
-    reader.onerror = () => reject(new Error("Gagal membaca file"));
+    reader.onerror = () => reject(new Error("Failed to read file"));
     reader.readAsBinaryString(file);
   });
 }
@@ -44,7 +44,7 @@ async function runProcess() {
   const fileB = document.getElementById("pricelist").files[0];
 
   if (!fileA || !fileB) {
-    alert("Harap upload File A (Stock Report) dan File B (Price List)");
+    alert("Please upload File A (Stock Report) dan File B (Price List)");
     hideLoading();
     return;
   }
@@ -53,11 +53,30 @@ async function runProcess() {
     const wbA = await readExcel(fileA);
     const wbB = await readExcel(fileB);
 
+    // Extract title from first sheet A1 and A2 of Price List
+    let plTitle1 = "";
+    let plTitle2 = "";
+    if (wbB.SheetNames.length > 0) {
+      const wsFirst = wbB.Sheets[wbB.SheetNames[0]];
+      const firstSheetRows = XLSX.utils.sheet_to_json(wsFirst, { header: 1, defval: "" });
+      if (firstSheetRows.length > 0 && firstSheetRows[0].length > 0) plTitle1 = firstSheetRows[0][0] || "";
+      if (firstSheetRows.length > 1 && firstSheetRows[1].length > 0) plTitle2 = firstSheetRows[1][0] || "";
+    }
+    
+    const titleContainer = document.getElementById("priceListMeta");
+    const title1El = document.getElementById("plTitle1");
+    const title2El = document.getElementById("plTitle2");
+    if (titleContainer && title1El && title2El) {
+      title1El.innerText = plTitle1;
+      title2El.innerText = plTitle2;
+      titleContainer.style.display = (plTitle1 || plTitle2) ? "block" : "none";
+    }
+
     // 1. Ambil data baris dari File A (Sheet pertama)
     const wsA = wbA.Sheets[wbA.SheetNames[0]];
     const rowsA = XLSX.utils.sheet_to_json(wsA, { header: 1, defval: "" });
 
-    // 2. Buat priceMap dari SEMUA sheet di File B
+    // 2. Buat priceMap dari ALL sheet di File B
     const priceMap = new Map();
     wbB.SheetNames.forEach((sheetName) => {
       const wsB = wbB.Sheets[sheetName];
@@ -79,7 +98,7 @@ async function runProcess() {
   } catch (err) {
     hideLoading();
     console.error(err);
-    alert("Gagal membaca file: " + err.message);
+    alert("Failed to read file: " + err.message);
   }
 }
 
@@ -132,3 +151,5 @@ function processRows(rows, priceMap) {
   // saveData ada di filter.js — dipanggil setelah semua data digroup
   saveData(Object.values(grouped));
 }
+
+

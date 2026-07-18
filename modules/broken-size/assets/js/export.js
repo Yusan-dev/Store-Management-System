@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - EXPORT.JS
+   SMS BROKEN SIZE - EXPORT.JS
    Export Excel for both Broken Size & IL
    ======================================== */
 
@@ -27,7 +27,7 @@ function exportBrokenSize() {
   const rows = window.bsFilteredData || [];
 
   if (!rows.length) {
-    alert("Tidak ada data");
+    alert("No data");
     return;
   }
 
@@ -52,7 +52,7 @@ function exportBrokenSize() {
   </head>
   <body>
   <table>
-      <tr><td colspan="9" class="title">KANGODING.ORG - GT BROKEN SIZE</td></tr>
+      <tr><td colspan="9" class="title">KANGODING.ORG - SMS BROKEN SIZE</td></tr>
       <tr><td colspan="9" class="meta">GENERATED: ${generatedAt}</td></tr>
       <tr></tr>
       <tr>
@@ -103,7 +103,7 @@ function exportIL() {
   const rows = window.ilTableData || [];
 
   if (!rows.length) {
-    alert("Tidak ada data IL");
+    alert("No IL data");
     return;
   }
 
@@ -128,7 +128,7 @@ function exportIL() {
   </head>
   <body>
   <table>
-      <tr><td colspan="8" class="title">KANGODING.ORG - GT INVENTORY LEVEL</td></tr>
+      <tr><td colspan="8" class="title">KANGODING.ORG - SMS INVENTORY LEVEL</td></tr>
       <tr><td colspan="8" class="meta">GENERATED: ${generatedAt}</td></tr>
       <tr></tr>
       <tr>
@@ -168,3 +168,5 @@ function exportIL() {
   link.click();
   document.body.removeChild(link);
 }
+
+

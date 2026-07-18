@@ -1,5 +1,5 @@
 /* ========================================
-   GT BROKEN SIZE - PROCESS.JS
+   SMS BROKEN SIZE - PROCESS.JS
    Logika utama parsing stock & broken size
    ======================================== */
 
@@ -56,7 +56,7 @@ async function runProcess() {
   } catch (err) {
     hideLoading();
     console.error(err);
-    alert("Gagal membaca file: " + err.message);
+    alert("Failed to read file: " + err.message);
   }
 }
 
@@ -79,7 +79,7 @@ function readExcel(file) {
         reject(err);
       }
     };
-    reader.onerror = () => reject(new Error("Gagal membaca file"));
+    reader.onerror = () => reject(new Error("Failed to read file"));
     reader.readAsBinaryString(file);
   });
 }
@@ -346,3 +346,5 @@ function updateBsSummary(rows) {
       footwearAll.length
     : "0%";
 }
+
+
