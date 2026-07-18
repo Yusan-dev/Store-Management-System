@@ -4,6 +4,7 @@ let active = {
   brand: new Set(),
   category: new Set(),
   status: new Set(),
+  discount: new Set(),
 };
 
 function saveData(data) {
@@ -42,12 +43,14 @@ function buildAll() {
   buildCheckbox("brand", dashboardData.map((x) => x.brand));
   buildCheckbox("category", dashboardData.map((x) => x.category));
   buildCheckbox("status", dashboardData.map((x) => x.status));
+  buildCheckbox("discount", dashboardData.map((x) => x.newDiscount).filter(d => d !== "-"));
 }
 
 function syncFilter() {
   active.brand = new Set([...document.querySelectorAll("#brand input:checked")].map((x) => x.value));
   active.category = new Set([...document.querySelectorAll("#category input:checked")].map((x) => x.value));
   active.status = new Set([...document.querySelectorAll("#status input:checked")].map((x) => x.value));
+  active.discount = new Set([...document.querySelectorAll("#discount input:checked")].map((x) => x.value));
 }
 
 function applyFilter() {
@@ -61,6 +64,7 @@ function applyFilter() {
     if (!active.brand.has(x.brand)) return false;
     if (!active.category.has(x.category)) return false;
     if (!active.status.has(x.status)) return false;
+    if (x.newDiscount !== "-" && !active.discount.has(x.newDiscount)) return false;
 
     let match = true;
     if (search) {
@@ -75,7 +79,21 @@ function applyFilter() {
   // Sorting
   if (sortVal) {
     const [key, dir] = sortVal.split("-"); // e.g. "qty-desc"
+
+    function parseDisc(v) {
+      if (v === "freefall" || v === "normal" || v === "-" || !v) return 0;
+      return parseInt(v) || 0;
+    }
+
     filtered.sort((a, b) => {
+      if (key === "newDiscount") {
+        let vA = parseDisc(a.newDiscount);
+        let vB = parseDisc(b.newDiscount);
+        if (vA < vB) return dir === "asc" ? -1 : 1;
+        if (vA > vB) return dir === "asc" ? 1 : -1;
+        return 0;
+      }
+
       let valA = a[key];
       let valB = b[key];
       
