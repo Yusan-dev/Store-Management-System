@@ -38,12 +38,13 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 300px;
+    width: 260px;
     background-color: var(--sidebar-bg);
     display: flex;
     flex-direction: column;
     z-index: 10;
     border-right: var(--border-brutal);
+    flex-shrink: 0;
 }
 
 .brand {
@@ -149,8 +150,9 @@ body {
     flex: 1;
     height: 100%;
     position: relative;
-    background: var(--accent-2);
-    padding: 24px;
+    background: var(--content-bg);
+    padding: 16px;
+    overflow: hidden;
 }
 
 #module-frame {
@@ -192,4 +194,30 @@ body {
 }
 .content-area {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px !important;
+    }
+    .sidebar .brand-text {
+        display: none;
+    }
+    .sidebar .nav-link {
+        justify-content: center;
+        padding: 14px;
+    }
+    .sidebar .nav-link .icon {
+        margin-right: 0;
+    }
+    .sidebar .nav-text {
+        display: none;
+    }
+    .sidebar .sidebar-footer {
+        display: none;
+    }
+    .content-area {
+        padding: 8px;
+    }
 }

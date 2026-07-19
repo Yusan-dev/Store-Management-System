@@ -59,10 +59,10 @@ const files = {
   target: null,
   dailyCash: null,
   advOrd: null,
-  msrLy: null,
-  dailyCashLy: null,
-  advOrdLy: null,
+  salesLy: null,
 };
+
+const LY_STORAGE_KEY = "gt_store_ly_data";
 
 function registerFileInput(id, labelId, fileKey) {
   const input = document.getElementById(id);
@@ -87,9 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
   registerFileInput("target", "targetName", "target");
   registerFileInput("dailyCash", "dailyCashName", "dailyCash");
   registerFileInput("advOrd", "advOrdName", "advOrd");
-  registerFileInput("msrLy", "msrLyName", "msrLy");
-  registerFileInput("dailyCashLy", "dailyCashLyName", "dailyCashLy");
-  registerFileInput("advOrdLy", "advOrdLyName", "advOrdLy");
+  registerFileInput("salesLy", "salesLyName", "salesLy");
+  document.getElementById("salesLy").addEventListener("change", () => {
+    localStorage.removeItem(LY_STORAGE_KEY);
+  });
 
   const inputs = ["targetStore", "targetUPT", "targetATV", "targetAUR"];
   inputs.forEach((id) => {
@@ -109,6 +110,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lbl) {
       lbl.innerText = "Target Saved in Memory";
       lbl.style.color = "#FF00FF";
+    }
+  }
+
+  // Auto-load LY data from localStorage
+  const savedLyData = localStorage.getItem(LY_STORAGE_KEY);
+  if (savedLyData) {
+    try {
+      window.storeDataLY = JSON.parse(savedLyData);
+      const lbl = document.getElementById("salesLyName");
+      if (lbl) {
+        lbl.innerText = "LY Data Loaded from Cache";
+        lbl.style.color = "#FF00FF";
+      }
+    } catch (e) {
+      localStorage.removeItem(LY_STORAGE_KEY);
     }
   }
 
@@ -164,16 +180,10 @@ document.addEventListener("DOMContentLoaded", () => {
         advOrdData
       );
 
-      if (files.msrLy) {
-        const msrLyData = await readExcel(files.msrLy);
-        const dailyCashLyData = files.dailyCashLy ? await readExcel(files.dailyCashLy) : [];
-        const advOrdLyData = files.advOrdLy ? await readExcel(files.advOrdLy) : [];
-        window.storeDataLY = parseAllData(
-          msrLyData,
-          [], 
-          dailyCashLyData,
-          advOrdLyData
-        );
+      if (files.salesLy) {
+        const salesLyData = await readExcel(files.salesLy);
+        window.storeDataLY = parseLYTemplate(salesLyData);
+        localStorage.setItem(LY_STORAGE_KEY, JSON.stringify(window.storeDataLY));
       } else {
         window.storeDataLY = null;
       }
@@ -1729,4 +1739,70 @@ function renderTopArticles(articleAgg) {
   const elFootwear = document.getElementById("topFootwear");
   if (elFootwear) elFootwear.innerHTML = renderList(topFootwear, false);
 }
+
+// =============================================
+// LY TEMPLATE DOWNLOAD & PARSER
+// =============================================
+function downloadLYTemplate() {
+  document.getElementById("yearModal").style.display = "flex";
+  document.getElementById("yearInput").value = new Date().getFullYear() - 1;
+  document.getElementById("yearInput").focus();
+  document.getElementById("confirmYearBtn").onclick = () => {
+    const year = document.getElementById("yearInput").value.trim();
+    document.getElementById("yearModal").style.display = "none";
+    if (!year || !/^\d{4}$/.test(year)) return;
+    
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) daysInMonth[1] = 29;
+    
+    const rows = [["DATE", "SALES", "QTY", "SM", "O2O SALES"]];
+    for (let m = 0; m < 12; m++) {
+      for (let d = 1; d <= daysInMonth[m]; d++) {
+        const dd = String(d).padStart(2, "0");
+        const mm = String(m + 1).padStart(2, "0");
+        rows.push([`${dd}-${mm}-${year}`, "", "", "", ""]);
+      }
+    }
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 10 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, ws, "SALES LY");
+    XLSX.writeFile(wb, `template_sales_last_year_${year}.xlsx`);
+  };
+}
+
+function parseLYTemplate(rows) {
+  const dates = {};
+  let started = false;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || !row.length) continue;
+    const first = String(row[0] || "").trim();
+    if (!started) {
+      if (first.toUpperCase() === "DATE" || first.toUpperCase().includes("DATE")) { started = true; }
+      continue;
+    }
+    if (!first) continue;
+    const date = first.replace(/[\/\.]/g, "-");
+    const sales = parseFloat(String(row[1] || "0").replace(/,/g, "")) || 0;
+    const qty = parseFloat(String(row[2] || "0").replace(/,/g, "")) || 0;
+    const sm = parseFloat(String(row[3] || "0").replace(/,/g, "")) || 0;
+    const o2oSales = parseFloat(String(row[4] || "0").replace(/,/g, "")) || 0;
+    if (!dates[date]) {
+      const dayNum = parseInt(date.split("-")[0], 10);
+      dates[date] = { sales: 0, qty: 0, sm: 0, o2oSales: 0, o2oSM: 0, o2oQty: 0, targetPercent: 0, dayOfMonth: dayNum, articles: {}, dynamicCats: {}, catSM: {} };
+    }
+    dates[date].sales += sales;
+    dates[date].qty += qty;
+    dates[date].sm += sm;
+    dates[date].o2oSales += o2oSales;
+  }
+  return { dates };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const dlBtn = document.getElementById("dlTemplateLy");
+  if (dlBtn) dlBtn.addEventListener("click", downloadLYTemplate);
+});
 

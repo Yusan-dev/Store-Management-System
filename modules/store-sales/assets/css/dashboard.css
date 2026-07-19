@@ -415,8 +415,8 @@ input[type="file"]::file-selector-button{
 
 .summary{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:15px;
+    grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+    gap:12px;
     margin-bottom:24px;
 }
 
@@ -433,6 +433,9 @@ input[type="file"]::file-selector-button{
     background:var(--surface);
 
     box-shadow:var(--shadow-sm);
+    
+    display:flex;
+    flex-direction:column;
 }
 
 .summary-title{
@@ -452,14 +455,21 @@ input[type="file"]::file-selector-button{
 
     color:var(--dark);
 
-    font-size:clamp(20px,2vw,28px);
-    line-height:1.15;
+    font-size:clamp(16px,1.5vw,24px);
+    line-height:1.3;
 
     font-weight:850;
     letter-spacing:-.035em;
+    
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+    word-break:break-word;
+}
 
-    overflow:hidden;
-    text-overflow:ellipsis;
+.summary-card > div{
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+    word-break:break-word;
 }
 
 
@@ -1445,74 +1455,6 @@ input[type="file"]::file-selector-button{
     font-weight:850;
 
     white-space:nowrap;
-}
-
-/* =========================================================
-   TOP 3 RANKING LIST
-========================================================= */
-
-.rank-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-
-    margin-top:10px;
-}
-
-.rank-item{
-    display:grid;
-
-    grid-template-columns:
-        28px minmax(0,1fr) auto;
-
-    align-items:center;
-    gap:8px;
-
-    padding:8px 10px;
-
-    border-radius:8px;
-
-    background:rgba(148,163,184,.08);
-}
-
-.rank-position{
-    font-size:16px;
-    text-align:center;
-}
-
-.rank-staff{
-    min-width:0;
-
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-
-    color:var(--dark);
-
-    font-size:12px;
-    font-weight:750;
-}
-
-.rank-value{
-    color:var(--dark);
-
-    font-size:12px;
-    font-weight:850;
-
-    white-space:nowrap;
-}
-
-@media(max-width:768px){
-
-    .rank-item{
-        grid-template-columns:
-            24px minmax(0,1fr);
-    }
-
-    .rank-value{
-        grid-column:2;
-    }
-
 }
 
 

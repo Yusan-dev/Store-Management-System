@@ -75,7 +75,7 @@
         <div class="logo-box" style="width:50px;height:50px;background:#FF00FF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
         <div>
             <h1>MAA STORE SALES</h1>
-            <p>Create By : 2309445</p>
+            <p>Created By : 2309445</p>
             <span class="version">ENGINE V2 STABLE</span>
         </div>
     </div>
@@ -123,20 +123,13 @@
                 <input type="file" id="advOrd" accept=".xls,.xlsx">
                 <div id="advOrdName" class="filename">Belum dipilih</div>
             </div>
-            <div class="upload-box" id="dz-msrLy">
-                <label>MERCHANDISE SALES (LAST YEAR)</label>
-                <input type="file" id="msrLy" accept=".xls,.xlsx">
-                <div id="msrLyName" class="filename">Belum dipilih</div>
-            </div>
-            <div class="upload-box" id="dz-dailyCashLy">
-                <label>DAILY CASH (LAST YEAR)</label>
-                <input type="file" id="dailyCashLy" accept=".xls,.xlsx">
-                <div id="dailyCashLyName" class="filename">Belum dipilih</div>
-            </div>
-            <div class="upload-box" id="dz-advOrdLy">
-                <label>SALESPERSON / ADV (LAST YEAR)</label>
-                <input type="file" id="advOrdLy" accept=".xls,.xlsx">
-                <div id="advOrdLyName" class="filename">Belum dipilih</div>
+            <div class="upload-box" id="dz-salesLy">
+                <label>SALES LAST YEAR</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input type="file" id="salesLy" accept=".xls,.xlsx" style="flex:1; min-width:0;">
+                    <button type="button" id="dlTemplateLy" style="white-space:nowrap; padding:6px 10px; background:#111; color:#fff; border:2px solid #111; font-weight:bold; cursor:pointer; font-size:10px;">📥 TEMPLATE</button>
+                </div>
+                <div id="salesLyName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box">
                 <button type="button" onclick="document.getElementById('targetModal').style.display='flex'" style="width: 100%; background-color: #111; color: #fff; padding: 10px; border: 2px solid #111; font-weight: bold; cursor: pointer;">SET MONTHLY TARGETS</button>
@@ -493,6 +486,21 @@ function saveTargetsAndCloseModal() {
 </div>
 
 <div id="printReportRoot"></div>
+
+<!-- ===================================== -->
+<!-- YEAR PICKER MODAL -->
+<!-- ===================================== -->
+<div id="yearModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:10001; justify-content:center; align-items:center;">
+    <div style="background:#fff; border:4px solid #111; width:95%; max-width:400px; padding:30px; box-shadow:8px 8px 0px #111; font-family:monospace; text-align:center;">
+        <h2 style="margin:0 0 20px; font-size:16px; border-bottom:2px solid #111; padding-bottom:12px;">📅 DOWNLOAD LY TEMPLATE</h2>
+        <p style="font-size:12px; margin-bottom:15px;">Masukkan tahun yang akan diisi tanggalnya:</p>
+        <input type="number" id="yearInput" value="2025" min="2020" max="2099" style="width:100%; padding:12px; border:3px solid #111; font-family:monospace; font-weight:bold; font-size:18px; text-align:center; margin-bottom:20px;" onkeydown="if(event.key==='Enter') document.getElementById('confirmYearBtn').click()">
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="document.getElementById('yearModal').style.display='none'" style="background:#999; color:#fff; border:2px solid #111; font-weight:bold; padding:10px 24px; cursor:pointer;">BATAL</button>
+            <button id="confirmYearBtn" style="background:#111; color:#fff; border:2px solid #111; font-weight:bold; padding:10px 24px; cursor:pointer;">DOWNLOAD</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
 

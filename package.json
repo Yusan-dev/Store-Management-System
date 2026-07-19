@@ -1,0 +1,12 @@
+{
+  "name": "gt-master-dashboard",
+  "version": "1.0.0",
+  "description": "GT Master Dashboard for Store Management",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8080 -c-1"
+  },
+  "keywords": ["dashboard", "store", "sales"],
+  "author": "KANGODING.ORG",
+  "license": "MIT"
+}

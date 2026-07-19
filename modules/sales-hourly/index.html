@@ -17,6 +17,7 @@
                 <label for="excelFile" class="file-label" id="fileLabel">Choose XLS File</label>
                 <input type="file" id="excelFile" class="file-input" accept=".xls,.xlsx">
                 <button class="btn" id="processBtn">Process Data</button>
+                <button class="btn" id="clearCacheBtn" style="background-color: #999; margin-left: 8px;">Clear Cache</button>
             </div>
         </div>
 
@@ -100,7 +101,14 @@
     </div>
 
     <div class="loading" id="loadingSpinner">
-        Processing Excel file... Please wait.
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Processing Excel file...</div>
+            <div class="loading-progress-bar">
+                <div class="loading-progress-fill" id="loadingProgressFill"></div>
+            </div>
+            <div class="loading-percent" id="loadingPercent">0%</div>
+        </div>
     </div>
 
     <!-- Include external libraries -->

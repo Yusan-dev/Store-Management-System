@@ -1,11 +1,110 @@
 let parsedDataByDate = {};
 let selectedFile = null;
 
+const STORAGE_KEY = "gt_sales_hourly_data";
+
+function saveToLocalStorage() {
+    const dataToSave = {};
+    Object.keys(parsedDataByDate).forEach(date => {
+        const dateData = parsedDataByDate[date];
+        dataToSave[date] = {
+            shifts: {},
+            hourly: {}
+        };
+        Object.keys(dateData.shifts).forEach(shiftKey => {
+            const shift = dateData.shifts[shiftKey];
+            dataToSave[date].shifts[shiftKey] = {
+                sales: shift.sales,
+                tx: Array.from(shift.tx),
+                qty: shift.qty
+            };
+        });
+        Object.keys(dateData.hourly).forEach(hourKey => {
+            const hourData = dateData.hourly[hourKey];
+            dataToSave[date].hourly[hourKey] = {
+                sales: hourData.sales,
+                qty: hourData.qty,
+                tx: Array.from(hourData.tx)
+            };
+        });
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+}
+
+function updateProgress(percent, text = null) {
+    const progressFill = document.getElementById("loadingProgressFill");
+    const progressPercent = document.getElementById("loadingPercent");
+    const loadingText = document.getElementById("loadingText");
+    
+    progressFill.style.width = percent + "%";
+    progressPercent.innerText = Math.round(percent) + "%";
+    if (text) loadingText.innerText = text;
+}
+
+function loadFromLocalStorage() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return false;
+    
+    try {
+        const data = JSON.parse(stored);
+        parsedDataByDate = {};
+        Object.keys(data).forEach(date => {
+            parsedDataByDate[date] = {
+                shifts: {},
+                hourly: {}
+            };
+            Object.keys(data[date].shifts).forEach(shiftKey => {
+                const shift = data[date].shifts[shiftKey];
+                parsedDataByDate[date].shifts[shiftKey] = {
+                    sales: shift.sales,
+                    tx: new Set(shift.tx),
+                    qty: shift.qty
+                };
+            });
+            Object.keys(data[date].hourly).forEach(hourKey => {
+                const hourData = data[date].hourly[hourKey];
+                parsedDataByDate[date].hourly[hourKey] = {
+                    sales: hourData.sales,
+                    qty: hourData.qty,
+                    tx: new Set(hourData.tx)
+                };
+            });
+        });
+        return true;
+    } catch (err) {
+        console.error("Error loading from localStorage:", err);
+        return false;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById("excelFile");
     const fileLabel = document.getElementById("fileLabel");
     const processBtn = document.getElementById("processBtn");
+    const clearCacheBtn = document.getElementById("clearCacheBtn");
     const dateSelect = document.getElementById("dateSelect");
+
+    const spinner = document.getElementById("loadingSpinner");
+
+    if (loadFromLocalStorage()) {
+        spinner.classList.add("show");
+        updateProgress(0, "Loading cached data...");
+        
+        setTimeout(() => {
+            updateProgress(50, "Preparing dashboard...");
+        }, 150);
+        
+        setTimeout(() => {
+            populateDateDropdown();
+            document.getElementById("filterContainer").style.display = "flex";
+            document.getElementById("dashboardContent").style.display = "grid";
+            updateProgress(100, "Done!");
+        }, 300);
+        
+        setTimeout(() => {
+            spinner.classList.remove("show");
+        }, 800);
+    }
 
     fileInput.addEventListener("change", (e) => {
         if (e.target.files.length > 0) {
@@ -20,22 +119,44 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const spinner = document.getElementById("loadingSpinner");
         spinner.classList.add("show");
+        updateProgress(0, "Reading Excel file...");
 
         try {
             const rows = await readExcel(selectedFile);
-            parseHourlyData(rows);
-            populateDateDropdown();
+            updateProgress(30, "Parsing data...");
             
-            // Show content sections
+            parseHourlyData(rows);
+            updateProgress(70, "Saving to cache...");
+            
+            saveToLocalStorage();
+            updateProgress(85, "Preparing dashboard...");
+            
+            populateDateDropdown();
+            updateProgress(100, "Done!");
+            
             document.getElementById("filterContainer").style.display = "flex";
             document.getElementById("dashboardContent").style.display = "grid";
+            
+            setTimeout(() => {
+                spinner.classList.remove("show");
+            }, 600);
         } catch (err) {
             alert("Error processing Excel file: " + err.message);
             console.error(err);
-        } finally {
             spinner.classList.remove("show");
+        }
+    });
+
+    clearCacheBtn.addEventListener("click", () => {
+        if (confirm("Clear all cached data? You'll need to upload the file again.")) {
+            localStorage.removeItem(STORAGE_KEY);
+            parsedDataByDate = {};
+            selectedFile = null;
+            fileLabel.innerText = "Choose XLS File";
+            document.getElementById("filterContainer").style.display = "none";
+            document.getElementById("dashboardContent").style.display = "none";
+            document.getElementById("dateSelect").innerHTML = '<option value="">-- Choose Date --</option>';
         }
     });
 
