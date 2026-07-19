@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Hourly Dashboard</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <div>
+                <h1>Sales Hourly Dashboard</h1>
+                <p style="margin: 5px 0 0 0; color: #666;">Analyze hourly sales performance from Sales Register report</p>
+            </div>
+            <div class="upload-box">
+                <label for="excelFile" class="file-label" id="fileLabel">Choose XLS File</label>
+                <input type="file" id="excelFile" class="file-input" accept=".xls,.xlsx">
+                <button class="btn" id="processBtn">Process Data</button>
+            </div>
+        </div>
+
+        <div class="filter-section" id="filterContainer" style="display: none;">
+            <label for="dateSelect" style="font-weight: bold; text-transform: uppercase;">Select Date:</label>
+            <select id="dateSelect" class="filter-select">
+                <option value="">-- Choose Date --</option>
+            </select>
+        </div>
+
+        <div class="dashboard-grid" id="dashboardContent" style="display: none;">
+            <!-- Left Card: Shift Summary -->
+            <div class="card">
+                <div class="card-title">Daily Sales Shift Summary</div>
+                <div class="date-badge" id="activeDateBadge">DATE: -</div>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Shift Hours</th>
+                            <th>Daily Sales</th>
+                            <th>Transaction</th>
+                            <th>Unit Sold</th>
+                        </tr>
+                        <tr>
+                            <th>Actual (TY)</th>
+                            <th>Actual</th>
+                            <th>Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shiftSummaryBody">
+                        <tr>
+                            <td>Open - 12:00</td>
+                            <td id="shift1_sales">Rp 0</td>
+                            <td id="shift1_tx">0</td>
+                            <td id="shift1_qty">0</td>
+                        </tr>
+                        <tr>
+                            <td>12:00 - 15:00</td>
+                            <td id="shift2_sales">Rp 0</td>
+                            <td id="shift2_tx">0</td>
+                            <td id="shift2_qty">0</td>
+                        </tr>
+                        <tr>
+                            <td>15:00 - 18:00</td>
+                            <td id="shift3_sales">Rp 0</td>
+                            <td id="shift3_tx">0</td>
+                            <td id="shift3_qty">0</td>
+                        </tr>
+                        <tr>
+                            <td>18:00 - Closing</td>
+                            <td id="shift4_sales">Rp 0</td>
+                            <td id="shift4_tx">0</td>
+                            <td id="shift4_qty">0</td>
+                        </tr>
+                        <tr class="grand-total-row">
+                            <td>Grand Total</td>
+                            <td id="total_sales">Rp 0</td>
+                            <td id="total_tx">0</td>
+                            <td id="total_qty">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right Card: Hourly Breakdown -->
+            <div class="card">
+                <div class="card-title">Hourly Sales Breakdown</div>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Hour Range</th>
+                            <th>Sales Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hourlyBreakdownBody">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loadingSpinner">
+        Processing Excel file... Please wait.
+    </div>
+
+    <!-- Include external libraries -->
+    <script src="../store-sales/libs/xlsx.full.min.js"></script>
+    <script src="assets/js/process.js"></script>
+</body>
+</html>

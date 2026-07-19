@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MAA STORE SALES</title>
-<link rel="stylesheet" href="assets/css/dashboard.css?v=5">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=6">
 <style>
     .loading-overlay {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -123,21 +123,23 @@
                 <input type="file" id="advOrd" accept=".xls,.xlsx">
                 <div id="advOrdName" class="filename">Belum dipilih</div>
             </div>
-            <div class="upload-box">
-                <label>TARGET STORE (Bulan)</label>
-                <input type="number" id="targetStore" placeholder="Contoh: 100000000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+            <div class="upload-box" id="dz-msrLy">
+                <label>MERCHANDISE SALES (LAST YEAR)</label>
+                <input type="file" id="msrLy" accept=".xls,.xlsx">
+                <div id="msrLyName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box" id="dz-dailyCashLy">
+                <label>DAILY CASH (LAST YEAR)</label>
+                <input type="file" id="dailyCashLy" accept=".xls,.xlsx">
+                <div id="dailyCashLyName" class="filename">Belum dipilih</div>
+            </div>
+            <div class="upload-box" id="dz-advOrdLy">
+                <label>SALESPERSON / ADV (LAST YEAR)</label>
+                <input type="file" id="advOrdLy" accept=".xls,.xlsx">
+                <div id="advOrdLyName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box">
-                <label>TARGET UPT</label>
-                <input type="number" step="0.01" id="targetUPT" placeholder="Contoh: 1.5" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-            </div>
-            <div class="upload-box">
-                <label>TARGET ATV</label>
-                <input type="number" id="targetATV" placeholder="Contoh: 850000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
-            </div>
-            <div class="upload-box">
-                <label>TARGET AUR</label>
-                <input type="number" id="targetAUR" placeholder="Contoh: 350000" style="width: 100%; border: 2px solid #111; padding: 6px; font-weight: 600; font-family: monospace; background: transparent;">
+                <button type="button" onclick="document.getElementById('targetModal').style.display='flex'" style="width: 100%; background-color: #111; color: #fff; padding: 10px; border: 2px solid #111; font-weight: bold; cursor: pointer;">SET MONTHLY TARGETS</button>
             </div>
         </div>
 
@@ -163,30 +165,41 @@
     <div class="summary-card">
         <span class="summary-title">UPT</span>
         <h2 id="staffCount">0</h2>
+        <div id="uptLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
     <div class="summary-card">
         <span class="summary-title">TOTAL SALES</span>
         <h2 id="salesTotal">0</h2>
+        <div id="salesLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
     <div class="summary-card">
         <span class="summary-title">TOTAL SM</span>
         <h2 id="smTotal">0</h2>
+        <div id="smLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
     <div class="summary-card">
         <span class="summary-title">TOTAL QTY</span>
         <h2 id="qtyTotal">0</h2>
+        <div id="qtyLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
     <div class="summary-card">
         <span class="summary-title">ATV</span>
         <h2 id="avgSales">0</h2>
+        <div id="atvLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
     <div class="summary-card">
         <span class="summary-title">AUR</span>
         <h2 id="aurTotal">0</h2>
+        <div id="aurLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
+    </div>
+    <div class="summary-card">
+        <span class="summary-title">TOTAL O2O</span>
+        <h2 id="o2oTotal">0</h2>
+        <div id="o2oLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
 </section>
@@ -201,8 +214,26 @@
             <div style="font-size:11px; color:#666; margin-top:4px;" id="performanceFilterInfo">CURRENT SUMMARY &bull; ALL AVAILABLE DATES</div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <select id="performanceDateFrom" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;"><option value="">SELECT FROM DATE</option></select>
-            <select id="performanceDateTo" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;"><option value="">SELECT TO DATE</option></select>
+            <select id="performanceTimePeriod" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;">
+                <option value="">SELECT PERIOD</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="last_week">Last Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_semester">This Semester</option>
+                <option value="this_year">This Year</option>
+            </select>
+            <input type="date" id="performanceDateFrom" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;">
+            <input type="date" id="performanceDateTo" disabled style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;">
+            <select id="performanceCompareTo" style="border:2px solid #111; padding:5px 8px; font-family:monospace; font-weight:bold; background:#fff;">
+                <option value="ly">COMPARE: LAST YEAR</option>
+                <option value="lm">COMPARE: LAST MONTH</option>
+                <option value="lw">COMPARE: LAST WEEK</option>
+                <option value="none">COMPARE: NONE</option>
+            </select>
             <button id="applyPerformanceDateRange" style="background:#111; color:#fff; padding:6px 12px; font-weight:bold; cursor:pointer; border:none; font-family:monospace;">APPLY</button>
             <button id="resetPerformanceDateRange" style="background:#fff; color:#111; padding:6px 12px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">RESET</button>
         </div>
@@ -322,11 +353,11 @@
 
 <script src="libs/xlsx.full.min.js"></script>
 <script src="assets/js/runtime.js"></script>
-<script src="assets/js/db-cache.js"></script>
-<script src="assets/js/process.js?v=5"></script>
-<script src="assets/js/summary.js"></script>
-<script src="assets/js/print.js"></script>
-<script src="assets/js/export.js"></script>
+<script src="assets/js/db-cache.js?v=7"></script>
+<script src="assets/js/process.js?v=7"></script>
+<script src="assets/js/summary.js?v=7"></script>
+<script src="assets/js/export.js?v=7"></script>
+<script src="assets/js/print.js?v=7"></script>
 <script src="assets/js/modal.js"></script>
 
 <script>
@@ -340,6 +371,76 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="print-watermark-brand">KANGODING.ORG</div>
     <div class="print-watermark-id">2309445</div>
 </div>
+
+<!-- ===================================== -->
+<!-- TARGET MODAL -->
+<!-- ===================================== -->
+<div id="targetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#fff; border:4px solid #111; width:95%; max-width:900px; max-height:90vh; overflow-y:auto; padding:20px; box-shadow:8px 8px 0px #111; font-family:monospace;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:20px;">
+            <h2 style="margin:0; font-size:18px;">SET MONTHLY TARGETS (CURRENT YEAR)</h2>
+            <button onclick="document.getElementById('targetModal').style.display='none'" style="background:#f00; color:#fff; border:2px solid #111; font-weight:bold; padding:4px 8px; cursor:pointer;">X</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; text-align:left;">
+                <thead>
+                    <tr style="background:#111; color:#fff;">
+                        <th style="padding:10px; border:2px solid #111;">MONTH</th>
+                        <th style="padding:10px; border:2px solid #111;">TARGET SALES (Rp)</th>
+                        <th style="padding:10px; border:2px solid #111;">TARGET UPT</th>
+                        <th style="padding:10px; border:2px solid #111;">TARGET ATV (Rp)</th>
+                        <th style="padding:10px; border:2px solid #111;">TARGET AUR (Rp)</th>
+                    </tr>
+                </thead>
+                <tbody id="cyTargetInputs">
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:20px; text-align:right;">
+            <button onclick="saveTargetsAndCloseModal()" style="background:#16a34a; color:#fff; border:2px solid #111; font-weight:bold; padding:10px 20px; cursor:pointer; font-size:14px;">SAVE & CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function buildTargetInputs() {
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    let cyHtml = "";
+    const savedCY = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
+    months.forEach((m, i) => {
+        let val = savedCY[i+1] || { sales:0, upt:0, atv:0, aur:0 };
+        // Fallback for old numeric format if any
+        if (typeof val === 'number') {
+            val = { sales: val, upt: 0, atv: 0, aur: 0 };
+        }
+        cyHtml += `
+            <tr>
+                <td style="padding:8px; border:2px solid #111; font-weight:bold;">${m}</td>
+                <td style="padding:8px; border:2px solid #111;"><input type="number" id="t_sales_${i+1}" value="${val.sales||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
+                <td style="padding:8px; border:2px solid #111;"><input type="number" step="0.01" id="t_upt_${i+1}" value="${val.upt||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
+                <td style="padding:8px; border:2px solid #111;"><input type="number" id="t_atv_${i+1}" value="${val.atv||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
+                <td style="padding:8px; border:2px solid #111;"><input type="number" id="t_aur_${i+1}" value="${val.aur||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
+            </tr>
+        `;
+    });
+    document.getElementById("cyTargetInputs").innerHTML = cyHtml;
+}
+buildTargetInputs();
+function saveTargetsAndCloseModal() {
+    const cyTargets = {};
+    for (let i = 1; i <= 12; i++) {
+        cyTargets[i] = {
+            sales: Number(document.getElementById("t_sales_" + i).value) || 0,
+            upt: Number(document.getElementById("t_upt_" + i).value) || 0,
+            atv: Number(document.getElementById("t_atv_" + i).value) || 0,
+            aur: Number(document.getElementById("t_aur_" + i).value) || 0
+        };
+    }
+    localStorage.setItem("gt_store_targets_cy", JSON.stringify(cyTargets));
+    document.getElementById('targetModal').style.display='none';
+    if (window.reRender) window.reRender();
+}
+</script>
 
 <!-- ===================================== -->
 <!-- LICENSE ACCESS SCREEN -->
@@ -392,7 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
 </div>
 
 <div id="printReportRoot"></div>
-<script src="assets/js/db-cache.js"></script>
 </body>
 </html>
 

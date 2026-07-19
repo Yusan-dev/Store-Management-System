@@ -59,6 +59,9 @@ const files = {
   target: null,
   dailyCash: null,
   advOrd: null,
+  msrLy: null,
+  dailyCashLy: null,
+  advOrdLy: null,
 };
 
 function registerFileInput(id, labelId, fileKey) {
@@ -84,6 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
   registerFileInput("target", "targetName", "target");
   registerFileInput("dailyCash", "dailyCashName", "dailyCash");
   registerFileInput("advOrd", "advOrdName", "advOrd");
+  registerFileInput("msrLy", "msrLyName", "msrLy");
+  registerFileInput("dailyCashLy", "dailyCashLyName", "dailyCashLy");
+  registerFileInput("advOrdLy", "advOrdLyName", "advOrdLy");
 
   const inputs = ["targetStore", "targetUPT", "targetATV", "targetAUR"];
   inputs.forEach((id) => {
@@ -132,15 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const targetStore = document.getElementById("targetStore").value;
-    const targetUPT = document.getElementById("targetUPT").value;
-    const targetATV = document.getElementById("targetATV").value;
-    const targetAUR = document.getElementById("targetAUR").value;
-
-    if (!targetStore || !targetUPT || !targetATV || !targetAUR) {
-      alert("Please complete the fields Target Store, UPT, ATV, dan AUR.");
-      return;
-    }
+    // Removed targetUPT, targetATV, targetAUR validation
 
     try {
       const loading = document.getElementById("loading");
@@ -163,18 +161,28 @@ document.addEventListener("DOMContentLoaded", () => {
         msrData,
         targetData,
         dailyCashData,
-        advOrdData,
-        Number(targetStore),
+        advOrdData
       );
+
+      if (files.msrLy) {
+        const msrLyData = await readExcel(files.msrLy);
+        const dailyCashLyData = files.dailyCashLy ? await readExcel(files.dailyCashLy) : [];
+        const advOrdLyData = files.advOrdLy ? await readExcel(files.advOrdLy) : [];
+        window.storeDataLY = parseAllData(
+          msrLyData,
+          [], 
+          dailyCashLyData,
+          advOrdLyData
+        );
+      } else {
+        window.storeDataLY = null;
+      }
 
       buildDateDropdowns();
       renderDashboard(
         "ALL",
         null,
-        null,
-        Number(targetUPT),
-        Number(targetATV),
-        Number(targetAUR),
+        null
       );
 
       if (loading) {
@@ -189,22 +197,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Report Control listeners
-  const targetUPTEl = document.getElementById("targetUPT");
-  const targetATVEl = document.getElementById("targetATV");
-  const targetAUREl = document.getElementById("targetAUR");
-  const getTargets = () => {
-    return {
-      upt: parseFloat(targetUPTEl ? targetUPTEl.value : "1.8"),
-      atv: parseFloat(targetATVEl ? targetATVEl.value : "850000"),
-      aur: parseFloat(targetAUREl ? targetAUREl.value : "250000"),
-    };
-  };
-
   const reRender = () => {
-    const dFrom = document.getElementById("performanceDateFrom").value;
-    const dTo = document.getElementById("performanceDateTo").value;
+    const rawFrom = document.getElementById("performanceDateFrom").value;
+    const rawTo = document.getElementById("performanceDateTo").value;
+    
+    // convert YYYY-MM-DD to DD-MM-YYYY
+    const dFrom = rawFrom ? rawFrom.split("-").reverse().join("-") : "";
+    const dTo = rawTo ? rawTo.split("-").reverse().join("-") : "";
+    
     const mode = dFrom && dTo ? "CUSTOM" : "ALL";
-    const t = getTargets();
     
     const discEls = document.querySelectorAll(".disc-filter:checked");
     const activeDisc = new Set([...discEls].map(x => x.value));
@@ -216,13 +217,92 @@ document.addEventListener("DOMContentLoaded", () => {
       mode,
       dFrom,
       dTo,
-      t.upt,
-      t.atv,
-      t.aur,
       activeDisc,
       activeCat,
     );
   };
+  const periodSel = document.getElementById("performanceTimePeriod");
+  if (periodSel) {
+    periodSel.addEventListener("change", (e) => {
+      const p = e.target.value;
+      if (!p || !window.storeData) return;
+      
+      const available = Object.keys(window.storeData.dates).sort((a, b) => {
+         const pa = a.split("-"); const pb = b.split("-");
+         return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+      });
+      if (available.length === 0) return;
+      
+      const maxDateStr = window.storeData.maxActualDateStr || available[available.length - 1];
+      const parts = maxDateStr.split("-");
+      const maxDate = new Date(parts[2], parts[1]-1, parts[0]);
+      
+      let fromDateObj, toDateObj;
+      if (p === "today") {
+          fromDateObj = new Date(maxDate); toDateObj = new Date(maxDate);
+      } else if (p === "yesterday") {
+          fromDateObj = new Date(maxDate); fromDateObj.setDate(fromDateObj.getDate() - 1); toDateObj = new Date(fromDateObj);
+      } else if (p === "this_week") {
+          let day = maxDate.getDay();
+          if (day === 0) day = 7; 
+          fromDateObj = new Date(maxDate); fromDateObj.setDate(maxDate.getDate() - day + 1); 
+          toDateObj = new Date(fromDateObj); toDateObj.setDate(fromDateObj.getDate() + 6);
+      } else if (p === "last_week") {
+          let day = maxDate.getDay();
+          if (day === 0) day = 7; 
+          fromDateObj = new Date(maxDate); fromDateObj.setDate(maxDate.getDate() - day - 6);
+          toDateObj = new Date(fromDateObj); toDateObj.setDate(fromDateObj.getDate() + 6);
+      } else if (p === "this_month") {
+          fromDateObj = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+          toDateObj = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+      } else if (p === "last_month") {
+          fromDateObj = new Date(maxDate.getFullYear(), maxDate.getMonth() - 1, 1);
+          toDateObj = new Date(maxDate.getFullYear(), maxDate.getMonth(), 0);
+      } else if (p === "this_quarter") {
+          const q = Math.floor(maxDate.getMonth() / 3);
+          fromDateObj = new Date(maxDate.getFullYear(), q * 3, 1);
+          toDateObj = new Date(maxDate.getFullYear(), q * 3 + 3, 0);
+      } else if (p === "this_semester") {
+          const s = Math.floor(maxDate.getMonth() / 6);
+          fromDateObj = new Date(maxDate.getFullYear(), s * 6, 1);
+          toDateObj = new Date(maxDate.getFullYear(), s * 6 + 6, 0);
+      } else if (p === "this_year") {
+          fromDateObj = new Date(maxDate.getFullYear(), 0, 1);
+          toDateObj = new Date(maxDate.getFullYear(), 11, 31);
+      }
+      
+      const toHtmlStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const fHtmlStr = toHtmlStr(fromDateObj);
+      const tHtmlStr = toHtmlStr(toDateObj);
+      
+      const selFrom = document.getElementById("performanceDateFrom");
+      const selTo = document.getElementById("performanceDateTo");
+      if (selFrom) selFrom.value = fHtmlStr;
+      if (selTo) selTo.value = tHtmlStr;
+      
+      const compSel = document.getElementById("performanceCompareTo");
+      if (compSel) {
+          const isLongPeriod = ["this_quarter", "this_semester", "this_year"].includes(p);
+          for (let i = 0; i < compSel.options.length; i++) {
+              const opt = compSel.options[i];
+              if (opt.value === "lm" || opt.value === "lw") {
+                  opt.disabled = isLongPeriod;
+                  if (isLongPeriod) opt.style.color = "#ccc";
+                  else opt.style.color = "";
+              }
+          }
+          if (isLongPeriod && (compSel.value === "lm" || compSel.value === "lw")) {
+              compSel.value = "ly";
+          }
+      }
+
+      reRender();
+    });
+  }
+
+  const compareToSel = document.getElementById("performanceCompareTo");
+  if (compareToSel) compareToSel.addEventListener("change", reRender);
+
   window.reRender = reRender;
 
   const applyBtn = document.getElementById("applyPerformanceDateRange");
@@ -233,7 +313,6 @@ document.addEventListener("DOMContentLoaded", () => {
     resetBtn.addEventListener("click", () => {
       document.getElementById("performanceDateFrom").value = "";
       document.getElementById("performanceDateTo").value = "";
-      const t = getTargets();
       
       const discEls = document.querySelectorAll(".disc-filter:checked");
       const activeDisc = new Set([...discEls].map(x => x.value));
@@ -241,26 +320,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const catEls = document.querySelectorAll(".cat-filter:checked");
       const activeCat = new Set([...catEls].map(x => x.value));
 
-      renderDashboard("ALL", null, null, t.upt, t.atv, t.aur, activeDisc, activeCat);
+      renderDashboard("ALL", null, null, activeDisc, activeCat);
     });
 
   // Checkbox listeners are attached directly after rendering categories or in HTML for discount
   document.querySelectorAll(".disc-filter").forEach(el => el.addEventListener("change", window.reRender));
 });
 
-function readExcel(file) {
+const readExcel = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = window.XLSX.read(data, { type: "array" });
-        const firstSheet = workbook.SheetNames[0];
-        const rows = window.XLSX.utils.sheet_to_json(
-          workbook.Sheets[firstSheet],
-          { header: 1 },
-        );
-        resolve(rows);
+        let allRows = [];
+        workbook.SheetNames.forEach(sheetName => {
+          const rows = window.XLSX.utils.sheet_to_json(
+            workbook.Sheets[sheetName],
+            { header: 1 }
+          );
+          allRows = allRows.concat(rows);
+        });
+        resolve(allRows);
       } catch (err) {
         reject(err);
       }
@@ -268,27 +350,80 @@ function readExcel(file) {
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
-}
+};
 
 function parseDate(rawDate) {
   if (!rawDate) return "";
   let str = String(rawDate).trim();
-  if (!isNaN(str) && Number(str) > 20000) {
+  
+  if (!isNaN(str) && Number(str) > 20000 && Number(str) < 100000) {
     const date = new Date((Number(str) - (25567 + 1)) * 86400 * 1000);
     const d = String(date.getDate()).padStart(2, "0");
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const y = date.getFullYear();
     return `${d}-${m}-${y}`;
   }
+  
+  // Deteksi format YYYYMMDD string rapat tanpa pemisah (contoh: 20250101)
+  if (!isNaN(str) && str.length === 8 && Number(str) > 20000000) {
+    const y = str.substring(0, 4);
+    const m = str.substring(4, 6);
+    const d = str.substring(6, 8);
+    return `${d}-${m}-${y}`;
+  }
+  
   if (str.includes(" ")) str = str.split(" ")[0];
-  str = str.replace(/\//g, "-");
+  str = str.replace(/[\/\.]/g, "-");
+  
+  const monthNames = {
+    jan:"01", feb:"02", mar:"03", apr:"04", may:"05", mei:"05", jun:"06",
+    jul:"07", aug:"08", agt:"08", sep:"09", oct:"10", okt:"10", nov:"11", dec:"12", des:"12"
+  };
+
   const parts = str.split("-");
   if (parts.length === 3) {
-    if (parts[0].length === 4)
-      return `${parts[2].padStart(2, "0")}-${parts[1].padStart(2, "0")}-${parts[0]}`;
-    return `${parts[0].padStart(2, "0")}-${parts[1].padStart(2, "0")}-${parts[2]}`;
+    let p0 = parts[0], p1 = parts[1], p2 = parts[2];
+    
+    if (isNaN(p1)) {
+       const mStr = p1.substring(0,3).toLowerCase();
+       if (monthNames[mStr]) p1 = monthNames[mStr];
+    }
+    if (isNaN(p0)) {
+       const mStr = p0.substring(0,3).toLowerCase();
+       if (monthNames[mStr]) p0 = monthNames[mStr];
+    }
+    
+    if (p0.length === 4) {
+      return `${p2.padStart(2, "0")}-${p1.padStart(2, "0")}-${p0}`;
+    }
+    
+    // Asumsi ekstrim jika ternyata formatnya YY-MM-DD atau YY/MM/DD (Misal: 25/01/31)
+    // p0 = 25 (Tahun), p1 = 01 (Bulan), p2 = 31 (Tanggal)
+    if (p0.length === 2 && parseInt(p0, 10) >= 24 && parseInt(p0, 10) <= 30) {
+        if (parseInt(p1, 10) <= 12 && parseInt(p2, 10) <= 31) {
+            // Karena p0 adalah 24-30 (tahun masuk akal untuk sistem 2024-2030), dan p1 adalah bulan valid, kita asumsikan YY-MM-DD
+            return `${p2.padStart(2, "0")}-${p1.padStart(2, "0")}-20${p0}`;
+        }
+    }
+    
+    let y = p2;
+    if (y.length === 2) {
+       y = "20" + y;
+    }
+    
+    let d = parseInt(p0, 10);
+    let m = parseInt(p1, 10);
+    
+    if (d > 12 && m <= 12) {
+      return `${p0.padStart(2, "0")}-${p1.padStart(2, "0")}-${y}`;
+    } else if (d <= 12 && m > 12) {
+      return `${p1.padStart(2, "0")}-${p0.padStart(2, "0")}-${y}`;
+    } else {
+      return `${p0.padStart(2, "0")}-${p1.padStart(2, "0")}-${y}`;
+    }
   }
-  return str;
+
+  return "";
 }
 
 // =============================================
@@ -337,8 +472,7 @@ function parseAllData(
   msrData,
   targetData,
   dailyCashData,
-  advOrdData,
-  targetStore,
+  advOrdData
 ) {
   const parseRupiah = (val) => {
     if (typeof val === "number") return val;
@@ -513,9 +647,9 @@ function parseAllData(
     if (!row) continue;
 
     const firstCell = String(row[0] || "").trim();
-    const dateMatch = firstCell.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-    if (dateMatch) {
-      currentDate = firstCell;
+    const possibleDate = parseDate(firstCell);
+    if (possibleDate) {
+      currentDate = possibleDate;
       continue;
     }
 
@@ -547,10 +681,20 @@ function parseAllData(
     const row = advOrdData[i];
     if (!row) continue;
     const firstCell = String(row[0] || "").trim();
-    const dateMatch = firstCell.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-    if (dateMatch) {
-      currentAdvDate = firstCell;
-      continue;
+    
+    let isAdvDate = false;
+    if (firstCell.includes("-") || firstCell.includes("/") || firstCell.includes(".")) {
+      isAdvDate = true;
+    } else if (!isNaN(firstCell) && Number(firstCell) > 20000 && !row[1]) {
+      isAdvDate = true;
+    }
+
+    if (isAdvDate) {
+      const possibleDate = parseDate(firstCell);
+      if (possibleDate) {
+        currentAdvDate = possibleDate;
+        continue;
+      }
     }
 
     // Track current article
@@ -599,10 +743,47 @@ function parseAllData(
     }
   }
 
+  // Get actual max date before extrapolation
+  const actualDates = Object.keys(dataByDate).sort((a, b) => {
+    const pa = a.split("-"); const pb = b.split("-");
+    return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+  });
+  const maxActualDateStr = actualDates.length > 0 ? actualDates[actualDates.length - 1] : "";
+
+  // Extrapolate all days for the months present
+  const monthsPresent = new Set();
+  for (const date in dataByDate) {
+    const parts = date.split("-");
+    if (parts.length === 3) monthsPresent.add(`${parts[1]}-${parts[2]}`);
+  }
+  
+  monthsPresent.forEach(my => {
+    const [mStr, yStr] = my.split("-");
+    const m = parseInt(mStr, 10);
+    const y = parseInt(yStr, 10);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateStr = `${String(i).padStart(2, '0')}-${mStr}-${yStr}`;
+      if (!dataByDate[dateStr]) {
+        dataByDate[dateStr] = {
+          dayOfMonth: i,
+          sales: 0,
+          qty: 0,
+          sm: 0,
+          o2oSales: 0,
+          o2oQty: 0,
+          o2oSM: 0,
+          discountData: {},
+          articles: {},
+          catSM: {},
+        };
+      }
+    }
+  });
+
   for (const date in dataByDate) {
     const dom = String(dataByDate[date].dayOfMonth);
     dataByDate[date].targetPercent = targetMap[dom] || 0;
-    dataByDate[date].targetSales = targetStore * dataByDate[date].targetPercent;
   }
 
   // Extract global unique categories
@@ -614,9 +795,9 @@ function parseAllData(
   }
 
   return {
-    targetStore: targetStore,
     dates: dataByDate,
     targetMap: targetMap,
+    maxActualDateStr: maxActualDateStr,
     categories: Array.from(allCategories).sort()
   };
 }
@@ -628,25 +809,26 @@ function buildDateDropdowns() {
 
   const selFrom = document.getElementById("performanceDateFrom");
   const selTo = document.getElementById("performanceDateTo");
-  if (selFrom) {
-    selFrom.innerHTML = '<option value="">SELECT FROM DATE</option>';
-    dates.forEach((d) => {
-      const opt = document.createElement("option");
-      opt.value = d;
-      opt.innerText = d;
-      selFrom.appendChild(opt);
-    });
-    selFrom.disabled = false;
-  }
-  if (selTo) {
-    selTo.innerHTML = '<option value="">SELECT TO DATE</option>';
-    dates.forEach((d) => {
-      const opt = document.createElement("option");
-      opt.value = d;
-      opt.innerText = d;
-      selTo.appendChild(opt);
-    });
-    selTo.disabled = false;
+  
+  if (dates.length > 0) {
+      const minDate = dates[0];
+      const maxDate = dates[dates.length - 1];
+      const formatHtmlDate = (d) => {
+          const p = d.split("-"); return `${p[2]}-${p[1]}-${p[0]}`;
+      };
+      const minHtml = formatHtmlDate(minDate);
+      const maxHtml = formatHtmlDate(maxDate);
+      
+      if (selFrom) {
+          selFrom.disabled = false;
+          selFrom.min = minHtml;
+          selFrom.max = maxHtml;
+      }
+      if (selTo) {
+          selTo.disabled = false;
+          selTo.min = minHtml;
+          selTo.max = maxHtml;
+      }
   }
 }
 
@@ -664,9 +846,6 @@ function renderDashboard(
   mode,
   fromD,
   toD,
-  targetUPT,
-  targetATV,
-  targetAUR,
   discFilter = "ALL",
   catFilter = "ALL",
 ) {
@@ -743,7 +922,23 @@ function renderDashboard(
   const formatNumber = (val) => Math.round(val).toLocaleString("id-ID");
   const formatDec = (val) => val.toFixed(2);
 
-  const rawTargetStore = window.storeData ? window.storeData.targetStore : 0;
+  const cyTargets = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
+  const lyTargets = JSON.parse(localStorage.getItem("gt_store_targets_ly") || "{}");
+  
+  let targetUPT = 0;
+  let targetATV = 0;
+  let targetAUR = 0;
+  if (selectedDates.length > 0) {
+    const lastDate = selectedDates[selectedDates.length - 1];
+    const parts = lastDate.split("-");
+    if (parts.length === 3) {
+      const monthData = cyTargets[parseInt(parts[1], 10)] || {};
+      targetUPT = monthData.upt || 0;
+      targetATV = monthData.atv || 0;
+      targetAUR = monthData.aur || 0;
+    }
+  }
+
   const targetMap = window.storeData ? (window.storeData.targetMap || {}) : {};
   const categories = window.storeData ? (window.storeData.categories || []) : [];
 
@@ -830,19 +1025,61 @@ function renderDashboard(
 
 
 
+  const compareTo = document.getElementById("performanceCompareTo") ? document.getElementById("performanceCompareTo").value : "ly";
+  const maxActualNum = (window.storeData && window.storeData.maxActualDateStr) ? dateToComparable(window.storeData.maxActualDateStr) : 99999999;
+
   let htmlRows = "";
+  let maxIncludedDay = 0;
 
   displayDates.forEach((d) => {
     const data = window.storeData.dates[d];
     const dayStr = String(parseInt(d.split("-")[0], 10));
     const dailyPct = targetMap[dayStr] || 0;
+    let rawTargetStore = 0;
+    const parts = d.split("-");
+    if (parts.length === 3) {
+      const monthData = cyTargets[parseInt(parts[1], 10)] || {};
+      rawTargetStore = monthData.sales || 0;
+    }
     const dailyTarget = Math.round(rawTargetStore * dailyPct);
+
+    if (selectedDates.includes(d)) {
+      if (dateToComparable(d) <= maxActualNum) {
+        totalTargetSales += dailyTarget;
+        const currentDay = parseInt(d.split("-")[0], 10);
+        if (currentDay > maxIncludedDay) maxIncludedDay = currentDay;
+      }
+    }
+
+    let compData = null;
+    let compLabelStr = "LY";
+    if (compareTo === "ly" && window.storeDataLY) {
+      const p = d.split("-");
+      if (p.length === 3) {
+        const lyDate = `${p[0]}-${p[1]}-${parseInt(p[2], 10) - 1}`;
+        compData = window.storeDataLY.dates[lyDate];
+        compLabelStr = "LY";
+      }
+    } else if (compareTo === "lm" && window.storeData) {
+      const p = d.split("-");
+      if (p.length === 3) {
+        let m = parseInt(p[1], 10) - 1;
+        let y = parseInt(p[2], 10);
+        if (m === 0) { m = 12; y -= 1; }
+        const lmDate = `${p[0]}-${String(m).padStart(2, '0')}-${y}`;
+        compData = window.storeData.dates[lmDate];
+        compLabelStr = "LM";
+      }
+    } else if (compareTo === "lw" && window.storeData) {
+      const lwDate = getPreviousWeekDate(d);
+      compData = window.storeData.dates[lwDate];
+      compLabelStr = "LW";
+    }
 
     if (data && selectedDates.includes(d)) {
       totalSales += data.sales;
       totalQty += data.qty;
       totalSM += data.sm;
-      totalTargetSales += data.targetSales;
 
       categories.forEach(cat => {
         if (data.dynamicCats && data.dynamicCats[cat]) {
@@ -878,40 +1115,67 @@ function renderDashboard(
       let catTds = "";
       categories.forEach(cat => {
         const catQty = data.dynamicCats && data.dynamicCats[cat] ? data.dynamicCats[cat].qty : 0;
-        catTds += `<td>${formatNumber(catQty)}</td>`;
+        const compCatQty = compData && compData.dynamicCats && compData.dynamicCats[cat] ? compData.dynamicCats[cat].qty : 0;
+        const compStr = compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${formatNumber(compCatQty)})</span>` : "";
+        catTds += `<td>${formatNumber(catQty)}${compStr}</td>`;
       });
 
       htmlRows += `
               <tr>
                   <td>${d}</td>
                   <td>${formatMoney(dailyTarget)}</td>
-                  <td style="color:${cSales}; font-weight:600;">${formatMoney(data.sales)}</td>
-                  <td>${formatNumber(data.sm)}</td>
-                  <td>${formatNumber(data.qty)}</td>
-                  <td style="color:${cUPT}; font-weight:600;">${formatDec(dUPT)}</td>
-                  <td style="color:${cATV}; font-weight:600;">${formatMoney(dATV)}</td>
-                  <td style="color:${cAUR}; font-weight:600;">${formatMoney(dAUR)}</td>
+                  <td style="color:${cSales}; font-weight:600;">
+                    ${formatMoney(data.sales)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "Rp 0"})</span>` : ""}
+                  </td>
+                  <td>
+                    ${formatNumber(data.sm)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.sm || 0) : "0"})</span>` : ""}
+                  </td>
+                  <td>
+                    ${formatNumber(data.qty)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.qty || 0) : "0"})</span>` : ""}
+                  </td>
+                  <td style="color:${cUPT}; font-weight:600;">
+                    ${formatDec(dUPT)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatDec((compData.sm > 0 ? compData.qty / compData.sm : 0)) : "0.00"})</span>` : ""}
+                  </td>
+                  <td style="color:${cATV}; font-weight:600;">
+                    ${formatMoney(dATV)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "Rp 0"})</span>` : ""}
+                  </td>
+                  <td style="color:${cAUR}; font-weight:600;">
+                    ${formatMoney(dAUR)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "Rp 0"})</span>` : ""}
+                  </td>
                   ${catTds}
-                  <td>${formatMoney(data.o2oSales)}</td>
+                  <td>
+                    ${formatMoney(data.o2oSales)}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "Rp 0"})</span>` : ""}
+                  </td>
               </tr>
           `;
     } else {
       // Row is generated but no sales data yet
       let catEmptyTds = "";
-      categories.forEach(cat => { catEmptyTds += `<td>-</td>`; });
+      categories.forEach(cat => { 
+        const compCatQty = compData && compData.dynamicCats && compData.dynamicCats[cat] ? compData.dynamicCats[cat].qty : 0;
+        const compStr = compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${formatNumber(compCatQty)})</span>` : "";
+        catEmptyTds += `<td>- ${compStr}</td>`; 
+      });
 
       htmlRows += `
               <tr>
                   <td>${d}</td>
                   <td>${formatMoney(dailyTarget)}</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "Rp 0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.sm || 0) : "0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.qty || 0) : "0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatDec((compData.sm > 0 ? compData.qty / compData.sm : 0)) : "0.00"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "Rp 0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "Rp 0"})</span>` : ""}</td>
                   ${catEmptyTds}
-                  <td>-</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "Rp 0"})</span>` : ""}</td>
               </tr>
           `;
     }
@@ -922,24 +1186,10 @@ function renderDashboard(
   const actualATV = totalSM > 0 ? totalSales / totalSM : 0;
 
   // =============================================
-  // TARGET AKUMULASI PRORATA
-  // Hitung berdasarkan hari ke-N dari data yang TAMPIL (selectedDates)
-  // dan jumlahkan persentase dari targetMap
+  // TARGET AKUMULASI
   // =============================================
-  let prorataTarget = totalTargetSales; // fallback
-  let lastDataDay = 0;
-  if (rawTargetStore > 0 && selectedDates.length > 0) {
-    const lastDate = selectedDates[selectedDates.length - 1]; // format: DD-MM-YYYY
-    const parts = lastDate.split("-");
-    if (parts.length === 3) {
-      lastDataDay = parseInt(parts[0], 10);
-      let totalPct = 0;
-      for (let i = 1; i <= lastDataDay; i++) {
-        totalPct += targetMap[String(i)] || 0;
-      }
-      prorataTarget = Math.round(rawTargetStore * totalPct);
-    }
-  }
+  let prorataTarget = totalTargetSales;
+  let lastDataDay = maxIncludedDay;
 
   const diffSales = totalSales - prorataTarget;
   const diffUPT = actualUPT - targetUPT;
@@ -951,7 +1201,7 @@ function renderDashboard(
   const colorAUR = diffAUR >= 0 ? "#16a34a" : "#dc2626";
   const colorATV = diffATV >= 0 ? "#16a34a" : "#dc2626";
 
-  const pct = rawTargetStore > 0 ? ((totalSales / rawTargetStore) * 100).toFixed(1) : "-";
+  const pct = prorataTarget > 0 ? ((totalSales / prorataTarget) * 100).toFixed(1) : "-";
   const pctColor = parseFloat(pct) >= 100 ? "#16a34a" : "#dc2626";
 
   const tbody = document.getElementById("tableBody");
@@ -1084,24 +1334,29 @@ function renderDashboard(
       const diffSign = diff > 0 ? "+" : "";
 
       let diffText = "";
+      let baseText = "";
       if (isMoney) {
         diffText = `(${diffSign}Rp ${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
+        baseText = `Rp ${Math.round(targetVal).toLocaleString("id-ID")}`;
       } else {
         diffText = `(${diffSign}${Math.abs(diff).toFixed(2)})`;
+        baseText = targetVal % 1 === 0 ? targetVal.toLocaleString("id-ID") : targetVal.toFixed(2);
       }
 
-      text += `<div style="font-size:12px;color:${tColor};margin-top:4px;font-weight:bold;">T: ${sign}${achPct.toFixed(1)}% <span style="font-size:10px;color:#555;">${diffText}</span></div>`;
+      text += `<div style="font-size:12px;color:${tColor};margin-top:4px;font-weight:bold;">T (${baseText}): ${sign}${achPct.toFixed(1)}% <span style="font-size:10px;color:#555;">${diffText}</span></div>`;
     }
 
-    // Last Year (Placeholder for now)
-    text += `<div style="font-size:11px;color:#666;margin-top:2px;">No LY Data</div>`;
-
-    // Last Week
+    // Last Week (Single Day fallback)
     if (showGrowth && lw > 0) {
       const pct = ((actual - lw) / lw) * 100;
       const color = pct >= 0 ? "green" : "red";
       const sign = pct > 0 ? "+" : "";
-      text += `<div style="font-size:11px;color:${color};margin-top:2px;">${sign}${pct.toFixed(1)}% vs Last Week</div>`;
+      
+      let baseText = "";
+      if (isMoney) baseText = `Rp ${Math.round(lw).toLocaleString("id-ID")}`;
+      else baseText = lw % 1 === 0 ? lw.toLocaleString("id-ID") : lw.toFixed(2);
+      
+      text += `<div style="font-size:11px;color:${color};margin-top:2px;">LW (${baseText}): ${sign}${pct.toFixed(1)}%</div>`;
     }
 
     return text;
@@ -1128,7 +1383,114 @@ function renderDashboard(
   idVal("avgSales", actualATV, lwATV, targetATV, true, false);
   const lwAUR = lwQty > 0 ? lwSales / lwQty : 0;
   idVal("aurTotal", actualAUR, lwAUR, targetAUR, true, false);
+  
+  // O2O Total Update
+  const o2oTotalEl = document.getElementById("o2oTotal");
+  if (o2oTotalEl) o2oTotalEl.innerHTML = `Rp&nbsp;${Math.round(totalO2OSales).toLocaleString("id-ID")}`;
 
+  // ==========================================
+  // COMPARISON (LY / LM)
+  // ==========================================
+  const renderCompare = (id, actual, compVal, isMoney, isDec, compLabel) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!compVal || compVal === 0) {
+      el.innerHTML = `No ${compLabel} Data`;
+      el.style.color = "#666";
+      return;
+    }
+    const diff = actual - compVal;
+    const pct = (diff / compVal) * 100;
+    const color = pct >= 0 ? "green" : "red";
+    const sign = pct > 0 ? "+" : "";
+    const diffSign = diff > 0 ? "+" : "";
+    
+    let diffText = "";
+    let baseText = "";
+    if (isMoney) {
+        diffText = `(${diffSign}Rp ${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
+        baseText = `Rp ${Math.round(compVal).toLocaleString("id-ID")}`;
+    } else if (isDec) {
+        diffText = `(${diffSign}${Math.abs(diff).toFixed(2)})`;
+        baseText = compVal.toFixed(2);
+    } else {
+        diffText = `(${diffSign}${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
+        baseText = Math.round(compVal).toLocaleString("id-ID");
+    }
+    
+    el.innerHTML = `${compLabel} (${baseText}): ${sign}${pct.toFixed(1)}% <span style="font-size:10px;color:#555;">${diffText}</span>`;
+    el.style.color = color;
+  };
+
+  let compSales = 0, compSM = 0, compQty = 0, compO2OSales = 0;
+  let compLabel = "LY";
+  
+  if (compareTo === "ly" && window.storeDataLY && selectedDates.length > 0) {
+    compLabel = "LY";
+    selectedDates.forEach(d => {
+      if (dateToComparable(d) > maxActualNum) return;
+      const parts = d.split("-");
+      if (parts.length === 3) {
+        const lyDate = `${parts[0]}-${parts[1]}-${parseInt(parts[2], 10) - 1}`;
+        const data = window.storeDataLY.dates[lyDate];
+        if (data) {
+          compSales += data.sales || 0;
+          compSM += data.sm || 0;
+          compQty += data.qty || 0;
+          compO2OSales += data.o2oSales || 0;
+        }
+      }
+    });
+  } else if (compareTo === "lm" && window.storeData && selectedDates.length > 0) {
+    compLabel = "LM";
+    selectedDates.forEach(d => {
+      if (dateToComparable(d) > maxActualNum) return;
+      const parts = d.split("-");
+      if (parts.length === 3) {
+        let m = parseInt(parts[1], 10) - 1;
+        let y = parseInt(parts[2], 10);
+        if (m === 0) { m = 12; y -= 1; }
+        const lmDate = `${parts[0]}-${String(m).padStart(2, '0')}-${y}`;
+        const data = window.storeData.dates[lmDate];
+        if (data) {
+          compSales += data.sales || 0;
+          compSM += data.sm || 0;
+          compQty += data.qty || 0;
+          compO2OSales += data.o2oSales || 0;
+        }
+      }
+    });
+  } else if (compareTo === "lw" && window.storeData && selectedDates.length > 0) {
+    compLabel = "LW";
+    selectedDates.forEach(d => {
+      if (dateToComparable(d) > maxActualNum) return;
+      const parts = d.split("-");
+      if (parts.length === 3) {
+        const curD = new Date(parts[2], parts[1]-1, parts[0]);
+        curD.setDate(curD.getDate() - 7);
+        const lwDate = `${String(curD.getDate()).padStart(2, '0')}-${String(curD.getMonth()+1).padStart(2, '0')}-${curD.getFullYear()}`;
+        const data = window.storeData.dates[lwDate];
+        if (data) {
+          compSales += data.sales || 0;
+          compSM += data.sm || 0;
+          compQty += data.qty || 0;
+          compO2OSales += data.o2oSales || 0;
+        }
+      }
+    });
+  }
+
+  const compUPT = compSM > 0 ? compQty / compSM : 0;
+  const compATV = compSM > 0 ? compSales / compSM : 0;
+  const compAUR = compQty > 0 ? compSales / compQty : 0;
+
+  renderCompare("salesLy", totalSales, compSales, true, false, compLabel);
+  renderCompare("smLy", totalSM, compSM, false, false, compLabel);
+  renderCompare("qtyLy", totalQty, compQty, false, false, compLabel);
+  renderCompare("uptLy", actualUPT, compUPT, false, true, compLabel);
+  renderCompare("atvLy", actualATV, compATV, true, false, compLabel);
+  renderCompare("aurLy", actualAUR, compAUR, true, false, compLabel);
+  renderCompare("o2oLy", totalO2OSales, compO2OSales, true, false, compLabel);
   // ===================================
   // Render SALES BY DISCOUNT table (collapsible per kategori)
   // Sumber: discountData dari MSR (gesttechPrice logic)
