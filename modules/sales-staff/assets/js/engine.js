@@ -54,17 +54,13 @@ const GTEngine = (() => {
 
   function number(value) {
     if (value === undefined || value === null) return 0;
-
-    return (
-      Number(
-        String(value)
-          .replace(/,/g, "")
-
-          .replace(/ /g, "")
-
-          .trim(),
-      ) || 0
-    );
+    const str = String(value).replace(/[Rr][Pp]\s*/g, "").trim();
+    if (!str) return 0;
+    const hasDotThousands = /^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(str);
+    const hasCommaThousands = /^\d{1,3}(,\d{3})+([.]\d+)?$/.test(str);
+    if (hasDotThousands) return Number(str.replace(/\./g, "").replace(",", ".")) || 0;
+    if (hasCommaThousands) return Number(str.replace(/,/g, "")) || 0;
+    return Number(str.replace(/,/g, "").replace(/ /g, "")) || 0;
   }
   function normalizeDate(value) {
     if (value === undefined || value === null || value === "") {

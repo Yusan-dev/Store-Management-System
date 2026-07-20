@@ -63,7 +63,7 @@ function calcStockPerCategory(rows) {
     const category = String(r[1] || "")
       .toUpperCase()
       .trim();
-    const qty = Number(r[7]) || 0;
+    const qty = toNum(r[7]);
 
     if (!category || qty <= 0) continue;
 
@@ -95,7 +95,7 @@ function calcSalesPerCategory(rows) {
     )
       continue;
 
-    const qty = Math.abs(Number(r[6]) || 0);
+    const qty = Math.abs(toNum(r[6]));
 
     if (!cats[division]) cats[division] = 0;
     cats[division] += qty;

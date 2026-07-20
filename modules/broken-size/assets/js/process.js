@@ -7,6 +7,15 @@
 let bsAllData = [];
 let bsFilteredData = [];
 
+function toNum(v) {
+  if (typeof v === "number") return v;
+  const s = String(v || "").replace(/[Rr][Pp]\s*/g, "").trim();
+  if (!s) return 0;
+  if (/^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(s)) return Number(s.replace(/\./g, "").replace(",", ".")) || 0;
+  if (/^\d{1,3}(,\d{3})+([.]\d+)?$/.test(s)) return Number(s.replace(/,/g, "")) || 0;
+  return Number(s.replace(/,/g, "")) || 0;
+}
+
 /**
  * Menampilkan loading indicator di layar.
  */
@@ -196,10 +205,11 @@ function processBrokenSize(rows) {
     const brand = String(r[0] || "");
     const category = String(r[1] || "").toUpperCase();
     const raw = String(r[4] || "");
-    const price = Number(r[6]) || 0;
-    const rowQty = Number(r[7]) || 0;
+    const price = toNum(r[6]);
+    const rowQty = toNum(r[7]);
 
     if (!raw || rowQty <= 0) continue;
+
 
     const variant = extractVariant(raw);
     if (!variant) continue;

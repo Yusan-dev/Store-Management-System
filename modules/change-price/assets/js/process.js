@@ -14,6 +14,15 @@ function hideLoading() {
 
 document.getElementById("process").onclick = runProcess;
 
+function toNum(v) {
+  if (typeof v === "number") return v;
+  const s = String(v || "").replace(/[Rr][Pp]\s*/g, "").trim();
+  if (!s) return 0;
+  if (/^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(s)) return Number(s.replace(/\./g, "").replace(",", ".")) || 0;
+  if (/^\d{1,3}(,\d{3})+([.]\d+)?$/.test(s)) return Number(s.replace(/,/g, "")) || 0;
+  return Number(s.replace(/,/g, "")) || 0;
+}
+
 /**
  * Membaca file excel dan mengembalikan workbook XLSX.
  * @param {File} file
@@ -85,7 +94,7 @@ async function runProcess() {
         const r = rowsB[i];
         if (!r) continue;
         const article = String(r[2] || "").trim(); // Generic Article (Kolom 3)
-        const price = Math.round(Number(r[4])) || 0; // Price (Kolom 5)
+        const price = Math.round(toNum(r[4])); // Price (Kolom 5)
         // Simpan harga pertama jika ada duplikat artikel
         if (article && price > 0 && !priceMap.has(article)) {
           priceMap.set(article, price);
@@ -115,8 +124,8 @@ function processRows(rows, priceMap) {
     const brand    = String(r[0] || "");
     const category = String(r[1] || "");
     const raw      = String(r[4] || "");
-    const oldPrice = Math.round(Number(r[6])) || 0;
-    const rowQty   = Number(r[7]) || 0;
+    const oldPrice = Math.round(toNum(r[6]));
+    const rowQty   = toNum(r[7]);
 
     if (!raw || rowQty <= 0) continue;
 

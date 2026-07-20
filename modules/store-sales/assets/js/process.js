@@ -486,8 +486,13 @@ function parseAllData(
 ) {
   const parseRupiah = (val) => {
     if (typeof val === "number") return val;
-    const str = String(val || "").trim();
-    return Number(str.replace(/\./g, "").replace(/[^\d-]/g, "")) || 0;
+    const str = String(val || "").replace(/[Rr][Pp]\s*/g, "").trim();
+    if (!str) return 0;
+    const hasDotThousands = /^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(str);
+    const hasCommaThousands = /^\d{1,3}(,\d{3})+([.]\d+)?$/.test(str);
+    if (hasDotThousands) return Number(str.replace(/\./g, "").replace(",", ".")) || 0;
+    if (hasCommaThousands) return Number(str.replace(/,/g, "")) || 0;
+    return Number(str.replace(/[^\d.-]/g, "")) || 0;
   };
   const dataByDate = {};
   let o2oInvoices = {};
@@ -500,7 +505,7 @@ function parseAllData(
       const dayStr = String(row[0]).trim();
       // Gunakan Kolom C (row[2]) untuk target persentase harian, atau fallback ke row[1]
       let rawPct = row[2] !== undefined ? row[2] : row[1];
-      let pct = parseFloat(rawPct) || 0;
+      let pct = typeof rawPct === "number" ? rawPct : parseFloat(String(rawPct || "").replace(",", ".").replace(/[^0-9.\-]/g, "")) || 0;
       // If the percentage is written as a number > 1 (e.g. 3.5 instead of 0.035), divide by 100
       if (pct > 1) pct = pct / 100;
       targetMap[dayStr] = pct;
@@ -559,7 +564,7 @@ function parseAllData(
       };
     }
 
-    const qty = parseFloat(row[6]) || 0;
+    const qty = Math.round(parseRupiah(row[6]));
     const netAmt = parseRupiah(row[8]);
     const article = String(row[5] || "").trim();
 
@@ -667,7 +672,7 @@ function parseAllData(
 
     const counter = parseInt(row[0], 10);
     const invoice = String(row[1] || "").trim();
-    const sales = parseFloat(row[2]) || 0;
+    const sales = parseRupiah(row[2]);
 
     if (!/^\d{6,}$/.test(invoice)) continue; // harus angka 6+
     if (!invoice.startsWith("100")) continue; // hanya struk PENJUALAN (bukan return)
@@ -719,7 +724,13 @@ function parseAllData(
 
     const parseNumStr = (val) => {
       if (typeof val === "number") return val;
-      return Number(String(val || "").replace(/[^\d.-]/g, "")) || 0;
+      const str = String(val || "").replace(/[Rr][Pp]\s*/g, "").trim();
+      if (!str) return 0;
+      const hasDotThousands = /^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(str);
+      const hasCommaThousands = /^\d{1,3}(,\d{3})+([.]\d+)?$/.test(str);
+      if (hasDotThousands) return Number(str.replace(/\./g, "").replace(",", ".")) || 0;
+      if (hasCommaThousands) return Number(str.replace(/,/g, "")) || 0;
+      return Number(str.replace(/[^\d.-]/g, "")) || 0;
     };
     const unitPrice = parseNumStr(row[0]);
     const invoice = String(row[1] || "").trim();

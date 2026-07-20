@@ -201,7 +201,12 @@ function parseHourlyData(rows) {
 
     const parseNum = (val) => {
         if (typeof val === "number") return val;
-        const str = String(val || "").trim();
+        const str = String(val || "").replace(/[Rr][Pp]\s*/g, "").trim();
+        if (!str) return 0;
+        const hasDotThousands = /^\d{1,3}(\.\d{3})+([,]\d+)?$/.test(str);
+        const hasCommaThousands = /^\d{1,3}(,\d{3})+([.]\d+)?$/.test(str);
+        if (hasDotThousands) return parseFloat(str.replace(/\./g, "").replace(",", ".")) || 0;
+        if (hasCommaThousands) return parseFloat(str.replace(/,/g, "")) || 0;
         return parseFloat(str.replace(/,/g, "")) || 0;
     };
 
