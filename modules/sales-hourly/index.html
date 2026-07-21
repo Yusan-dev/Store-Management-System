@@ -26,7 +26,7 @@
             </div>
             <div class="license-status-info" style="display:flex; justify-content:space-between; gap:20px; font-size:12px;">
                 <span style="opacity:0.7;">USER ID</span>
-                <strong id="licenseUserId" style="font-family:monospace;">23027508</strong>
+                <strong id="licenseUserId" style="font-family:monospace;">-</strong>
             </div>
         </div>
     </div>
@@ -140,5 +140,14 @@
     <!-- Include external libraries -->
     <script src="../store-sales/libs/xlsx.full.min.js"></script>
     <script src="assets/js/process.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const globalUserId = localStorage.getItem("gt_global_user_id");
+        if (globalUserId) {
+            const uidEl = document.getElementById("licenseUserId");
+            if (uidEl) uidEl.innerText = globalUserId;
+        }
+    });
+</script>
 </body>
 </html>

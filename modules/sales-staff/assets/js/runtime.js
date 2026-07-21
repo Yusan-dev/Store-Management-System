@@ -387,6 +387,10 @@ const GTRuntime = (() => {
 
     const userId = extractUserId(rows);
 
+    if (userId) {
+      localStorage.setItem("gt_global_user_id", userId);
+    }
+
     // =============================================
     // USER ID NOT FOUND
     // =============================================

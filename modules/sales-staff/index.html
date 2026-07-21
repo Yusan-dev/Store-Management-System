@@ -1042,6 +1042,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <div id="printReportRoot"></div>
 <script src="assets/js/db-cache.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const globalUserId = localStorage.getItem("gt_global_user_id");
+        if (globalUserId) {
+            const uidEl = document.getElementById("licenseUserId");
+            if (uidEl) uidEl.innerText = globalUserId;
+        }
+    });
+</script>
 </body>
 </html>
 
