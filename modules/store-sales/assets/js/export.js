@@ -191,6 +191,7 @@ document.getElementById("export").addEventListener("click", async function() {
     
     const blob = new Blob([template], { type: "application/vnd.ms-excel" });
     
+    let useFallback = !window.showSaveFilePicker;
     if (window.showSaveFilePicker) {
       try {
         const handle = await window.showSaveFilePicker({
@@ -200,8 +201,12 @@ document.getElementById("export").addEventListener("click", async function() {
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
-      } catch (e) { if (e.name === "AbortError") return; }
-    } else {
+      } catch (e) { 
+        if (e.name === "AbortError") return; 
+        useFallback = true; 
+      }
+    }
+    if (useFallback) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "Store_Sales_Achievement.xls";

@@ -149,12 +149,14 @@ async function exportIL() {
   });
 
   html += `</table></body></html>`;
+  html += `</table></body></html>`;
 
   await saveFile(html, `GT_INVENTORY_LEVEL_${stamp}.xls`);
 }
 
 async function saveFile(html, filename) {
   const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  let useFallback = !window.showSaveFilePicker;
   if (window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
@@ -164,8 +166,12 @@ async function saveFile(html, filename) {
       const writable = await handle.createWritable();
       await writable.write(blob);
       await writable.close();
-    } catch (e) { if (e.name === "AbortError") return; }
-  } else {
+    } catch (e) { 
+      if (e.name === "AbortError") return; 
+      useFallback = true;
+    }
+  }
+  if (useFallback) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = filename;
