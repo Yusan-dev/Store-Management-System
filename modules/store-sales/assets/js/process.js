@@ -185,7 +185,12 @@ document.addEventListener("DOMContentLoaded", () => {
         window.storeDataLY = parseLYTemplate(salesLyData);
         localStorage.setItem(LY_STORAGE_KEY, JSON.stringify(window.storeDataLY));
       } else {
-        window.storeDataLY = null;
+        const cachedLy = localStorage.getItem(LY_STORAGE_KEY);
+        if (cachedLy) {
+          window.storeDataLY = JSON.parse(cachedLy);
+        } else {
+          window.storeDataLY = null;
+        }
       }
 
       buildDateDropdowns();
@@ -293,15 +298,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const compSel = document.getElementById("performanceCompareTo");
       if (compSel) {
           const isLongPeriod = ["this_quarter", "this_semester", "this_year"].includes(p);
+          const isMonthOrLong = ["this_month", "last_month", "this_quarter", "this_semester", "this_year"].includes(p);
           for (let i = 0; i < compSel.options.length; i++) {
               const opt = compSel.options[i];
-              if (opt.value === "lm" || opt.value === "lw") {
+              if (opt.value === "lw") {
+                  opt.disabled = isMonthOrLong;
+                  opt.style.color = isMonthOrLong ? "#ccc" : "";
+              } else if (opt.value === "lm") {
                   opt.disabled = isLongPeriod;
-                  if (isLongPeriod) opt.style.color = "#ccc";
-                  else opt.style.color = "";
+                  opt.style.color = isLongPeriod ? "#ccc" : "";
               }
           }
-          if (isLongPeriod && (compSel.value === "lm" || compSel.value === "lw")) {
+          if (isMonthOrLong && compSel.value === "lw") {
+              compSel.value = "ly";
+          }
+          if (isLongPeriod && compSel.value === "lm") {
               compSel.value = "ly";
           }
       }
@@ -912,7 +923,7 @@ function renderDashboard(
     const cFrom = dateToComparable(fromD);
     const cTo = dateToComparable(toD);
     if (!cFrom && !cTo) {
-      renderDashboard("ALL", null, null, targetUPT, targetATV, targetAUR);
+      renderDashboard("ALL", null, null, discFilter, catFilter);
       return;
     }
 
@@ -939,7 +950,7 @@ function renderDashboard(
     totalQty = 0,
     totalSM = 0,
     totalTargetSales = 0;
-  const formatMoney = (val) => "Rp " + Math.round(val).toLocaleString("id-ID");
+  const formatMoney = (val) => "Rp&nbsp;" + Math.round(val).toLocaleString("id-ID");
   const formatNumber = (val) => Math.round(val).toLocaleString("id-ID");
   const formatDec = (val) => val.toFixed(2);
 
@@ -1051,20 +1062,30 @@ function renderDashboard(
 
   let htmlRows = "";
   let maxIncludedDay = 0;
+  let fullPeriodTargetSales = 0;
 
   displayDates.forEach((d) => {
     const data = window.storeData.dates[d];
-    const dayStr = String(parseInt(d.split("-")[0], 10));
-    const dailyPct = targetMap[dayStr] || 0;
-    let rawTargetStore = 0;
     const parts = d.split("-");
+    const monthNum = parts.length === 3 ? parseInt(parts[1], 10) : 0;
+    
+    // Load dynamic daily target map for this specific month
+    const savedDaily = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
+    const monthDailyInfo = savedDaily[monthNum] || {};
+    const monthTargetMap = monthDailyInfo.targetMap || {};
+    
+    const dayStr = String(parseInt(parts[0], 10));
+    const dailyPct = monthTargetMap[dayStr] !== undefined ? monthTargetMap[dayStr] : (targetMap[dayStr] || 0);
+    
+    let rawTargetStore = 0;
     if (parts.length === 3) {
-      const monthData = cyTargets[parseInt(parts[1], 10)] || {};
+      const monthData = cyTargets[monthNum] || {};
       rawTargetStore = monthData.sales || 0;
     }
     const dailyTarget = Math.round(rawTargetStore * dailyPct);
 
     if (selectedDates.includes(d)) {
+      fullPeriodTargetSales += dailyTarget;
       if (dateToComparable(d) <= maxActualNum) {
         totalTargetSales += dailyTarget;
         const currentDay = parseInt(d.split("-")[0], 10);
@@ -1101,6 +1122,9 @@ function renderDashboard(
       totalSales += data.sales;
       totalQty += data.qty;
       totalSM += data.sm;
+      totalO2OSales += data.o2oSales || 0;
+      totalO2OSM += data.o2oSM || 0;
+      totalO2OQty += data.o2oQty || 0;
 
       categories.forEach(cat => {
         if (data.dynamicCats && data.dynamicCats[cat]) {
@@ -1222,7 +1246,7 @@ function renderDashboard(
   const colorAUR = diffAUR >= 0 ? "#16a34a" : "#dc2626";
   const colorATV = diffATV >= 0 ? "#16a34a" : "#dc2626";
 
-  const pct = prorataTarget > 0 ? ((totalSales / prorataTarget) * 100).toFixed(1) : "-";
+  const pct = fullPeriodTargetSales > 0 ? ((totalSales / fullPeriodTargetSales) * 100).toFixed(1) : "-";
   const pctColor = parseFloat(pct) >= 100 ? "#16a34a" : "#dc2626";
 
   const tbody = document.getElementById("tableBody");
@@ -1397,7 +1421,7 @@ function renderDashboard(
 
   const lwUPT = lwSM > 0 ? lwQty / lwSM : 0;
   idVal("staffCount", actualUPT, lwUPT, targetUPT, false, true);
-  idVal("salesTotal", totalSales, lwSales, totalTargetSales, true, false);
+  idVal("salesTotal", totalSales, lwSales, fullPeriodTargetSales, true, false);
   idVal("smTotal", totalSM, lwSM, 0, false, false);
   idVal("qtyTotal", totalQty, lwQty, 0, false, false);
   const lwATV = lwSM > 0 ? lwSales / lwSM : 0;
@@ -1505,7 +1529,7 @@ function renderDashboard(
   const compATV = compSM > 0 ? compSales / compSM : 0;
   const compAUR = compQty > 0 ? compSales / compQty : 0;
 
-  renderCompare("salesLy", totalSales, compSales, true, false, compLabel);
+  renderCompare("salesCompare", totalSales, compSales, true, false, compLabel);
   renderCompare("smLy", totalSM, compSM, false, false, compLabel);
   renderCompare("qtyLy", totalQty, compQty, false, false, compLabel);
   renderCompare("uptLy", actualUPT, compUPT, false, true, compLabel);

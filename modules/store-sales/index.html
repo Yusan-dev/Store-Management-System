@@ -23,7 +23,7 @@
     .loading-text { margin-top: 20px; font-size: 24px; font-weight: bold; color: #000; letter-spacing: 2px; }
 
     /* Responsive Overrides */
-    @media (max-width: 1024px) {
+    @media (max-width: 800px) {
         .main-layout {
             grid-template-columns: 1fr !important;
             display: flex !important;
@@ -61,6 +61,10 @@
             font-size: 20px !important;
         }
     }
+    table th, table td {
+        white-space: nowrap !important;
+        padding: 8px 12px !important;
+    }
 </style>
 </head>
 
@@ -96,7 +100,7 @@
     </div>
 </header>
 
-<div class="main-layout" style="display: grid; grid-template-columns: 330px 1fr; gap: 22px; align-items: start;">
+<div class="main-layout" style="display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 22px; align-items: start;">
     
     <!-- SIDEBAR KIRI -->
     <aside class="sidebar" style="position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; padding-right: 10px;">
@@ -107,11 +111,6 @@
                 <label>MERCHANDISE SALES REPORT</label>
                 <input type="file" id="msr" accept=".xls,.xlsx">
                 <div id="msrName" class="filename">Belum dipilih</div>
-            </div>
-            <div class="upload-box" id="dz-target">
-                <label>TARGET HARIAN (EXCEL)</label>
-                <input type="file" id="target" accept=".xls,.xlsx">
-                <div id="targetName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box" id="dz-dailyCash">
                 <label>DAILY CASH COLLECTION</label>
@@ -144,7 +143,7 @@
     </aside>
 
     <!-- KONTEN KANAN -->
-    <main class="content-area">
+    <main class="content-area" style="min-width: 0;">
 
 <!-- ===================================== -->
 <!-- SUMMARY CARDS (5 kartu atas) -->
@@ -164,7 +163,7 @@
     <div class="summary-card">
         <span class="summary-title">TOTAL SALES</span>
         <h2 id="salesTotal">0</h2>
-        <div id="salesLy" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
+        <div id="salesCompare" style="font-size:11px; margin-top:4px; font-weight:bold;">No LY Data</div>
     </div>
 
     <div class="summary-card">
@@ -231,7 +230,7 @@
             <button id="resetPerformanceDateRange" style="background:#fff; color:#111; padding:6px 12px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">RESET</button>
         </div>
     </div>
-    <div style="overflow-x:auto;">
+    <div id="tableScrollContainer" style="overflow-x:auto; cursor:grab; padding-bottom: 5px;">
         <table class="report-table" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
             <thead>
                 <tr id="tableHeaderRow" style="border-bottom:2px solid #111; background:#f0f0f0;">
@@ -347,7 +346,7 @@
 <script src="libs/xlsx.full.min.js"></script>
 <script src="assets/js/runtime.js"></script>
 <script src="assets/js/db-cache.js?v=7"></script>
-<script src="assets/js/process.js?v=7"></script>
+<script src="assets/js/process.js?v=14"></script>
 <script src="assets/js/summary.js?v=7"></script>
 <script src="assets/js/export.js?v=7"></script>
 <script src="assets/js/print.js?v=7"></script>
@@ -374,6 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h2 style="margin:0; font-size:18px;">SET MONTHLY TARGETS (CURRENT YEAR)</h2>
             <button onclick="document.getElementById('targetModal').style.display='none'" style="background:#f00; color:#fff; border:2px solid #111; font-weight:bold; padding:4px 8px; cursor:pointer;">X</button>
         </div>
+        
         <div style="overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse; text-align:left;">
                 <thead>
@@ -383,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <th style="padding:10px; border:2px solid #111;">TARGET UPT</th>
                         <th style="padding:10px; border:2px solid #111;">TARGET ATV (Rp)</th>
                         <th style="padding:10px; border:2px solid #111;">TARGET AUR (Rp)</th>
+                        <th style="padding:10px; border:2px solid #111;">DAILY TARGET (EXCEL)</th>
                     </tr>
                 </thead>
                 <tbody id="cyTargetInputs">
@@ -400,12 +401,18 @@ function buildTargetInputs() {
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     let cyHtml = "";
     const savedCY = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
+    const savedDaily = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
+    
     months.forEach((m, i) => {
         let val = savedCY[i+1] || { sales:0, upt:0, atv:0, aur:0 };
-        // Fallback for old numeric format if any
         if (typeof val === 'number') {
             val = { sales: val, upt: 0, atv: 0, aur: 0 };
         }
+        
+        const dailyInfo = savedDaily[i+1] || {};
+        const filename = dailyInfo.filename || "Belum ada file";
+        const fileColor = dailyInfo.filename ? "#16a34a" : "#888";
+        
         cyHtml += `
             <tr>
                 <td style="padding:8px; border:2px solid #111; font-weight:bold;">${m}</td>
@@ -413,12 +420,73 @@ function buildTargetInputs() {
                 <td style="padding:8px; border:2px solid #111;"><input type="number" step="0.01" id="t_upt_${i+1}" value="${val.upt||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
                 <td style="padding:8px; border:2px solid #111;"><input type="number" id="t_atv_${i+1}" value="${val.atv||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
                 <td style="padding:8px; border:2px solid #111;"><input type="number" id="t_aur_${i+1}" value="${val.aur||0}" style="width:100%; border:none; outline:none; font-family:monospace; font-weight:bold;"></td>
+                <td style="padding:8px; border:2px solid #111; text-align:center; vertical-align:middle;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                        <label for="monthly_target_file_${i+1}" style="background:#111; color:#fff; border:1px solid #111; padding:3px 8px; cursor:pointer; font-size:10px; font-weight:bold;">CHOOSE FILE</label>
+                        <input type="file" id="monthly_target_file_${i+1}" accept=".xls,.xlsx" onchange="uploadMonthlyTargetFile(this, ${i+1})" style="display:none;">
+                        <span id="monthly_target_lbl_${i+1}" style="font-size:10px; font-weight:bold; color:${fileColor}; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${filename}</span>
+                    </div>
+                </td>
             </tr>
         `;
     });
     document.getElementById("cyTargetInputs").innerHTML = cyHtml;
 }
 buildTargetInputs();
+
+async function uploadMonthlyTargetFile(input, monthIndex) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const label = document.getElementById("monthly_target_lbl_" + monthIndex);
+    label.innerText = "Loading...";
+
+    try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = window.XLSX.read(data, { type: "array" });
+                const firstSheetName = workbook.SheetNames[0];
+                const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1 });
+                
+                // Parse Target
+                const targetMap = {};
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row && row[0]) {
+                        const dayStr = String(row[0]).trim();
+                        let rawPct = row[2] !== undefined ? row[2] : row[1];
+                        let pct = typeof rawPct === "number" ? rawPct : parseFloat(String(rawPct || "").replace(",", ".").replace(/[^0-9.\-]/g, "")) || 0;
+                        if (pct > 1) pct = pct / 100;
+                        targetMap[dayStr] = pct;
+                    }
+                }
+                
+                // Save to localStorage
+                const saved = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
+                saved[monthIndex] = {
+                    filename: file.name,
+                    targetMap: targetMap
+                };
+                localStorage.setItem("gt_store_daily_targets_cy", JSON.stringify(saved));
+                
+                label.innerText = file.name;
+                label.style.color = "#16a34a";
+            } catch (err) {
+                alert("Error parsing file: " + err.message);
+                label.innerText = "Upload Failed";
+                label.style.color = "#dc2626";
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } catch (err) {
+        alert("FileReader error: " + err.message);
+        label.innerText = "Upload Failed";
+        label.style.color = "#dc2626";
+    }
+}
+
 function saveTargetsAndCloseModal() {
     const cyTargets = {};
     for (let i = 1; i <= 12; i++) {
@@ -501,6 +569,37 @@ function saveTargetsAndCloseModal() {
         </div>
     </div>
 </div>
+
+<script>
+    // Drag-to-scroll functionality for the table container
+    const slider = document.getElementById('tableScrollContainer');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        slider.style.cursor = 'grabbing';
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.style.cursor = 'grab';
+    });
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.style.cursor = 'grab';
+    });
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2; // scroll speed multiplier
+        slider.scrollLeft = scrollLeft - walk;
+    });
+</script>
+
 </body>
 </html>
 

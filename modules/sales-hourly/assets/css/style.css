@@ -1,6 +1,6 @@
 body {
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #fafafa;
+    font-family: "Space Mono", "Courier New", Courier, monospace;
+    background-color: #00FFFF;
     color: #111;
     margin: 0;
     padding: 20px;
@@ -32,10 +32,16 @@ h1, h2, h3 {
     gap: 15px;
 }
 
+.header-section h1 {
+    color: #FF00FF;
+    text-shadow: 3px 3px 0px #000;
+}
+
 .upload-box {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .btn {
@@ -60,29 +66,32 @@ h1, h2, h3 {
 }
 
 .file-label {
-    background: #fff;
+    background: #FFDF00;
     color: #111;
     border: 2px solid #111;
     padding: 8px 16px;
     font-weight: bold;
     cursor: pointer;
     text-transform: uppercase;
+    font-size: 11px;
+    box-shadow: 3px 3px 0px #000;
 }
 
 .file-label:hover {
-    background: #111;
+    background: #FF00FF;
     color: #fff;
 }
 
 .filter-section {
-    background: #f0f0f0;
-    border: 2px solid #111;
+    background: #FFDF00;
+    border: 3px solid #111;
     padding: 15px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
+    box-shadow: 4px 4px 0px #000;
 }
 
 .filter-select {
@@ -110,16 +119,18 @@ h1, h2, h3 {
     border: 3px solid #111;
     padding: 15px;
     background: #fff;
+    box-shadow: 5px 5px 0px #000;
 }
 
 .card-title {
-    background: #3b82f6;
+    background: #FF00FF;
     color: #fff;
     padding: 8px 12px;
     font-weight: bold;
     margin: -15px -15px 15px -15px;
     border-bottom: 3px solid #111;
     text-transform: uppercase;
+    text-shadow: 2px 2px 0px #000;
 }
 
 .report-table {
@@ -135,7 +146,8 @@ h1, h2, h3 {
 }
 
 .report-table th {
-    background: #f3f4f6;
+    background: #111;
+    color: #fff;
     text-align: center;
 }
 
@@ -145,22 +157,27 @@ h1, h2, h3 {
 }
 
 .highlight-row {
-    background: #eff6ff;
+    background: #ccff00;
     font-weight: bold;
 }
 
 .grand-total-row {
-    background: #e5e7eb;
+    background: #FFDF00;
     font-weight: bold;
 }
 
+.grand-total-row td {
+    border-top: 3px solid #000;
+}
+
 .date-badge {
-    background: #ccff00;
+    background: #00FFFF;
     padding: 4px 8px;
     font-weight: bold;
     border: 2px solid #111;
     display: inline-block;
     margin-bottom: 10px;
+    box-shadow: 2px 2px 0px #000;
 }
 
 .loading {
@@ -193,7 +210,7 @@ h1, h2, h3 {
     width: 60px;
     height: 60px;
     border: 5px solid #111;
-    border-top: 5px solid #ff00ff;
+    border-top: 5px solid #FF00FF;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -223,7 +240,7 @@ h1, h2, h3 {
 
 .loading-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #ffdf00, #ff00ff);
+    background: linear-gradient(90deg, #FFDF00, #FF00FF);
     width: 0%;
     transition: width 0.3s ease;
 }

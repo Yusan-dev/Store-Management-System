@@ -23,7 +23,7 @@ function exportData() {
  * Mengekspor data Broken Size ke dalam file Excel (.xls)
  * dengan gaya warna dan border kustom berbasis XML mso.
  */
-function exportBrokenSize() {
+async function exportBrokenSize() {
   const rows = window.bsFilteredData || [];
 
   if (!rows.length) {
@@ -84,22 +84,14 @@ function exportBrokenSize() {
 
   html += `</table></body></html>`;
 
-  let blob = new Blob([html], {
-    type: "application/vnd.ms-excel;charset=utf-8",
-  });
-  let link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `GT_BROKEN_SIZE_${stamp}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  await saveFile(html, `GT_BROKEN_SIZE_${stamp}.xls`);
 }
 
 /**
  * Mengekspor data Inventory Level (IL) ke dalam file Excel (.xls)
  * dengan gaya warna dan border kustom berbasis XML mso.
  */
-function exportIL() {
+async function exportIL() {
   const rows = window.ilTableData || [];
 
   if (!rows.length) {
@@ -158,15 +150,58 @@ function exportIL() {
 
   html += `</table></body></html>`;
 
-  let blob = new Blob([html], {
-    type: "application/vnd.ms-excel;charset=utf-8",
-  });
-  let link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `GT_INVENTORY_LEVEL_${stamp}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  await saveFile(html, `GT_INVENTORY_LEVEL_${stamp}.xls`);
 }
+
+async function saveFile(html, filename) {
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: "Excel File", accept: { "application/vnd.ms-excel": [".xls"] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } catch (e) { if (e.name === "AbortError") return; }
+  } else {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  const d = document.createElement("div"); d.innerHTML = html;
+  const t = d.querySelector("table");
+  if (t) { 
+    const c = t.cloneNode(true); 
+    function cleanNumber(str) {
+        if (!str) return "";
+        let cleaned = str.replace(/Rp/gi, "").trim();
+        if ((cleaned.match(/\./g) || []).length > 1) {
+            cleaned = cleaned.replace(/\./g, "");
+        } else if ((cleaned.match(/\./g) || []).length === 1) {
+            const parts = cleaned.split(".");
+            if (parts[1] && parts[1].length === 3) {
+                cleaned = cleaned.replace(/\./g, "");
+            }
+        }
+        cleaned = cleaned.replace(/[^\d.-]/g, "");
+        return cleaned;
+    }
+    c.querySelectorAll("td").forEach(td => {
+        const txt = td.innerText.trim();
+        const cleaned = cleanNumber(txt);
+        if (cleaned !== "" && !isNaN(cleaned)) {
+            td.innerText = cleaned;
+            td.setAttribute("x:num", cleaned);
+        }
+    });
+    navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([`<table>${c.innerHTML}</table>`],{type:"text/html"})})]).catch(()=>{}); 
+  }
+}
+
+
+
 
 

@@ -4,7 +4,7 @@ document.getElementById("export").onclick = exportFiltered;
  * Mengubah data yang sudah difilter menjadi format HTML table khusus (XML mso)
  * dan men-downloadnya sebagai file .xls agar sesuai warna dan formatnya.
  */
-function exportFiltered() {
+async function exportFiltered() {
   const rows = window.filteredData || [];
   if (!rows.length) {
     alert("No data");
@@ -71,13 +71,56 @@ function exportFiltered() {
 
   html += `</table></body></html>`;
 
-  let blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
-  let link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `GT_CHANGE_PRICE_${stamp}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  await saveFile(html, `GT_CHANGE_PRICE_${stamp}.xls`);
 }
+
+async function saveFile(html, filename) {
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: "Excel File", accept: { "application/vnd.ms-excel": [".xls"] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } catch (e) { if (e.name === "AbortError") return; }
+  } else {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  const d = document.createElement("div"); d.innerHTML = html;
+  const t = d.querySelector("table");
+  if (t) { 
+    const c = t.cloneNode(true); 
+    function cleanNumber(str) {
+        if (!str) return "";
+        let cleaned = str.replace(/Rp/gi, "").trim();
+        if ((cleaned.match(/\./g) || []).length > 1) {
+            cleaned = cleaned.replace(/\./g, "");
+        } else if ((cleaned.match(/\./g) || []).length === 1) {
+            const parts = cleaned.split(".");
+            if (parts[1] && parts[1].length === 3) {
+                cleaned = cleaned.replace(/\./g, "");
+            }
+        }
+        cleaned = cleaned.replace(/[^\d.-]/g, "");
+        return cleaned;
+    }
+    c.querySelectorAll("td").forEach(td => {
+        const txt = td.innerText.trim();
+        const cleaned = cleanNumber(txt);
+        if (cleaned !== "" && !isNaN(cleaned)) {
+            td.innerText = cleaned;
+            td.setAttribute("x:num", cleaned);
+        }
+    });
+    navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([`<table>${c.innerHTML}</table>`],{type:"text/html"})})]).catch(()=>{}); 
+  }
+}
+
 
 

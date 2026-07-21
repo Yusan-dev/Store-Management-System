@@ -4,22 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Hourly Dashboard</title>
+    <link rel="stylesheet" href="../store-sales/assets/css/dashboard.css?v=6">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
     <div class="container">
-        <div class="header-section">
-            <div>
-                <h1>Sales Hourly Dashboard</h1>
-                <p style="margin: 5px 0 0 0; color: #666;">Analyze hourly sales performance from Sales Register report</p>
+<header class="topbar">
+    <div class="brand">
+        <div class="logo-box" style="width:50px;height:50px;background:#FF00FF;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:4px 4px 0px #000;margin-right:16px;">KG</div>
+        <div>
+            <h1>MAA SALES HOURLY</h1>
+            <p>Created By : 2309445</p>
+            <span class="version" style="background:#FFDF00; color:#111; border:1px solid #111; padding:2px 8px; font-weight:bold; border-radius:10px; font-size:11px;">Version 1.0</span>
+        </div>
+    </div>
+    <div class="top-action">
+        <div id="licenseStatusCard" class="license-status-card" data-plan="FREE" style="border:3px solid #FFDF00; padding:8px 15px; background:#1e293b; color:#fff; border-radius:8px;">
+            <div class="license-status-top" style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span class="license-status-dot" style="width:8px; height:8px; background:#FFDF00; border-radius:50%; display:inline-block;"></span>
+                <span id="licensePlan" style="font-weight:bold; font-size:12px; color:#FFDF00;">FREE ACCESS</span>
             </div>
-            <div class="upload-box">
-                <label for="excelFile" class="file-label" id="fileLabel">Choose XLS File</label>
-                <input type="file" id="excelFile" class="file-input" accept=".xls,.xlsx">
-                <button class="btn" id="processBtn">Process Data</button>
-                <button class="btn" id="clearCacheBtn" style="background-color: #999; margin-left: 8px;">Clear Cache</button>
+            <div class="license-status-info" style="display:flex; justify-content:space-between; gap:20px; font-size:12px;">
+                <span style="opacity:0.7;">USER ID</span>
+                <strong id="licenseUserId" style="font-family:monospace;">23027508</strong>
             </div>
         </div>
+    </div>
+</header>
+
+<section class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <label for="excelFile" class="file-label" id="fileLabel" style="border:2px solid #111; padding:6px 12px; font-weight:bold; cursor:pointer; background:#fff; display:inline-block;">salesregisteritemdatewisehhmmss,xls/xlsx</label>
+            <input type="file" id="excelFile" class="file-input" accept=".xls,.xlsx" style="display:none;">
+            <button class="btn" id="processBtn" style="background:#111; color:#fff; padding:8px 16px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">PROCESS DATA</button>
+            <button class="btn" id="clearCacheBtn" style="background:#666; color:#fff; padding:8px 16px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">CLEAR CACHE</button>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn" id="exportPdfBtn" style="background:#dc2626; color:#fff; padding:8px 16px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">EXPORT PDF</button>
+            <button class="btn" id="exportExcelBtn" style="background:#16a34a; color:#fff; padding:8px 16px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">EXPORT EXCEL</button>
+        </div>
+    </div>
+</section>
 
         <div class="filter-section" id="filterContainer" style="display: none;">
             <label for="dateSelect" style="font-weight: bold; text-transform: uppercase;">Select Date:</label>
@@ -33,18 +59,18 @@
             <div class="card">
                 <div class="card-title">Daily Sales Shift Summary</div>
                 <div class="date-badge" id="activeDateBadge">DATE: -</div>
-                <table class="report-table">
+                <table class="report-table" id="shiftSummaryTable">
                     <thead>
                         <tr>
                             <th rowspan="2">Shift Hours</th>
-                            <th>Daily Sales</th>
-                            <th>Transaction</th>
-                            <th>Unit Sold</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Daily Sales</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Transaction</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Unit Sold</th>
                         </tr>
                         <tr>
-                            <th>Actual (TY)</th>
-                            <th>Actual</th>
-                            <th>Actual</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Actual (TY)</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Actual</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Actual</th>
                         </tr>
                     </thead>
                     <tbody id="shiftSummaryBody">
@@ -85,11 +111,11 @@
             <!-- Right Card: Hourly Breakdown -->
             <div class="card">
                 <div class="card-title">Hourly Sales Breakdown</div>
-                <table class="report-table">
+                <table class="report-table" id="hourlyBreakdownTable">
                     <thead>
                         <tr>
                             <th>Hour Range</th>
-                            <th>Sales Amount</th>
+                            <th style="cursor: copy;" title="Klik untuk copy kolom ini">Sales Amount</th>
                         </tr>
                     </thead>
                     <tbody id="hourlyBreakdownBody">
