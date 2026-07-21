@@ -1152,10 +1152,20 @@ function renderDashboard(
       const dAUR = data.qty > 0 ? data.sales / data.qty : 0;
       const dATV = data.sm > 0 ? data.sales / data.sm : 0;
 
+      let rowTargetUPT = targetUPT;
+      let rowTargetATV = targetATV;
+      let rowTargetAUR = targetAUR;
+      if (parts.length === 3) {
+        const monthData = cyTargets[parseInt(parts[1], 10)] || {};
+        rowTargetUPT = monthData.upt || 0;
+        rowTargetATV = monthData.atv || 0;
+        rowTargetAUR = monthData.aur || 0;
+      }
+
       const cSales = data.sales >= dailyTarget ? "#16a34a" : "#dc2626";
-      const cUPT = dUPT >= targetUPT ? "#16a34a" : "#dc2626";
-      const cATV = dATV >= targetATV ? "#16a34a" : "#dc2626";
-      const cAUR = dAUR >= targetAUR ? "#16a34a" : "#dc2626";
+      const cUPT = dUPT >= rowTargetUPT ? "#16a34a" : "#dc2626";
+      const cATV = dATV >= rowTargetATV ? "#16a34a" : "#dc2626";
+      const cAUR = dAUR >= rowTargetAUR ? "#16a34a" : "#dc2626";
 
       let catTds = "";
       categories.forEach(cat => {
