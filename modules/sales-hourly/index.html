@@ -15,18 +15,21 @@
         <div>
             <h1>MAA SALES HOURLY</h1>
             <p>Created By : 2309445</p>
-            <span class="version" style="background:#FFDF00; color:#111; border:1px solid #111; padding:2px 8px; font-weight:bold; border-radius:10px; font-size:11px;">Version 1.0</span>
+            <span class="version global-version-badge" style="background:transparent; border:1px solid #FFDF00; color:#FFDF00; padding:2px 8px; font-weight:bold; border-radius:10px; font-size:11px;">Version 1.0</span>
         </div>
     </div>
     <div class="top-action">
-        <div id="licenseStatusCard" class="license-status-card" data-plan="FREE" style="border:3px solid #FFDF00; padding:8px 15px; background:#1e293b; color:#fff; border-radius:8px;">
-            <div class="license-status-top" style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                <span class="license-status-dot" style="width:8px; height:8px; background:#FFDF00; border-radius:50%; display:inline-block;"></span>
-                <span id="licensePlan" style="font-weight:bold; font-size:12px; color:#FFDF00;">FREE ACCESS</span>
+        <div id="licenseStatusCard" class="license-status-card" data-plan="NONE">
+            <div class="license-status-top">
+                <span class="license-status-dot"></span>
+                <span id="licensePlan">NOT AUTHORIZED</span>
             </div>
-            <div class="license-status-info" style="display:flex; justify-content:space-between; gap:20px; font-size:12px;">
-                <span style="opacity:0.7;">USER ID</span>
-                <strong id="licenseUserId" style="font-family:monospace;">-</strong>
+            <div class="license-status-info">
+                <span>USER ID</span>
+                <strong id="licenseUserId">-</strong>
+            </div>
+            <div class="license-status-footer">
+                <span id="licenseAccessInfo">PROCESS DAILY CASH TO VERIFY ACCESS</span>
             </div>
         </div>
     </div>
@@ -149,5 +152,6 @@
         }
     });
 </script>
+    <script src="../global.js"></script>
 </body>
 </html>
