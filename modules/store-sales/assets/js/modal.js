@@ -137,7 +137,7 @@ function openStaffDetail(staff) {
 
                 <strong>
 
-                    ${Number(sales).toLocaleString("id-ID")}
+                    ${Number(sales).toLocaleString("en-US")}
 
                 </strong>
 
@@ -199,7 +199,7 @@ function openStaffDetail(staff) {
 
                     ${Math.round(atv)
 
-                      .toLocaleString("id-ID")}
+                      .toLocaleString("en-US")}
 
                 </strong>
 
@@ -214,7 +214,7 @@ function openStaffDetail(staff) {
 
                     ${Math.round(aur)
 
-                      .toLocaleString("id-ID")}
+                      .toLocaleString("en-US")}
 
                 </strong>
 
@@ -281,7 +281,7 @@ function openStaffDetail(staff) {
 
                 <td>
 
-                    ${Number(t.sales).toLocaleString("id-ID")}
+                    ${Number(t.sales).toLocaleString("en-US")}
 
                 </td>
 
@@ -355,7 +355,7 @@ function openStaffDetail(staff) {
 
         <td>${t.qty}</td>
 
-        <td>${Number(t.sales).toLocaleString("id-ID")}</td>
+        <td>${Number(t.sales).toLocaleString("en-US")}</td>
 
         </tr>
 

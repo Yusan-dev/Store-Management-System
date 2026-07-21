@@ -16,9 +16,9 @@ function drawTable(rows) {
         ? 'style="background-color: #d4edda; color: #155724;"'
         : 'style="background-color: #f8d7da; color: #721c24;"';
 
-    const priceLamaStr = Number(r.oldPrice).toLocaleString("id-ID");
+    const priceLamaStr = Number(r.oldPrice).toLocaleString("en-US");
     const priceBaruStr =
-      r.newPrice !== "-" ? Number(r.newPrice).toLocaleString("id-ID") : "-";
+      r.newPrice !== "-" ? Number(r.newPrice).toLocaleString("en-US") : "-";
 
     body.insertAdjacentHTML(
       "beforeend",
@@ -32,7 +32,7 @@ function drawTable(rows) {
         <td>${priceBaruStr}</td>
         <td>${r.oldDiscount}</td>
         <td>${r.newDiscount}</td>
-        <td>${Number(r.qty).toLocaleString("id-ID")}</td>
+        <td>${Number(r.qty).toLocaleString("en-US")}</td>
       </tr>`
     );
   });
@@ -59,12 +59,12 @@ function updateSummary(rows) {
     if (el) el.innerText = val;
   };
 
-  setEl("totalSku",      totalSku.toLocaleString("id-ID"));
-  setEl("totalQty",      totalQty.toLocaleString("id-ID"));
-  setEl("affectedSku",   `${affectedSku.toLocaleString("id-ID")} SKU`);
-  setEl("affectedQty",   `${affectedQty.toLocaleString("id-ID")} PCS`);
-  setEl("unaffectedSku", `${unaffectedSku.toLocaleString("id-ID")} SKU`);
-  setEl("unaffectedQty", `${unaffectedQty.toLocaleString("id-ID")} PCS`);
+  setEl("totalSku",      totalSku.toLocaleString("en-US"));
+  setEl("totalQty",      totalQty.toLocaleString("en-US"));
+  setEl("affectedSku",   `${affectedSku.toLocaleString("en-US")} SKU`);
+  setEl("affectedQty",   `${affectedQty.toLocaleString("en-US")} PCS`);
+  setEl("unaffectedSku", `${unaffectedSku.toLocaleString("en-US")} SKU`);
+  setEl("unaffectedQty", `${unaffectedQty.toLocaleString("en-US")} PCS`);
 
   // Dynamic Categories
   const dynContainer = document.getElementById("dynamicCategories");
@@ -91,8 +91,8 @@ function updateSummary(rows) {
           <span>${cat}</span>
           <span style="font-size:10px; background:#00ffff; color:#000; padding:2px 4px; border-radius:4px; font-weight:bold;">AFFECTED</span>
         </div>
-        <h2>${catAffectedSku.toLocaleString("id-ID")} SKU</h2>
-        <small>${catAffectedQty.toLocaleString("id-ID")} PCS</small>
+        <h2>${catAffectedSku.toLocaleString("en-US")} SKU</h2>
+        <small>${catAffectedQty.toLocaleString("en-US")} PCS</small>
       </div>`
     );
   });

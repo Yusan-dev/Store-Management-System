@@ -428,9 +428,9 @@ function renderDateData(date) {
     const shifts = ["shift1", "shift2", "shift3", "shift4"];
     shifts.forEach((key, idx) => {
         const shift = data.shifts[key];
-        document.getElementById(`${key}_sales`).innerText = Math.round(shift.sales).toLocaleString("id-ID");
-        document.getElementById(`${key}_tx`).innerText = shift.tx.size.toLocaleString("id-ID");
-        document.getElementById(`${key}_qty`).innerText = shift.qty.toLocaleString("id-ID");
+        document.getElementById(`${key}_sales`).innerText = Math.round(shift.sales).toLocaleString("en-US");
+        document.getElementById(`${key}_tx`).innerText = shift.tx.size.toLocaleString("en-US");
+        document.getElementById(`${key}_qty`).innerText = shift.qty.toLocaleString("en-US");
 
         totalSales += shift.sales;
         totalQty += shift.qty;
@@ -438,9 +438,9 @@ function renderDateData(date) {
         shift.tx.forEach(invoice => grandTxSet.add(invoice));
     });
 
-    document.getElementById("total_sales").innerText = Math.round(totalSales).toLocaleString("id-ID");
-    document.getElementById("total_tx").innerText = grandTxSet.size.toLocaleString("id-ID");
-    document.getElementById("total_qty").innerText = totalQty.toLocaleString("id-ID");
+    document.getElementById("total_sales").innerText = Math.round(totalSales).toLocaleString("en-US");
+    document.getElementById("total_tx").innerText = grandTxSet.size.toLocaleString("en-US");
+    document.getElementById("total_qty").innerText = totalQty.toLocaleString("en-US");
 
     // 2. Render Hourly Breakdown Table
     const breakdownBody = document.getElementById("hourlyBreakdownBody");
@@ -472,7 +472,7 @@ function renderDateData(date) {
         }
         tr.innerHTML = `
             <td>${timeLabel}</td>
-            <td>${Math.round(hourlySales).toLocaleString("id-ID")}</td>
+            <td>${Math.round(hourlySales).toLocaleString("en-US")}</td>
         `;
         breakdownBody.appendChild(tr);
     }

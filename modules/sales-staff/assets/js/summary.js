@@ -9,11 +9,11 @@
 // =====================================================
 
 function formatNumber(value) {
-  return Number(value || 0).toLocaleString("id-ID");
+  return Number(value || 0).toLocaleString("en-US");
 }
 
 function money(value) {
-  return Number(value || 0).toLocaleString("id-ID");
+  return Number(value || 0).toLocaleString("en-US");
 }
 
 // =====================================================

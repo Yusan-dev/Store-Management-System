@@ -53,8 +53,8 @@ async function exportFiltered() {
 
   rows.forEach((x) => {
     const bgClass = x.status === "TRUE" ? "bg-true" : "bg-false";
-    const priceLamaStr = Number(x.oldPrice || 0).toLocaleString("id-ID");
-    const priceBaruStr = x.newPrice !== "-" ? Number(x.newPrice).toLocaleString("id-ID") : "-";
+    const priceLamaStr = Number(x.oldPrice || 0).toLocaleString("en-US");
+    const priceBaruStr = x.newPrice !== "-" ? Number(x.newPrice).toLocaleString("en-US") : "-";
     html += `<tr class="${bgClass}">
             <td class="td-border">${x.brand || ""}</td>
             <td class="td-border">${x.category || ""}</td>
