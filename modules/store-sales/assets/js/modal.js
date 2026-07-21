@@ -137,7 +137,7 @@ function openStaffDetail(staff) {
 
                 <strong>
 
-                    Rp ${Number(sales).toLocaleString("id-ID")}
+                    ${Number(sales).toLocaleString("id-ID")}
 
                 </strong>
 
@@ -197,7 +197,7 @@ function openStaffDetail(staff) {
 
                 <strong>
 
-                    Rp ${Math.round(atv)
+                    ${Math.round(atv)
 
                       .toLocaleString("id-ID")}
 
@@ -212,7 +212,7 @@ function openStaffDetail(staff) {
 
                 <strong>
 
-                    Rp ${Math.round(aur)
+                    ${Math.round(aur)
 
                       .toLocaleString("id-ID")}
 
@@ -281,7 +281,7 @@ function openStaffDetail(staff) {
 
                 <td>
 
-                    Rp ${Number(t.sales).toLocaleString("id-ID")}
+                    ${Number(t.sales).toLocaleString("id-ID")}
 
                 </td>
 
@@ -374,4 +374,5 @@ function openStaffDetail(staff) {
 
   modal.classList.add("show");
 }
+
 

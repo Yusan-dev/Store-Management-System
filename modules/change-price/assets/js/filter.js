@@ -114,3 +114,4 @@ function applyFilter() {
 // Attach event listeners
 document.getElementById("search")?.addEventListener("input", applyFilter);
 document.getElementById("sortSelect")?.addEventListener("change", applyFilter);
+

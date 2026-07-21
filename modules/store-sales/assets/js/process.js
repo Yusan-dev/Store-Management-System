@@ -950,7 +950,7 @@ function renderDashboard(
     totalQty = 0,
     totalSM = 0,
     totalTargetSales = 0;
-  const formatMoney = (val) => "Rp&nbsp;" + Math.round(val).toLocaleString("id-ID");
+  const formatMoney = (val) => Math.round(val).toLocaleString("id-ID");
   const formatNumber = (val) => Math.round(val).toLocaleString("id-ID");
   const formatDec = (val) => val.toFixed(2);
 
@@ -1171,7 +1171,7 @@ function renderDashboard(
                   <td>${formatMoney(dailyTarget)}</td>
                   <td style="color:${cSales}; font-weight:600;">
                     ${formatMoney(data.sales)}
-                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "Rp 0"})</span>` : ""}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "0"})</span>` : ""}
                   </td>
                   <td>
                     ${formatNumber(data.sm)}
@@ -1187,16 +1187,16 @@ function renderDashboard(
                   </td>
                   <td style="color:${cATV}; font-weight:600;">
                     ${formatMoney(dATV)}
-                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "Rp 0"})</span>` : ""}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "0"})</span>` : ""}
                   </td>
                   <td style="color:${cAUR}; font-weight:600;">
                     ${formatMoney(dAUR)}
-                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "Rp 0"})</span>` : ""}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "0"})</span>` : ""}
                   </td>
                   ${catTds}
                   <td>
                     ${formatMoney(data.o2oSales)}
-                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "Rp 0"})</span>` : ""}
+                    ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "0"})</span>` : ""}
                   </td>
               </tr>
           `;
@@ -1213,14 +1213,14 @@ function renderDashboard(
               <tr>
                   <td>${d}</td>
                   <td>${formatMoney(dailyTarget)}</td>
-                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "Rp 0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.sales || 0) : "0"})</span>` : ""}</td>
                   <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.sm || 0) : "0"})</span>` : ""}</td>
                   <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatNumber(compData.qty || 0) : "0"})</span>` : ""}</td>
                   <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatDec((compData.sm > 0 ? compData.qty / compData.sm : 0)) : "0.00"})</span>` : ""}</td>
-                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "Rp 0"})</span>` : ""}</td>
-                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "Rp 0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.sm > 0 ? compData.sales / compData.sm : 0)) : "0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney((compData.qty > 0 ? compData.sales / compData.qty : 0)) : "0"})</span>` : ""}</td>
                   ${catEmptyTds}
-                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "Rp 0"})</span>` : ""}</td>
+                  <td>- ${compareTo !== "none" ? `<br><span style="font-size:10px; color:#888; font-weight:normal;">(${compLabelStr}: ${compData ? formatMoney(compData.o2oSales || 0) : "0"})</span>` : ""}</td>
               </tr>
           `;
     }
@@ -1381,8 +1381,8 @@ function renderDashboard(
       let diffText = "";
       let baseText = "";
       if (isMoney) {
-        diffText = `(${diffSign}Rp ${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
-        baseText = `Rp ${Math.round(targetVal).toLocaleString("id-ID")}`;
+        diffText = `(${diffSign}${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
+        baseText = `${Math.round(targetVal).toLocaleString("id-ID")}`;
       } else {
         diffText = `(${diffSign}${Math.abs(diff).toFixed(2)})`;
         baseText = targetVal % 1 === 0 ? targetVal.toLocaleString("id-ID") : targetVal.toFixed(2);
@@ -1398,7 +1398,7 @@ function renderDashboard(
       const sign = pct > 0 ? "+" : "";
       
       let baseText = "";
-      if (isMoney) baseText = `Rp ${Math.round(lw).toLocaleString("id-ID")}`;
+      if (isMoney) baseText = `${Math.round(lw).toLocaleString("id-ID")}`;
       else baseText = lw % 1 === 0 ? lw.toLocaleString("id-ID") : lw.toFixed(2);
       
       text += `<div style="font-size:11px;color:${color};margin-top:2px;">LW (${baseText}): ${sign}${pct.toFixed(1)}%</div>`;
@@ -1412,7 +1412,7 @@ function renderDashboard(
     if (!el) return;
 
     let textVal = "";
-    if (isMoney) textVal = "Rp&nbsp;" + Math.round(val).toLocaleString("id-ID");
+    if (isMoney) textVal = Math.round(val).toLocaleString("id-ID");
     else if (isDec) textVal = val.toFixed(2);
     else textVal = Math.round(val).toLocaleString("id-ID");
 
@@ -1431,7 +1431,7 @@ function renderDashboard(
   
   // O2O Total Update
   const o2oTotalEl = document.getElementById("o2oTotal");
-  if (o2oTotalEl) o2oTotalEl.innerHTML = `Rp&nbsp;${Math.round(totalO2OSales).toLocaleString("id-ID")}`;
+  if (o2oTotalEl) o2oTotalEl.innerHTML = `${Math.round(totalO2OSales).toLocaleString("id-ID")}`;
 
   // ==========================================
   // COMPARISON (LY / LM)
@@ -1453,8 +1453,8 @@ function renderDashboard(
     let diffText = "";
     let baseText = "";
     if (isMoney) {
-        diffText = `(${diffSign}Rp ${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
-        baseText = `Rp ${Math.round(compVal).toLocaleString("id-ID")}`;
+        diffText = `(${diffSign}${Math.round(Math.abs(diff)).toLocaleString("id-ID")})`;
+        baseText = `${Math.round(compVal).toLocaleString("id-ID")}`;
     } else if (isDec) {
         diffText = `(${diffSign}${Math.abs(diff).toFixed(2)})`;
         baseText = compVal.toFixed(2);
@@ -1636,7 +1636,7 @@ function renderDashboard(
                 </td>
                 <td style="padding:10px; font-weight:bold;">ALL TYPES</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(catTotalQty).toLocaleString("id-ID")}</td>
-                <td style="padding:10px; text-align:right; font-weight:bold;">Rp ${Math.round(catTotalSales).toLocaleString("id-ID")}</td>
+                <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(catTotalSales).toLocaleString("id-ID")}</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">${catContrib}</td>
             </tr>`;
 
@@ -1663,7 +1663,7 @@ function renderDashboard(
                     <td style="padding:8px; padding-left:30px; font-size:12px; font-weight:bold; color:#555;">► ${div}</td>
                     <td style="padding:8px; font-weight:bold; font-size:12px; color:#555;">ALL TYPES</td>
                     <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">${Math.round(divTotalQty).toLocaleString("id-ID")}</td>
-                    <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">Rp ${Math.round(divTotalSales).toLocaleString("id-ID")}</td>
+                    <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">${Math.round(divTotalSales).toLocaleString("id-ID")}</td>
                     <td style="padding:8px; text-align:right; font-size:12px; font-weight:bold; color:#555;">${divContrib}</td>
                 </tr>`;
 
@@ -1683,7 +1683,7 @@ function renderDashboard(
                         <td style="padding:8px; padding-left:50px; font-size:12px; font-weight:bold;"></td>
                         <td style="padding:8px; font-weight:bold; font-size:12px; color:${typeColor};">${typeLabel}</td>
                         <td style="padding:8px; text-align:right; font-size:12px;">${Math.round(qty).toLocaleString("id-ID")}</td>
-                        <td style="padding:8px; text-align:right; font-size:12px; color:${typeColor};">Rp ${Math.round(sales).toLocaleString("id-ID")}</td>
+                        <td style="padding:8px; text-align:right; font-size:12px; color:${typeColor};">${Math.round(sales).toLocaleString("id-ID")}</td>
                         <td style="padding:8px; text-align:right; font-size:12px; color:${typeColor};">${typeContrib}</td>
                     </tr>`;
          });
@@ -1757,7 +1757,7 @@ function renderTopArticles(articleAgg) {
       '<ol style="margin-left: 20px; font-size: 14px; line-height: 1.5;">';
     items.forEach((it) => {
       const val = isSales
-        ? "Rp " + Math.round(it.sales).toLocaleString("id-ID")
+        ? Math.round(it.sales).toLocaleString("id-ID")
         : Math.round(it.qty).toLocaleString("id-ID") + " pcs";
       html += `<li><strong>${it.article}</strong> : ${val}</li>`;
     });
@@ -1840,4 +1840,5 @@ document.addEventListener("DOMContentLoaded", () => {
   const dlBtn = document.getElementById("dlTemplateLy");
   if (dlBtn) dlBtn.addEventListener("click", downloadLYTemplate);
 });
+
 

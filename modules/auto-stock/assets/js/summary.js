@@ -99,3 +99,4 @@ function renderStatusSummary(rows) {
 
   if (target) target.innerHTML = html;
 }
+

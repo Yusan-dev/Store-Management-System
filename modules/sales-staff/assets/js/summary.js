@@ -584,7 +584,7 @@ function updateSummary(summary, divisions) {
   if (elTotalStaff) elTotalStaff.innerText = formatNumber(uniqueStaffs.size);
 
   const elTotalSales = document.getElementById("salesTotal");
-  if (elTotalSales) elTotalSales.innerText = `Rp ${money(total.sales)}`;
+  if (elTotalSales) elTotalSales.innerText = `${money(total.sales)}`;
 
   const elTotalSM = document.getElementById("smTotal");
   if (elTotalSM) elTotalSM.innerText = formatNumber(total.sm);
@@ -595,7 +595,7 @@ function updateSummary(summary, divisions) {
   const activeCount = uniqueStaffs.size > 0 ? uniqueStaffs.size : 1;
   const elAvgSales = document.getElementById("avgSales");
   if (elAvgSales)
-    elAvgSales.innerText = `Rp ${money(Math.round(total.sales / activeCount))}`;
+    elAvgSales.innerText = `${money(Math.round(total.sales / activeCount))}`;
 
   updateValidation();
   if (typeof populateStaffFilter === "function") {
@@ -670,7 +670,7 @@ function drawTable(summary, divisions) {
     tr.appendChild(staffCell);
 
     const salesCell = document.createElement("td");
-    salesCell.innerText = `Rp ${money(row.sales)}`;
+    salesCell.innerText = `${money(row.sales)}`;
     tr.appendChild(salesCell);
 
     const smCell = document.createElement("td");
@@ -686,11 +686,11 @@ function drawTable(summary, divisions) {
     tr.appendChild(uptCell);
 
     const atvCell = document.createElement("td");
-    atvCell.innerText = `Rp ${money(Math.round(calculateATV(row)))}`;
+    atvCell.innerText = `${money(Math.round(calculateATV(row)))}`;
     tr.appendChild(atvCell);
 
     const aurCell = document.createElement("td");
-    aurCell.innerText = `Rp ${money(Math.round(calculateAUR(row)))}`;
+    aurCell.innerText = `${money(Math.round(calculateAUR(row)))}`;
     tr.appendChild(aurCell);
 
     divisions.forEach((division) => {
@@ -878,7 +878,7 @@ function updateRanking(filteredSummary, filteredDivisions) {
 
       (row) => row.sales,
 
-      (value) => `Rp ${money(value)}`,
+      (value) => `${money(value)}`,
     );
   }
 
@@ -967,7 +967,7 @@ function drawKPIRankings(data) {
 
       title: "💳 TOP ATV",
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
 
     {
@@ -975,7 +975,7 @@ function drawKPIRankings(data) {
 
       title: "🏷️ TOP AUR",
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
   ];
 
@@ -1359,7 +1359,7 @@ function updateValidation() {
             <br>
 
             Sales:
-            Rp ${money(v.unknownSales)}
+            ${money(v.unknownSales)}
 
             <br>
 
@@ -1698,7 +1698,7 @@ function buildDailyAuditKPI(detail) {
 
                 <strong>
 
-                    Rp ${money(totalSales)}
+                    ${money(totalSales)}
 
                 </strong>
 
@@ -1765,7 +1765,7 @@ function buildDailyAuditKPI(detail) {
 
                 <strong>
 
-                    Rp ${money(avgSales)}
+                    ${money(avgSales)}
 
                 </strong>
 
@@ -1901,7 +1901,7 @@ function buildDailyStaffPerformance(detail) {
 
                 <td>
 
-                    Rp ${money(row.sales)}
+                    ${money(row.sales)}
 
                 </td>
 
@@ -1928,14 +1928,14 @@ function buildDailyStaffPerformance(detail) {
 
 <td>
 
-    Rp ${money(Math.round(calculateATV(row)))}
+    ${money(Math.round(calculateATV(row)))}
 
 </td>
 
 
 <td>
 
-    Rp ${money(Math.round(calculateAUR(row)))}
+    ${money(Math.round(calculateAUR(row)))}
 
 </td>
 
@@ -2095,7 +2095,7 @@ function buildDailyValidationDetail(detail) {
 
                     <strong>
 
-                        Rp ${money(v.unknownSales)}
+                        ${money(v.unknownSales)}
 
                     </strong>
 
@@ -2284,7 +2284,7 @@ function buildDailyValidationDetail(detail) {
 
                     <td>
 
-                        Rp ${money(t.sales)}
+                        ${money(t.sales)}
 
                     </td>
 
@@ -2557,7 +2557,7 @@ function buildPrintSummary(summary) {
 
     {
       label: "TOTAL SALES",
-      value: `Rp ${money(total.sales)}`,
+      value: `${money(total.sales)}`,
     },
 
     {
@@ -2572,7 +2572,7 @@ function buildPrintSummary(summary) {
 
     {
       label: "AVG SALES / STAFF",
-      value: `Rp ${money(avgSales)}`,
+      value: `${money(avgSales)}`,
     },
 
     {
@@ -2658,12 +2658,12 @@ function buildPrintPerformanceTable(summary, divisions) {
             <tr class="${isTotal ? "total-row" : ""}">
                 ${dateCell}
                 <td>${escapePrintHTML(displayStaffName(row.staff))}</td>
-                <td>Rp ${escapePrintHTML(money(row.sales))}</td>
+                <td>${escapePrintHTML(money(row.sales))}</td>
                 <td>${escapePrintHTML(row.sm || 0)}</td>
                 <td>${escapePrintHTML(row.qty || 0)}</td>
                 <td>${escapePrintHTML(formatDecimal(calculateUPT(row), 2))}</td>
-                <td>Rp ${escapePrintHTML(money(Math.round(calculateATV(row))))}</td>
-                <td>Rp ${escapePrintHTML(money(Math.round(calculateAUR(row))))}</td>
+                <td>${escapePrintHTML(money(Math.round(calculateATV(row))))}</td>
+                <td>${escapePrintHTML(money(Math.round(calculateAUR(row))))}</td>
                 ${divisionCells}
             </tr>
         `;
@@ -2697,7 +2697,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => Number(row.sales || 0),
 
-      formatter: (value) => `Rp ${money(value)}`,
+      formatter: (value) => `${money(value)}`,
     },
 
     {
@@ -2721,7 +2721,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => calculateATV(row),
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
 
     {
@@ -2729,7 +2729,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => calculateAUR(row),
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
   ];
 
@@ -3153,7 +3153,7 @@ function drawMonthlySummaryTable(summary, divisions) {
     staticColumns.push({ key: "staff", value: row.staff });
     staticColumns.push({
       key: "sales",
-      value: `Rp ${formatNumber(Math.round(row.sales || 0))}`,
+      value: `${formatNumber(Math.round(row.sales || 0))}`,
     });
     staticColumns.push({ key: "sm", value: formatNumber(row.sm || 0) });
     staticColumns.push({ key: "qty", value: formatNumber(row.qty || 0) });
@@ -3163,11 +3163,11 @@ function drawMonthlySummaryTable(summary, divisions) {
     });
     staticColumns.push({
       key: "atv",
-      value: `Rp ${formatNumber(Math.round((row.sales || 0) / (row.sm || 1)))}`,
+      value: `${formatNumber(Math.round((row.sales || 0) / (row.sm || 1)))}`,
     });
     staticColumns.push({
       key: "aur",
-      value: `Rp ${formatNumber(Math.round((row.sales || 0) / (row.qty || 1)))}`,
+      value: `${formatNumber(Math.round((row.sales || 0) / (row.qty || 1)))}`,
     });
 
     staticColumns.forEach((col) => {
@@ -3226,12 +3226,12 @@ function buildPrintMonthlySummary(summary, divisions) {
         cols.push(escapePrintHTML(row.staff === "TOTAL" ? "" : row.date || ""));
       cols.push(
         escapePrintHTML(row.staff),
-        `Rp ${formatNumber(Math.round(row.sales || 0))}`,
+        `${formatNumber(Math.round(row.sales || 0))}`,
         formatNumber(row.sm || 0),
         formatNumber(row.qty || 0),
         ((row.qty || 0) / (row.sm || 1)).toFixed(2).replace(".", ","),
-        `Rp ${formatNumber(Math.round((row.sales || 0) / (row.sm || 1)))}`,
-        `Rp ${formatNumber(Math.round((row.sales || 0) / (row.qty || 1)))}`,
+        `${formatNumber(Math.round((row.sales || 0) / (row.sm || 1)))}`,
+        `${formatNumber(Math.round((row.sales || 0) / (row.qty || 1)))}`,
       );
       activeDivisions.forEach((div) => {
         cols.push(formatNumber(row.categories?.[div] || 0));
@@ -3451,4 +3451,5 @@ async function saveFile(html, filename) {
     navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([`<table>${c.innerHTML}</table>`],{type:"text/html"})})]).catch(()=>{}); 
   }
 }
+
 

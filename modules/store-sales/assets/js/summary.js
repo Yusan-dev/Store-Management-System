@@ -992,7 +992,7 @@ function updateRanking(summary, divisions) {
 
       (row) => row.sales,
 
-      (value) => `Rp ${money(value)}`,
+      (value) => `${money(value)}`,
     );
   }
 
@@ -1081,7 +1081,7 @@ function drawKPIRankings(data) {
 
       title: "💳 TOP ATV",
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
 
     {
@@ -1089,7 +1089,7 @@ function drawKPIRankings(data) {
 
       title: "🏷️ TOP AUR",
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
   ];
 
@@ -1473,7 +1473,7 @@ function updateValidation() {
             <br>
 
             Sales:
-            Rp ${money(v.unknownSales)}
+            ${money(v.unknownSales)}
 
             <br>
 
@@ -1812,7 +1812,7 @@ function buildDailyAuditKPI(detail) {
 
                 <strong>
 
-                    Rp ${money(totalSales)}
+                    ${money(totalSales)}
 
                 </strong>
 
@@ -1879,7 +1879,7 @@ function buildDailyAuditKPI(detail) {
 
                 <strong>
 
-                    Rp ${money(avgSales)}
+                    ${money(avgSales)}
 
                 </strong>
 
@@ -2015,7 +2015,7 @@ function buildDailyStaffPerformance(detail) {
 
                 <td>
 
-                    Rp ${money(row.sales)}
+                    ${money(row.sales)}
 
                 </td>
 
@@ -2042,14 +2042,14 @@ function buildDailyStaffPerformance(detail) {
 
 <td>
 
-    Rp ${money(Math.round(calculateATV(row)))}
+    ${money(Math.round(calculateATV(row)))}
 
 </td>
 
 
 <td>
 
-    Rp ${money(Math.round(calculateAUR(row)))}
+    ${money(Math.round(calculateAUR(row)))}
 
 </td>
 
@@ -2209,7 +2209,7 @@ function buildDailyValidationDetail(detail) {
 
                     <strong>
 
-                        Rp ${money(v.unknownSales)}
+                        ${money(v.unknownSales)}
 
                     </strong>
 
@@ -2398,7 +2398,7 @@ function buildDailyValidationDetail(detail) {
 
                     <td>
 
-                        Rp ${money(t.sales)}
+                        ${money(t.sales)}
 
                     </td>
 
@@ -2671,7 +2671,7 @@ function buildPrintSummary(summary) {
 
     {
       label: "TOTAL SALES",
-      value: `Rp ${money(total.sales)}`,
+      value: `${money(total.sales)}`,
     },
 
     {
@@ -2686,7 +2686,7 @@ function buildPrintSummary(summary) {
 
     {
       label: "AVG SALES / STAFF",
-      value: `Rp ${money(avgSales)}`,
+      value: `${money(avgSales)}`,
     },
 
     {
@@ -2778,7 +2778,7 @@ function buildPrintPerformanceTable(summary, divisions) {
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(money(row.sales))}
+                    ${escapePrintHTML(money(row.sales))}
                 </td>
 
                 <td>
@@ -2794,11 +2794,11 @@ function buildPrintPerformanceTable(summary, divisions) {
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(money(Math.round(calculateATV(row))))}
+                    ${escapePrintHTML(money(Math.round(calculateATV(row))))}
                 </td>
 
                 <td>
-                    Rp ${escapePrintHTML(money(Math.round(calculateAUR(row))))}
+                    ${escapePrintHTML(money(Math.round(calculateAUR(row))))}
                 </td>
 
                 ${divisionCells}
@@ -2856,7 +2856,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => Number(row.sales || 0),
 
-      formatter: (value) => `Rp ${money(value)}`,
+      formatter: (value) => `${money(value)}`,
     },
 
     {
@@ -2880,7 +2880,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => calculateATV(row),
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
 
     {
@@ -2888,7 +2888,7 @@ function getPrintRankingConfig(divisions) {
 
       getValue: (row) => calculateAUR(row),
 
-      formatter: (value) => `Rp ${money(Math.round(value))}`,
+      formatter: (value) => `${money(Math.round(value))}`,
     },
   ];
 
@@ -3238,4 +3238,5 @@ function printStaffPerformanceReport() {
       });
     });
 }
+
 

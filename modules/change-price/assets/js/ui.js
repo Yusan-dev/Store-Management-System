@@ -97,3 +97,4 @@ function updateSummary(rows) {
     );
   });
 }
+
