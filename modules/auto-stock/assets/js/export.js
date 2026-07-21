@@ -63,7 +63,7 @@ async function exportFiltered() {
   html += `</table></body></html>`;
   html += `</table></body></html>`;
 
-  await saveFile(html, `GT_AUTO_STOCK_${stamp}.xls`);
+  await saveFile(html, `AUTO_STOCK_${stamp}.xls`);
 }
 
 async function saveFile(html, filename) {

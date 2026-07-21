@@ -84,7 +84,7 @@ async function exportBrokenSize() {
 
   html += `</table></body></html>`;
 
-  await saveFile(html, `GT_BROKEN_SIZE_${stamp}.xls`);
+  await saveFile(html, `BROKEN_SIZE_${stamp}.xls`);
 }
 
 /**
@@ -151,7 +151,7 @@ async function exportIL() {
   html += `</table></body></html>`;
   html += `</table></body></html>`;
 
-  await saveFile(html, `GT_INVENTORY_LEVEL_${stamp}.xls`);
+  await saveFile(html, `INVENTORY_LEVEL_${stamp}.xls`);
 }
 
 async function saveFile(html, filename) {
