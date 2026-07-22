@@ -40,7 +40,7 @@ href="assets/css/dashboard.css">
 
 <header class="topbar" style="background: #0f172a; color: #ffffff; border-radius: 12px; padding: 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <div class="brand" style="display: flex; align-items: center; gap: 20px;">
-        <div class="logo-box" style="width:50px;height:50px;background:#000;border:4px solid #000;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;box-shadow:4px 4px 0px #fff;">KG</div>
+        <div class="logo-box" style="width:52px;height:52px;background:linear-gradient(135deg, #FACC15, #EAB308);border:2px solid #FEF08A;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#422006;font-size:22px;box-shadow:0px 4px 16px rgba(234, 179, 8, 0.4);text-shadow:1px 1px 0px rgba(255,255,255,0.3);">KG</div>
         <div>
             <h1 style="margin: 0; font-size: 24px; color: #ffffff;">SALES STAFF</h1>
             <p style="margin: 4px 0 8px 0; font-size: 14px; color: #94a3b8;">Created By : 2309445</p>
@@ -251,6 +251,21 @@ Belum dipilih
 
 </section>
 
+<!-- ===================================== -->
+<!-- GRAPHIC CHART -->
+<!-- ===================================== -->
+<section class="chart-section" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff; position: relative;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px;">
+        <h2 style="font-size:16px; letter-spacing:1px; color:#111; margin:0;">STAFF PERFORMANCE CHART</h2>
+        <button id="downloadStaffChartBtn" style="background:#111; color:#fff; padding:6px 12px; font-weight:bold; cursor:pointer; border:none; font-family:monospace; font-size:12px;">DOWNLOAD CHART</button>
+    </div>
+    <div id="chartExportContainer" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width:100%; min-height:300px; padding: 10px; background: #fff;">
+        <div style="position: relative; height: 300px;"><canvas id="staffChartSales"></canvas></div>
+        <div style="position: relative; height: 300px;"><canvas id="staffChartQty"></canvas></div>
+        <div style="position: relative; height: 300px;"><canvas id="staffChartUPT"></canvas></div>
+        <div style="position: relative; height: 300px;"><canvas id="staffChartSM"></canvas></div>
+    </div>
+</section>
 
 <section class="validation-card">
 
@@ -481,12 +496,22 @@ Belum dipilih
             
             <!-- STAFF FILTER -->
             <div class="performance-filter-field" style="margin-right:16px;">
-                <label for="performanceFilterStaff">STAFF FILTER</label>
-                <div class="input-with-icon">
-                    <span class="input-icon">👤</span>
-                    <select id="performanceFilterStaff" class="date-input" style="width:200px; appearance:none; -webkit-appearance:none; padding-left:36px; background-color:transparent; border:none; outline:none; font-family:inherit; font-size:inherit;">
-                        <option value="ALL">ALL STAFF</option>
-                    </select>
+                <label>STAFF FILTER</label>
+                <div class="custom-multi-select" id="staffMultiSelectContainer" style="position:relative; width:220px; font-family:monospace; font-size:14px;">
+                    <div id="staffMultiSelectHeader" style="display:flex; align-items:center; padding:8px 12px; background:#fff; border:2px solid #ddd; border-radius:6px; cursor:pointer; min-height:40px;">
+                        <span style="margin-right:8px;">👤</span>
+                        <span id="staffMultiSelectLabel" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-grow:1;">ALL STAFF</span>
+                        <span style="margin-left:8px; font-size:10px;">▼</span>
+                    </div>
+                    <div id="staffMultiSelectDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #ddd; border-radius:6px; max-height:200px; overflow-y:auto; z-index:100; margin-top:4px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                        <label style="display:flex; align-items:center; padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee; margin:0; width:100%;">
+                            <input type="checkbox" id="staffMultiSelectAll" checked style="margin-right:10px; width:16px; height:16px;">
+                            <strong>ALL STAFF</strong>
+                        </label>
+                        <div id="staffMultiSelectOptions">
+                            <!-- Options injected here -->
+                        </div>
+                    </div>
                 </div>
             </div>            <!-- FROM DATE -->
 
@@ -502,17 +527,13 @@ Belum dipilih
                         ◫
                     </span>
 
-                    <select
+                    <input
+                        type="date"
                         id="performanceDateFrom"
                         aria-label="Performance start date"
+                        class="date-input"
                         disabled
                     >
-
-                        <option value="">
-                            SELECT FROM DATE
-                        </option>
-
-                    </select>
 
                 </div>
 
@@ -546,17 +567,13 @@ Belum dipilih
                         ◫
                     </span>
 
-                    <select
+                    <input
+                        type="date"
                         id="performanceDateTo"
                         aria-label="Performance end date"
+                        class="date-input"
                         disabled
                     >
-
-                        <option value="">
-                            SELECT TO DATE
-                        </option>
-
-                    </select>
 
                 </div>
 
@@ -824,6 +841,8 @@ Initializing Engine...
 <script src="assets/js/runtime.js?v=2"></script>
 
 <script src="assets/js/summary.js?v=5"></script>
+<script src="../../libs/Chart.min.js"></script>
+<script src="../../libs/chartjs-plugin-datalabels.min.js"></script>
 <script src="assets/js/process.js?v=5"></script>
 
 <script src="assets/js/modal.js?v=2"></script>

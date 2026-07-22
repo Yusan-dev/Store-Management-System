@@ -252,48 +252,89 @@ function getPerformanceFilterLabel(filter) {
 // POPULATE STAFF FILTER
 // =====================================================
 function populateStaffFilter() {
-  const staffFilterEl = document.getElementById("performanceFilterStaff");
-  if (staffFilterEl) {
-    if (typeof GTEngine !== "undefined" && GTEngine.staffMap) {
-      const staffs = Array.from(GTEngine.staffMap.values())
-        .map((s) =>
-          String(s.name || "")
-            .trim()
-            .toUpperCase(),
-        )
-        .filter((name) => name && name !== "UNKNOWN");
-      staffs.push("O2O");
-      const uniqueStaffs = [...new Set(staffs.sort())];
+  const optionsContainer = document.getElementById("staffMultiSelectOptions");
+  const allCheckbox = document.getElementById("staffMultiSelectAll");
+  const header = document.getElementById("staffMultiSelectHeader");
+  const label = document.getElementById("staffMultiSelectLabel");
+  const dropdown = document.getElementById("staffMultiSelectDropdown");
+  
+  if (!optionsContainer) return;
 
-      const staffListHash = uniqueStaffs.join(",");
-      if (staffFilterEl.dataset.lastStaffs === staffListHash) {
-        return; // Do not rebuild if staff list hasn't changed
-      }
-      staffFilterEl.dataset.lastStaffs = staffListHash;
+  if (typeof GTEngine !== "undefined" && GTEngine.staffMap) {
+    const staffs = Array.from(GTEngine.staffMap.values())
+      .map((s) => String(s.name || "").trim().toUpperCase())
+      .filter((name) => name && name !== "UNKNOWN");
+    staffs.push("O2O");
+    const uniqueStaffs = [...new Set(staffs.sort())];
 
-      const currentSelected = staffFilterEl.value;
-      staffFilterEl.innerHTML = '<option value="ALL">ALL STAFF</option>';
-
-      uniqueStaffs.forEach((staff) => {
-        const opt = document.createElement("option");
-        opt.value = staff;
-        opt.innerText = staff;
-        staffFilterEl.appendChild(opt);
-      });
-
-      if (uniqueStaffs.includes(currentSelected) || currentSelected === "ALL") {
-        staffFilterEl.value = currentSelected;
-      } else {
-        staffFilterEl.value = "ALL";
-      }
-
-      if (staffFilterEl.dataset.registered !== "true") {
-        staffFilterEl.addEventListener("change", () => {
-          applyPerformanceDateFilter(getActivePerformanceDateFilter());
-        });
-        staffFilterEl.dataset.registered = "true";
-      }
+    const staffListHash = uniqueStaffs.join(",");
+    if (optionsContainer.dataset.lastStaffs === staffListHash) {
+      return; 
     }
+    optionsContainer.dataset.lastStaffs = staffListHash;
+
+    optionsContainer.innerHTML = '';
+
+    uniqueStaffs.forEach((staff) => {
+      const wrapper = document.createElement("label");
+      wrapper.style.cssText = "display:flex; align-items:center; padding:8px 12px; cursor:pointer; border-bottom:1px solid #eee; margin:0; width:100%;";
+      
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = staff;
+      cb.checked = true; // default checked if "ALL" was selected
+      cb.style.cssText = "margin-right:10px; width:16px; height:16px;";
+      
+      const text = document.createElement("span");
+      text.innerText = staff;
+      
+      wrapper.appendChild(cb);
+      wrapper.appendChild(text);
+      optionsContainer.appendChild(wrapper);
+      
+      cb.addEventListener('change', () => {
+          allCheckbox.checked = false;
+          updateMultiSelectLabel();
+          applyPerformanceDateFilter(getActivePerformanceDateFilter());
+      });
+    });
+
+    if (allCheckbox && allCheckbox.dataset.registered !== "true") {
+        allCheckbox.addEventListener('change', (e) => {
+            const checkboxes = optionsContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            updateMultiSelectLabel();
+            applyPerformanceDateFilter(getActivePerformanceDateFilter());
+        });
+        allCheckbox.dataset.registered = "true";
+    }
+    
+    if (header && header.dataset.registered !== "true") {
+        header.addEventListener('click', () => {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('staffMultiSelectContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        header.dataset.registered = "true";
+    }
+
+    function updateMultiSelectLabel() {
+        const checked = optionsContainer.querySelectorAll('input[type="checkbox"]:checked');
+        if (allCheckbox.checked || checked.length === uniqueStaffs.length || checked.length === 0) {
+            allCheckbox.checked = true;
+            optionsContainer.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+            label.innerText = 'ALL STAFF';
+        } else {
+            const names = Array.from(checked).map(c => c.value);
+            label.innerText = names.length + ' STAFF SELECTED';
+            label.title = names.join(', ');
+        }
+    }
+    
+    updateMultiSelectLabel();
   }
 }
 
@@ -308,17 +349,37 @@ function applyPerformanceDateFilter(filter = "") {
     populateStaffFilter();
   }
 
-  const staffFilterEl = document.getElementById("performanceFilterStaff");
-  let summary;
+  const allStaffSummary = GTEngine.getAllStaffDailySummary(activePerformanceDateFilter);
 
-  if (staffFilterEl && staffFilterEl.value !== "ALL") {
-    const selectedStaff = staffFilterEl.value;
-    summary = GTEngine.getStaffDailySummary(
-      selectedStaff,
-      activePerformanceDateFilter,
-    );
+  const allCheckbox = document.getElementById('staffMultiSelectAll');
+  const optionsContainer = document.getElementById('staffMultiSelectOptions');
+  let summary = [];
+
+  if (allCheckbox && optionsContainer && !allCheckbox.checked) {
+    const checkedBoxes = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'));
+    const selectedStaffs = checkedBoxes.map(cb => cb.value);
+    
+    if (selectedStaffs.length > 0) {
+      summary = allStaffSummary.filter(row => row.staff === 'TOTAL' || selectedStaffs.includes(row.staff));
+      
+      // Recalculate total row for filtered summary
+      let totalSales = 0, totalQty = 0, totalSm = 0;
+      summary.forEach(row => {
+          if (row.staff !== 'TOTAL') {
+              totalSales += (row.sales || 0);
+              totalQty += (row.qty || 0);
+              totalSm += (row.sm || 0);
+          }
+      });
+      const totalRow = summary.find(r => r.staff === 'TOTAL');
+      if (totalRow) {
+          totalRow.sales = totalSales;
+          totalRow.qty = totalQty;
+          totalRow.sm = totalSm;
+      }
+    }
   } else {
-    summary = GTEngine.getAllStaffDailySummary(activePerformanceDateFilter);
+    summary = allStaffSummary;
   }
 
   const divisions = getActiveDivisions(summary, []);
@@ -371,7 +432,6 @@ function updatePerformanceFilterUI() {
 
 function configurePerformanceDateLimits() {
   const fromInput = document.getElementById("performanceDateFrom");
-
   const toInput = document.getElementById("performanceDateTo");
 
   if (!fromInput || !toInput) {
@@ -380,61 +440,28 @@ function configurePerformanceDateLimits() {
 
   const availableDates = GTEngine.getAvailableDates();
 
-  fromInput.innerHTML = `
-
-        <option value="">
-            SELECT FROM DATE
-        </option>
-
-    `;
-
-  toInput.innerHTML = `
-
-        <option value="">
-            SELECT TO DATE
-        </option>
-
-    `;
-
   if (!Array.isArray(availableDates) || availableDates.length === 0) {
     fromInput.disabled = true;
-
     toInput.disabled = true;
-
     return;
   }
 
-  availableDates.forEach((date) => {
-    const inputDate = engineDateToInputDate(date);
-
-    if (!inputDate) {
-      return;
-    }
-
-    const fromOption = document.createElement("option");
-
-    fromOption.value = inputDate;
-
-    fromOption.innerText = date;
-
-    fromInput.appendChild(fromOption);
-
-    const toOption = document.createElement("option");
-
-    toOption.value = inputDate;
-
-    toOption.innerText = date;
-
-    toInput.appendChild(toOption);
-  });
+  // Set min and max based on available dates
+  const minDate = engineDateToInputDate(availableDates[0]);
+  const maxDate = engineDateToInputDate(availableDates[availableDates.length - 1]);
+  
+  if (minDate && maxDate) {
+      fromInput.min = minDate;
+      fromInput.max = maxDate;
+      toInput.min = minDate;
+      toInput.max = maxDate;
+  }
 
   fromInput.disabled = false;
-
   toInput.disabled = false;
 
   console.log(
-    "PERFORMANCE AVAILABLE DATES:",
-
+    "PERFORMANCE AVAILABLE DATES CONFIGURED:",
     availableDates,
   );
 }
@@ -703,6 +730,9 @@ function drawTable(summary, divisions) {
   });
 
   updateRanking(summary, divisions);
+  if (typeof updateStaffChart === 'function') {
+      updateStaffChart(summary);
+  }
 }
 
 function sortTable(key) {
@@ -3453,3 +3483,167 @@ async function saveFile(html, filename) {
 }
 
 
+
+
+let chartSales = null, chartQty = null, chartUPT = null, chartSM = null;
+
+function updateStaffChart(summary) {
+    if (!summary || summary.length === 0) return;
+    
+    const aggregated = {};
+    summary.forEach(row => {
+        if (row.staff === 'TOTAL') return;
+        const name = typeof displayStaffName === 'function' ? displayStaffName(row.staff) : row.staff;
+        if (!aggregated[name]) {
+            aggregated[name] = { staff: name, sales: 0, qty: 0, sm: 0 };
+        }
+        aggregated[name].sales += (row.sales || 0);
+        aggregated[name].qty += (row.qty || 0);
+        aggregated[name].sm += (row.sm || 0);
+    });
+
+    const chartData = Object.values(aggregated).filter(r => r.sales > 0).sort((a, b) => b.sales - a.sales);
+    if (chartData.length === 0) return;
+    
+    const labels = chartData.map(r => r.staff);
+    const salesData = chartData.map(r => r.sales);
+    const qtyData = chartData.map(r => r.qty);
+    const smData = chartData.map(r => r.sm);
+    // Use manual calculation for aggregated UPT and RPT
+    const uptData = chartData.map(r => r.sm > 0 ? r.qty / r.sm : 0);
+    const rptData = chartData.map(r => r.sm > 0 ? r.sales / r.sm : 0);
+    
+    const colors = [
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', 
+        '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
+        '#7f1d1d', '#7c2d12', '#78350f', '#3f6212', '#14532d', '#064e3b', '#134e4a', '#164e63',
+        '#0c4a6e', '#1e3a8a', '#312e81', '#4c1d95', '#581c87', '#701a75', '#831843', '#881337'
+    ];
+    const bgColors = labels.map((_, i) => colors[i % colors.length]);
+
+    const createPie = (id, label, data, instance) => {
+        const ctx = document.getElementById(id);
+        if (!ctx) return instance;
+        if (instance) instance.destroy();
+        
+        return new Chart(ctx, {
+            type: 'pie',
+            plugins: [ChartDataLabels],
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 10, family: 'monospace' },
+                        textAlign: 'center',
+                        formatter: function(value, context) {
+                            const dataset = context.chart.data.datasets[0];
+                            const total = dataset.data.reduce((acc, current) => acc + (current || 0), 0);
+                            if (total === 0 || value === 0) return '';
+                            const percentage = Math.round((value / total) * 100);
+                            
+                            let formattedVal = value;
+                            if (label.includes('SALES') || label.includes('RPT')) {
+                                formattedVal = 'Rp' + Math.round(value / 1000).toLocaleString('en-US') + 'k';
+                            } else if (label.includes('UPT')) {
+                                formattedVal = value.toFixed(2);
+                            } else {
+                                formattedVal = value.toLocaleString('en-US');
+                            }
+                            
+                            return percentage >= 2 ? [formattedVal, percentage + '%'] : '';
+                        }
+                    },
+                    legend: { position: 'bottom', labels: { font: { family: 'monospace', size: 10 } } },
+                    title: { display: true, text: label, font: { family: 'monospace', size: 14, weight: 'bold' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let val = context.parsed;
+                                const dataset = context.chart.data.datasets[0];
+                                const total = dataset.data.reduce((acc, current) => acc + (current || 0), 0);
+                                const percentage = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
+                                
+                                if (label.includes('SALES') || label.includes('RPT')) val = 'Rp ' + Math.round(val).toLocaleString('en-US');
+                                else if (label.includes('UPT')) val = val.toFixed(2);
+                                else val = val.toLocaleString('en-US');
+                                
+                                return ' ' + context.label + ': ' + val + ' (' + percentage + ')';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+
+    chartSales = createPie('staffChartSales', 'SALES CONTRIBUTION', salesData, chartSales);
+    chartQty   = createPie('staffChartQty', 'QTY CONTRIBUTION', qtyData, chartQty);
+    chartUPT   = createPie('staffChartUPT', 'UPT (UNITS PER TRANSACTION)', uptData, chartUPT);
+    chartSM    = createPie('staffChartSM', 'RPT (RUPIAH PER TRANSACTION)', rptData, chartSM);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('downloadStaffChartBtn');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const container = document.getElementById('chartExportContainer');
+            if (!container) return;
+            
+            const canvases = container.querySelectorAll('canvas');
+            if (canvases.length === 0) return;
+            
+            const destCtx = document.createElement('canvas');
+            destCtx.width = 1200; 
+            destCtx.height = 1200;
+            const ctx2 = destCtx.getContext('2d');
+            
+            ctx2.fillStyle = '#FFFFFF'; 
+            ctx2.fillRect(0, 0, destCtx.width, destCtx.height);
+            
+            ctx2.fillStyle = '#111111';
+            ctx2.font = 'bold 32px monospace';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('STAFF PERFORMANCE', 600, 60);
+            
+            // Get current selected period from DOM
+            let periodText = '';
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            if (startDateEl && endDateEl && startDateEl.value && endDateEl.value) {
+                periodText = `Periode: ${startDateEl.value} s/d ${endDateEl.value}`;
+            } else {
+                periodText = `Periode: All Data`;
+            }
+            ctx2.fillStyle = '#555555';
+            ctx2.font = 'bold 16px monospace';
+            ctx2.fillText(periodText, 600, 90);
+            
+            const positions = [
+                {x: 50, y: 100}, {x: 650, y: 100},
+                {x: 50, y: 650}, {x: 650, y: 650}
+            ];
+            
+            canvases.forEach((c, i) => {
+                if (i < 4) {
+                    ctx2.drawImage(c, positions[i].x, positions[i].y, 500, 500);
+                }
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'staff_performance_pies.png';
+            link.href = destCtx.toDataURL('image/png');
+            link.click();
+        });
+    }
+});

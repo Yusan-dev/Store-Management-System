@@ -90,6 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Apply to main containers and table wrappers
-    const scrollContainers = document.querySelectorAll('.table-wrap, .main-layout, .container, body');
+    const scrollContainers = document.querySelectorAll('.table-wrap, .table-container, .main-layout, .container, body');
     scrollContainers.forEach(enableDragToScroll);
 });

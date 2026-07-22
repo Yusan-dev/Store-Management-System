@@ -1831,6 +1831,11 @@ function renderDashboard(
 
   // Render TOP 5 Articles
   renderTopArticles(articleAgg);
+
+  // Update Chart
+  if (typeof updateStoreChart === 'function') {
+      updateStoreChart(selectedDates);
+  }
 }
 
 // Toggle collapse/expand discount group rows
@@ -1974,3 +1979,84 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+
+
+let storeChartInstance = null;
+function updateStoreChart(selectedDates) {
+    if (!window.storeData || !window.storeData.dates) return;
+    
+    const sortedDates = [...selectedDates].sort((a, b) => {
+        const pa = a.split('-'); const pb = b.split('-');
+        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+    });
+    
+    const labels = [];
+    const salesData = [];
+    const uptData = [];
+    const rptData = [];
+    const aurData = [];
+    
+    sortedDates.forEach(d => {
+        const data = window.storeData.dates[d];
+        if (!data) return;
+        labels.push(d.substring(0, 5));
+        
+        const sales = data.sales || 0;
+        const qty = data.qty || 0;
+        const sm = data.sm || 0;
+        
+        salesData.push(sales);
+        uptData.push(sm > 0 ? qty / sm : 0);
+        rptData.push(sm > 0 ? sales / sm : 0);
+        aurData.push(qty > 0 ? sales / qty : 0);
+    });
+    
+    const ctx = document.getElementById('storeChart');
+    if (!ctx) return;
+    if (storeChartInstance) storeChartInstance.destroy();
+    
+    storeChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Sales (Rp)', data: salesData, borderColor: '#16a34a', backgroundColor: 'rgba(22, 163, 74, 0.1)', borderWidth: 2, tension: 0.3, fill: true, yAxisID: 'y' },
+                { label: 'RPT (Rp)', data: rptData, borderColor: '#f59e0b', borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y' },
+                { label: 'AUR (Rp)', data: aurData, borderColor: '#3b82f6', borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y' },
+                { label: 'UPT', data: uptData, type: 'bar', backgroundColor: 'rgba(239, 68, 68, 0.5)', borderColor: '#ef4444', borderWidth: 1, yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { font: { family: 'monospace', weight: 'bold' } } }
+            },
+            scales: {
+                y: { type: 'linear', display: true, position: 'left', ticks: { font: { family: 'monospace' } } },
+                y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: 'monospace' } } },
+                x: { ticks: { font: { family: 'monospace' } } }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('downloadChartBtn');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const canvas = document.getElementById('storeChart');
+            if (canvas) {
+                const destCtx = document.createElement('canvas');
+                destCtx.width = canvas.width; destCtx.height = canvas.height;
+                const ctx2 = destCtx.getContext('2d');
+                ctx2.fillStyle = '#FFFFFF'; ctx2.fillRect(0, 0, destCtx.width, destCtx.height);
+                ctx2.drawImage(canvas, 0, 0);
+                const link = document.createElement('a');
+                link.download = 'sales_performance_chart.png';
+                link.href = destCtx.toDataURL('image/png');
+                link.click();
+            }
+        });
+    }
+});
