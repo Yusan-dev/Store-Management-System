@@ -406,7 +406,6 @@ text-transform:uppercase;
     1fr;
     
     gap:22px;
-    align-items: start;
     
     }
     
@@ -420,11 +419,6 @@ text-transform:uppercase;
     background: #FFFFFF; border: 3px solid #000;;
     border-radius:0px;
     padding:22px;
-    height:fit-content;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
-    position:sticky;
-    top:18px;
     }
     
     
@@ -586,6 +580,10 @@ text-transform:uppercase;
     
     border-radius:0px;
     
+    display:flex;
+    
+    flex-direction:column;
+    
     overflow:hidden;
     
     }
@@ -598,13 +596,17 @@ text-transform:uppercase;
     
     font-weight:700;
     
+    flex-shrink:0;
+    
     }
     
     
     
     .table-wrap{
     
-    max-height:65vh;
+    flex:1;
+    
+    min-height:0;
     
     overflow-x:auto;
     
