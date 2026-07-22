@@ -243,10 +243,10 @@
             <button id="resetPerformanceDateRange" style="background:#fff; color:#111; padding:6px 12px; font-weight:bold; cursor:pointer; border:2px solid #111; font-family:monospace;">RESET</button>
         </div>
     </div>
-    <div id="tableScrollContainer" style="overflow-x:auto; cursor:grab; padding-bottom: 5px;">
+    <div id="tableScrollContainer" style="overflow-x:auto; overflow-y:auto; max-height:65vh; cursor:grab; padding-bottom: 5px;">
         <table class="report-table" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
-            <thead>
-                <tr id="tableHeaderRow" style="border-bottom:2px solid #111; background:#f0f0f0;">
+            <thead style="position:sticky; top:0; z-index:10; background:#f0f0f0; box-shadow: 0 2px 0 #111;">
+                <tr id="tableHeaderRow" style="border-bottom:2px solid #111;">
                     <th style="padding:8px; text-align:left;">DATE</th>
                     <th style="padding:8px; text-align:right;">TARGET</th>
                     <th style="padding:8px; text-align:right;">SALES</th>
@@ -305,10 +305,10 @@
             </div>
         </div>
     </div>
-    <div style="overflow-x:auto;">
+    <div style="overflow-x:auto; overflow-y:auto; max-height:50vh;">
         <table class="report-table" id="tableCat" style="width:100%; border-collapse:collapse; font-family:monospace; font-size:13px;">
-            <thead>
-                <tr style="border-bottom:2px solid #111; background:#f0f0f0;">
+            <thead style="position:sticky; top:0; z-index:10; background:#f0f0f0; box-shadow: 0 2px 0 #111;">
+                <tr style="border-bottom:2px solid #111;">
                     <th style="padding:10px; text-align:left;">CATEGORY</th>
                     <th style="padding:10px; text-align:left;">TYPE</th>
                     <th style="padding:10px; text-align:right;">QTY</th>

@@ -590,6 +590,12 @@ text-transform:uppercase;
     
     border-radius:0px;
     
+    display:flex;
+    
+    flex-direction:column;
+    
+    min-height:74vh;
+    
     }
     
     
@@ -606,7 +612,11 @@ text-transform:uppercase;
     
     .table-wrap{
     
-    max-height:74vh;
+    flex:1;
+    
+    min-height:0;
+    
+    max-height:none;
     
     overflow:auto;
     
