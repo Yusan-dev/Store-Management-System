@@ -584,6 +584,8 @@ text-transform:uppercase;
     
     flex-direction:column;
     
+    min-height:0;
+    
     overflow:hidden;
     
     }
