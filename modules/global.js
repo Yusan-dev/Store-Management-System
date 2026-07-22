@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
         el.addEventListener('mousedown', (e) => {
             // Ignore if clicking on input, select, button, checkbox, etc.
             if (e.target.tagName.match(/INPUT|TEXTAREA|SELECT|BUTTON|A|LABEL/i)) return;
+            if (e.target.closest('.no-drag')) return;
             
             isDown = true;
             el.classList.add('dragging');
