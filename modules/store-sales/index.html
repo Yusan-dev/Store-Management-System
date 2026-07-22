@@ -109,23 +109,23 @@
         <div class="upload-grid" style="display: flex; flex-direction: column; gap: 15px;">
             <div class="upload-box" id="dz-msr">
                 <label>MERCHANDISE SALES REPORT</label>
-                <input type="file" id="msr" accept=".xls,.xlsx">
+                <input type="file" id="msr" accept=".xls,.xlsx,.ods">
                 <div id="msrName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box" id="dz-dailyCash">
                 <label>DAILY CASH COLLECTION</label>
-                <input type="file" id="dailyCash" accept=".xls,.xlsx">
+                <input type="file" id="dailyCash" accept=".xls,.xlsx,.ods">
                 <div id="dailyCashName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box" id="dz-advOrd">
                 <label>SALESPERSON / ADV ORD</label>
-                <input type="file" id="advOrd" accept=".xls,.xlsx">
+                <input type="file" id="advOrd" accept=".xls,.xlsx,.ods">
                 <div id="advOrdName" class="filename">Belum dipilih</div>
             </div>
             <div class="upload-box" id="dz-salesLy">
                 <label>SALES LAST YEAR</label>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <input type="file" id="salesLy" accept=".xls,.xlsx" style="flex:1; min-width:0;">
+                    <input type="file" id="salesLy" accept=".xls,.xlsx,.ods" style="flex:1; min-width:0;">
                     <button type="button" id="dlTemplateLy" style="white-space:nowrap; padding:6px 10px; background:#111; color:#fff; border:2px solid #111; font-weight:bold; cursor:pointer; font-size:10px;">📥 TEMPLATE</button>
                 </div>
                 <div id="salesLyName" class="filename">Belum dipilih</div>
@@ -423,7 +423,7 @@ function buildTargetInputs() {
                 <td style="padding:8px; border:2px solid #111; text-align:center; vertical-align:middle;">
                     <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
                         <label for="monthly_target_file_${i+1}" style="background:#111; color:#fff; border:1px solid #111; padding:3px 8px; cursor:pointer; font-size:10px; font-weight:bold;">CHOOSE FILE</label>
-                        <input type="file" id="monthly_target_file_${i+1}" accept=".xls,.xlsx" onchange="uploadMonthlyTargetFile(this, ${i+1})" style="display:none;">
+                        <input type="file" id="monthly_target_file_${i+1}" accept=".xls,.xlsx,.ods" onchange="uploadMonthlyTargetFile(this, ${i+1})" style="display:none;">
                         <span id="monthly_target_lbl_${i+1}" style="font-size:10px; font-weight:bold; color:${fileColor}; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${filename}</span>
                     </div>
                 </td>
@@ -447,12 +447,66 @@ async function uploadMonthlyTargetFile(input, monthIndex) {
             try {
                 const data = new Uint8Array(e.target.result);
                 const workbook = window.XLSX.read(data, { type: "array" });
-                const firstSheetName = workbook.SheetNames[0];
-                const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { header: 1 });
-                
+
+                // ==========================================================
+                // CARI SHEET + BARIS AWAL TABEL HARIAN YANG BENAR.
+                //
+                // File Excel daily target sering punya BEBERAPA sheet
+                // (contoh: hyp_budget, hyp_sbu, raw_combined, JAN) dan tabel
+                // harian yang sebenarnya (Date/Day/% per tanggal 1-31) bisa
+                // ada di sheet MANAPUN, bukan cuma sheet pertama. Kalau kode
+                // asal ambil sheet pertama, sheet lain yang formatnya beda
+                // total (misal tabel budget bulanan per toko) akan gagal
+                // dibaca dan targetnya jadi 0 semua walau file "terbaca".
+                //
+                // Solusi: scan semua sheet, cari baris di mana kolom A
+                // bernilai angka 1 dan baris berikutnya bernilai angka 2
+                // (awal urutan tanggal 1, 2, 3, ...). Baris itu dianggap
+                // baris data pertama tabel harian.
+                // ==========================================================
+                function findDailyTargetTable(wb) {
+                    for (const sheetName of wb.SheetNames) {
+                        const sheetRows = window.XLSX.utils.sheet_to_json(
+                            wb.Sheets[sheetName],
+                            { header: 1 }
+                        );
+                        for (let i = 0; i < sheetRows.length; i++) {
+                            const row = sheetRows[i];
+                            const nextRow = sheetRows[i + 1];
+                            if (
+                                row && nextRow &&
+                                Number(row[0]) === 1 &&
+                                Number(nextRow[0]) === 2
+                            ) {
+                                return { rows: sheetRows, startIndex: i, sheetName };
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                const found = findDailyTargetTable(workbook);
+
+                // Fallback: kalau tidak ada sheet yang cocok dengan pola tabel
+                // harian, pakai perilaku lama (sheet pertama, mulai baris ke-2)
+                // supaya file yang sebelumnya sudah berhasil dibaca tetap jalan.
+                const rows = found
+                    ? found.rows
+                    : window.XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                const startIndex = found ? found.startIndex : 1;
+
+                if (!found) {
+                    console.warn(
+                        "DAILY TARGET: pola tabel harian (kolom A = 1,2,3,...) tidak ditemukan di sheet manapun. " +
+                        "Menggunakan sheet pertama (\"" + workbook.SheetNames[0] + "\") sebagai fallback."
+                    );
+                } else {
+                    console.log("DAILY TARGET: tabel harian ditemukan di sheet \"" + found.sheetName + "\".");
+                }
+
                 // Parse Target
                 const targetMap = {};
-                for (let i = 1; i < rows.length; i++) {
+                for (let i = startIndex; i < rows.length; i++) {
                     const row = rows[i];
                     if (row && row[0]) {
                         const dayStr = String(row[0]).trim();
@@ -461,6 +515,13 @@ async function uploadMonthlyTargetFile(input, monthIndex) {
                         if (pct > 1) pct = pct / 100;
                         targetMap[dayStr] = pct;
                     }
+                }
+
+                if (Object.keys(targetMap).length === 0) {
+                    alert(
+                        "PERINGATAN: Tidak ada baris target harian yang berhasil dibaca dari file \"" +
+                        file.name + "\". Pastikan file berisi kolom TANGGAL (1-31) dan PERSENTASE per hari."
+                    );
                 }
                 
                 // Save to localStorage

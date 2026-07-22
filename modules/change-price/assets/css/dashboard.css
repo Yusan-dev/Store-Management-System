@@ -10,7 +10,7 @@ padding:0;
 
 box-sizing:border-box;
 
-font-family: "Space Mono", monospace;
+font-family: "Space Mono", "Courier New", Courier, monospace;
 
 }
 
@@ -36,7 +36,7 @@ input,
 
 table{
 
-font-family: "Space Mono", monospace;
+font-family: "Space Mono", "Courier New", Courier, monospace;
 
 }
 

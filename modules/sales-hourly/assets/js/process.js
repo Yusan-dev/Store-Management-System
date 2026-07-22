@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.removeItem(STORAGE_KEY);
             parsedDataByDate = {};
             selectedFile = null;
-            fileLabel.innerText = "salesregisteritemdatewisehhmmss,xls/xlsx";
+            fileLabel.innerText = "Unggah File";
             document.getElementById("filterContainer").style.display = "none";
             document.getElementById("dashboardContent").style.display = "none";
             document.getElementById("dateSelect").innerHTML = '<option value="">-- Choose Date --</option>';

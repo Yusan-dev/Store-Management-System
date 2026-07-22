@@ -180,6 +180,36 @@ document.addEventListener("DOMContentLoaded", () => {
         advOrdData
       );
 
+      // Persist this run's daily target map under the specific month(s)
+      // actually present in the uploaded MSR data, so that viewing other
+      // months/periods later does not incorrectly reuse this month's file.
+      // Only runs when a NEW Target Harian file was uploaded this time
+      // (files.target), matching the same storage format the "SET MONTHLY
+      // TARGETS" modal already uses (gt_store_daily_targets_cy).
+      if (files.target && window.storeData && window.storeData.targetMap) {
+        const monthsInData = new Set();
+        Object.keys(window.storeData.dates).forEach((d) => {
+          const parts = d.split("-");
+          if (parts.length === 3) monthsInData.add(parseInt(parts[1], 10));
+        });
+
+        if (monthsInData.size > 0) {
+          const savedDaily = JSON.parse(
+            localStorage.getItem("gt_store_daily_targets_cy") || "{}"
+          );
+          monthsInData.forEach((monthNum) => {
+            savedDaily[monthNum] = {
+              filename: files.target.name,
+              targetMap: window.storeData.targetMap,
+            };
+          });
+          localStorage.setItem(
+            "gt_store_daily_targets_cy",
+            JSON.stringify(savedDaily)
+          );
+        }
+      }
+
       if (files.salesLy) {
         const salesLyData = await readExcel(files.salesLy);
         window.storeDataLY = parseLYTemplate(salesLyData);
@@ -957,21 +987,112 @@ function renderDashboard(
   const cyTargets = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
   const lyTargets = JSON.parse(localStorage.getItem("gt_store_targets_ly") || "{}");
   
+  // Kumpulan bulan (angka 1-12) yang termasuk dalam periode yang sedang dipilih
+  // (This Year -> semua bulan berjalan, Quarter -> 3 bulan, Last Month -> 1 bulan, dst).
+  // monthYearInPeriod menyimpan tahun dari setiap bulan tsb, dipakai untuk mendeteksi
+  // apakah bulan itu adalah "bulan berjalan" (bulan & tahun yang sama dengan hari ini).
+  const monthsInPeriod = new Set();
+  const monthYearInPeriod = {};
+  selectedDates.forEach((d) => {
+    const p = d.split("-");
+    if (p.length === 3) {
+      const mm = parseInt(p[1], 10);
+      monthsInPeriod.add(mm);
+      monthYearInPeriod[mm] = parseInt(p[2], 10);
+    }
+  });
+
+  // TARGET TOTAL SALES untuk periode = jumlah "Target Sales" bulanan (yang diisi di SET MONTHLY
+  // TARGETS) untuk semua bulan yang termasuk dalam periode ini.
+  //
+  // BULAN YANG SUDAH SELESAI (semua tanggalnya sudah lewat dari tanggal data actual terakhir)
+  // -> target penuh 1 bulan.
+  //
+  // BULAN YANG SEDANG BERJALAN (bulan & tahun yang sama dengan tanggal data actual TERAKHIR yang
+  // sudah diproses -- BUKAN jam sistem, supaya konsisten dengan baris "TARGET (UP TO DAY-X)" dan
+  // tidak menghitung hari yang datanya belum diupload sebagai "sudah lewat") -> target di-prorata
+  // dengan AKUMULASI PERSENTASE HARIAN ASLI dari file "DAILY TARGET (EXCEL)" (tanggal 1 s.d tanggal
+  // data terakhir), karena pola sales per-hari biasanya TIDAK rata (weekend > weekday), jadi lebih
+  // akurat dibanding rasio kalender polos (hari-berjalan / jumlah-hari-di-bulan).
+  //
+  // Kalau bulan berjalan itu BELUM ada file DAILY TARGET yang diupload, baru fallback ke rasio
+  // kalender polos supaya card tidak menampilkan 0.
+  //
+  // Logika ini otomatis "pindah" mengikuti bulan berjalan yang baru setiap kali bulan berganti
+  // (tidak di-hardcode), dan berlaku sama untuk semua mode periode (This Month, This Quarter,
+  // This Semester, This Year, Custom) karena sumbernya sama-sama dari monthsInPeriod.
+  const savedDailyForTarget = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
+
+  const maxActualDateStr = (window.storeData && window.storeData.maxActualDateStr) || "";
+  const maxActualParts = maxActualDateStr.split("-");
+  const hasMaxActualDate = maxActualParts.length === 3;
+  const maxActualDay = hasMaxActualDate ? parseInt(maxActualParts[0], 10) : 0;
+  const maxActualMonth = hasMaxActualDate ? parseInt(maxActualParts[1], 10) : 0;
+  const maxActualYear = hasMaxActualDate ? parseInt(maxActualParts[2], 10) : 0;
+
+  let periodTargetSales = 0;
+  monthsInPeriod.forEach((m) => {
+    const monthData = cyTargets[m] || {};
+    const monthTargetSales = monthData.sales || 0;
+    const isRunningMonth =
+      hasMaxActualDate && m === maxActualMonth && monthYearInPeriod[m] === maxActualYear;
+
+    if (!isRunningMonth) {
+      periodTargetSales += monthTargetSales;
+      return;
+    }
+
+    const monthDailyInfo = savedDailyForTarget[m] || {};
+    const monthTargetMap = monthDailyInfo.targetMap || {};
+    const hasDailyFile = Object.keys(monthTargetMap).length > 0;
+
+    if (hasDailyFile) {
+      // Jumlahkan persentase harian ASLI dari file, tanggal 1 s.d tanggal data terakhir.
+      let accumulatedPct = 0;
+      for (let day = 1; day <= maxActualDay; day++) {
+        accumulatedPct += monthTargetMap[String(day)] || 0;
+      }
+      periodTargetSales += monthTargetSales * accumulatedPct;
+    } else {
+      // Fallback: belum ada file DAILY TARGET untuk bulan ini -> pakai rasio kalender polos.
+      const daysInThisMonth = new Date(maxActualYear, m, 0).getDate();
+      const elapsedRatio = Math.min(Math.max(maxActualDay / daysInThisMonth, 0), 1);
+      periodTargetSales += monthTargetSales * elapsedRatio;
+    }
+  });
+
+
+  // UPT / ATV / AUR target mengikuti periode yang dipilih:
+  // - Jika periode hanya 1 bulan (mode "this_month", custom 1 bulan, dll), pakai target bulan tsb.
+  // - Jika periode mencakup beberapa bulan (this year, quarter, semester/season, custom multi-bulan),
+  //   target dihitung sebagai RATA-RATA target bulan-bulan yang termasuk dalam periode tsb
+  //   (hanya bulan yang sudah punya target di-set yang diikutkan, agar rata-rata tidak turun karena bulan kosong).
   let targetUPT = 0;
   let targetATV = 0;
   let targetAUR = 0;
   if (selectedDates.length > 0) {
-    const lastDate = selectedDates[selectedDates.length - 1];
-    const parts = lastDate.split("-");
-    if (parts.length === 3) {
-      const monthData = cyTargets[parseInt(parts[1], 10)] || {};
-      targetUPT = monthData.upt || 0;
-      targetATV = monthData.atv || 0;
-      targetAUR = monthData.aur || 0;
+    let sumUPT = 0,
+      sumATV = 0,
+      sumAUR = 0,
+      monthsWithTarget = 0;
+
+    monthsInPeriod.forEach((m) => {
+      const monthData = cyTargets[m] || {};
+      if (monthData.upt || monthData.atv || monthData.aur) {
+        sumUPT += monthData.upt || 0;
+        sumATV += monthData.atv || 0;
+        sumAUR += monthData.aur || 0;
+        monthsWithTarget++;
+      }
+    });
+
+    if (monthsWithTarget > 0) {
+      targetUPT = sumUPT / monthsWithTarget;
+      targetATV = sumATV / monthsWithTarget;
+      targetAUR = sumAUR / monthsWithTarget;
     }
   }
 
-  const targetMap = window.storeData ? (window.storeData.targetMap || {}) : {};
   const categories = window.storeData ? (window.storeData.categories || []) : [];
 
   const dynamicCatTotals = {};
@@ -1062,7 +1183,9 @@ function renderDashboard(
 
   let htmlRows = "";
   let maxIncludedDay = 0;
-  let fullPeriodTargetSales = 0;
+  // Total target sales untuk periode ini = jumlah target bulanan (lihat periodTargetSales di atas),
+  // tidak lagi tergantung file breakdown harian.
+  let fullPeriodTargetSales = periodTargetSales;
 
   displayDates.forEach((d) => {
     const data = window.storeData.dates[d];
@@ -1073,10 +1196,10 @@ function renderDashboard(
     const savedDaily = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
     const monthDailyInfo = savedDaily[monthNum] || {};
     const monthTargetMap = monthDailyInfo.targetMap || {};
-    
+
     const dayStr = String(parseInt(parts[0], 10));
-    const dailyPct = monthTargetMap[dayStr] !== undefined ? monthTargetMap[dayStr] : (targetMap[dayStr] || 0);
-    
+    const dailyPct = monthTargetMap[dayStr] !== undefined ? monthTargetMap[dayStr] : 0;
+
     let rawTargetStore = 0;
     if (parts.length === 3) {
       const monthData = cyTargets[monthNum] || {};
@@ -1085,7 +1208,6 @@ function renderDashboard(
     const dailyTarget = Math.round(rawTargetStore * dailyPct);
 
     if (selectedDates.includes(d)) {
-      fullPeriodTargetSales += dailyTarget;
       if (dateToComparable(d) <= maxActualNum) {
         totalTargetSales += dailyTarget;
         const currentDay = parseInt(d.split("-")[0], 10);

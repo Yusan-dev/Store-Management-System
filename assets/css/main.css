@@ -20,7 +20,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Space Mono', monospace, 'Courier New', Courier;
+    font-family: 'Space Mono', 'Courier New', Courier, monospace;
 }
 
 body {
