@@ -3367,7 +3367,7 @@ LICENSE ACCESS SCREEN
 
 .performance-filter-card{
     position:relative;
-    overflow:hidden;
+    overflow:visible;
 
     margin:28px 0 24px;
     padding:0;
@@ -3408,6 +3408,9 @@ LICENSE ACCESS SCREEN
             #ffd65a,
             #f4b400
         );
+        
+    border-top-left-radius: 19px;
+    border-top-right-radius: 19px;
 }
 
 
