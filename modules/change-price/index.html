@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAA CHANGE PRICE</title>
-    <link rel="stylesheet" href="assets/css/dashboard.css?v=3">
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=4">
     <style>
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -190,7 +190,7 @@
 (function(){
     function syncHeight(){
         var f=document.querySelector('.filter');
-        var c=document.querySelector('.content');
+        var c=document.querySelector('.table-container');
         if(f&&c) c.style.maxHeight=f.offsetHeight+'px';
     }
     window.addEventListener('load',syncHeight);
