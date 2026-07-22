@@ -14,7 +14,7 @@ content="width=device-width,initial-scale=1">
 
 <link
 rel="stylesheet"
-href="assets/css/dashboard.css?v=2">
+href="assets/css/dashboard.css?v=3">
 
 </head>
 
@@ -545,6 +545,23 @@ Generating dashboard...
     });
 </script>
     <script src="../global.js"></script>
+<script>
+(function(){
+    function syncHeight(){
+        var f=document.querySelector('.filter');
+        var c=document.querySelector('.content');
+        if(f&&c) c.style.maxHeight=f.offsetHeight+'px';
+    }
+    window.addEventListener('load',syncHeight);
+    window.addEventListener('resize',syncHeight);
+    if(window.ResizeObserver){
+        var el=document.querySelector('.filter');
+        if(el) new ResizeObserver(syncHeight).observe(el);
+    }
+    setTimeout(syncHeight,300);
+    setTimeout(syncHeight,1000);
+})();
+</script>
 </body>
 
 </html>
