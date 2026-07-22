@@ -586,11 +586,7 @@ text-transform:uppercase;
     
     border-radius:0px;
     
-    display:flex;
-    
-    flex-direction:column;
-    
-    min-height:74vh;
+    overflow:hidden;
     
     }
     
@@ -608,13 +604,11 @@ text-transform:uppercase;
     
     .table-wrap{
     
-    flex:1;
+    max-height:65vh;
     
-    min-height:0;
+    overflow-x:auto;
     
-    max-height:none;
-    
-    overflow:auto;
+    overflow-y:auto;
     
     }
     
