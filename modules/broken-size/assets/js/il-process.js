@@ -10,6 +10,9 @@
    ======================================== */
 
 window.ilTableData = [];
+window.ilRawStockRows = [];
+window.ilRawMsrArr = [];
+window.ilDiscountFilter = new Set();
 
 /* ---------- PROCESS IL ---------- */
 async function processIL(stockRows) {
@@ -17,14 +20,12 @@ async function processIL(stockRows) {
   const msr2File = document.getElementById("msr2").files[0];
   const msr3File = document.getElementById("msr3").files[0];
 
-  // IL needs at least stock + 1 MSR file
   if (!msr1File && !msr2File && !msr3File) {
     console.log("IL: No MSR files uploaded, skipping IL calculation");
     return;
   }
 
   try {
-    // Parse MSR files
     const msrFiles = [msr1File, msr2File, msr3File].filter(Boolean);
     const msrDataArr = [];
 
@@ -33,23 +34,76 @@ async function processIL(stockRows) {
       msrDataArr.push(data);
     }
 
-    // Calculate stock per category from stock file
-    const stockPerCat = calcStockPerCategory(stockRows);
+    window.ilRawStockRows = stockRows;
+    window.ilRawMsrArr = msrDataArr;
+    
+    // Extract available discounts
+    extractILDiscounts();
 
-    // Calculate sales per category per month from MSR files
-    const salesPerMonth = msrDataArr.map((rows) => calcSalesPerCategory(rows));
-
-    // Combine into IL table
-    const ilData = buildILTable(stockPerCat, salesPerMonth);
-    window.ilTableData = ilData;
-
-    // Render IL table
-    drawILTable(ilData);
-    updateILSummary(ilData);
+    reRunIL();
   } catch (err) {
     console.error("IL Error:", err);
     alert("Failed memproses IL: " + err.message);
   }
+}
+
+function extractILDiscounts() {
+  if (typeof kangodingPrice !== 'function') return;
+  const allDiscounts = new Set();
+  
+  // From Stock
+  for (let i = 1; i < window.ilRawStockRows.length; i++) {
+    const r = window.ilRawStockRows[i];
+    if (!r) continue;
+    const cat = getStandardCategory(r);
+    const p = toNum(r[6]);
+    const d = kangodingPrice(p, cat);
+    if (d) allDiscounts.add(d);
+  }
+  
+  // From MSR
+  window.ilRawMsrArr.forEach(rows => {
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r) continue;
+      const cat = getStandardCategory(r);
+      const qty = Math.abs(toNum(r[6]));
+      const sales = toNum(r[8]);
+      const discountAmt = toNum(r[7]);
+      const total = discountAmt + sales;
+      const hargaAsli = qty > 0 ? Math.round(total / qty) : 0;
+      const d = kangodingPrice(hargaAsli, cat);
+      if (d) allDiscounts.add(d);
+    }
+  });
+  
+  const root = document.getElementById("ilDiscountCheckboxes");
+  if (root) {
+      root.innerHTML = "";
+      [...allDiscounts].sort().forEach(v => {
+          root.insertAdjacentHTML("beforeend", `<label><input type="checkbox" class="il-disc-cb" value="${v}"> ${v}</label>`);
+      });
+      root.querySelectorAll("input").forEach(cb => {
+          cb.addEventListener("change", (e) => {
+              if (e.target.checked) window.ilDiscountFilter.add(e.target.value);
+              else window.ilDiscountFilter.delete(e.target.value);
+              reRunIL();
+          });
+      });
+  }
+}
+
+function reRunIL() {
+    if (!window.ilRawStockRows || window.ilRawStockRows.length === 0) return;
+    
+    const stockPerCat = calcStockPerCategory(window.ilRawStockRows, window.ilDiscountFilter);
+    const salesPerMonth = window.ilRawMsrArr.map((rows) => calcSalesPerCategory(rows, window.ilDiscountFilter));
+
+    const ilData = buildILTable(stockPerCat, salesPerMonth);
+    window.ilTableData = ilData;
+
+    drawILTable(ilData);
+    updateILSummary(ilData);
 }
 
 /* ---------- CATEGORY EXTRACTOR ---------- */
@@ -63,15 +117,19 @@ function getStandardCategory(r) {
     if (val === "NON-MD" || val === "NON MD" || val.includes("ZSP")) return "NON-MD";
   }
   let def = String(r[1] || "").toUpperCase().trim();
-  if (/^\d+$/.test(def) || ["NEW ERA", "REEBOK", "CONVERSE", "PUMA", "SKECHERS", "CROCS", "NIKE", "ADIDAS", "DIADORA", "AIRWALK"].includes(def)) {
+  const isNumberOrBrand = /^\d+$/.test(def) || ["NEW ERA", "REEBOK", "CONVERSE", "PUMA", "SKECHERS", "CROCS", "NIKE", "ADIDAS", "DIADORA", "AIRWALK"].includes(def);
+  
+  if (isNumberOrBrand) {
       const col2 = String(r[2] || "").toUpperCase().trim();
       if (col2 && !/^\d+$/.test(col2)) return col2;
+      return "UNCATEGORIZED"; // Never return numbers or brands as category!
   }
+  
   return def || "UNCATEGORIZED";
 }
 
 /* ---------- STOCK PER CATEGORY ---------- */
-function calcStockPerCategory(rows) {
+function calcStockPerCategory(rows, activeDiscounts) {
   const cats = {};
 
   for (let i = 1; i < rows.length; i++) {
@@ -80,6 +138,12 @@ function calcStockPerCategory(rows) {
 
     const category = getStandardCategory(r);
     const qty = toNum(r[7]);
+    
+    // Extract discount
+    const price = toNum(r[6]);
+    const discount = typeof kangodingPrice === 'function' ? kangodingPrice(price, category) : "";
+    
+    if (activeDiscounts && activeDiscounts.size > 0 && discount && !activeDiscounts.has(discount)) continue;
 
     if (!category || qty <= 0) continue;
 
@@ -91,7 +155,7 @@ function calcStockPerCategory(rows) {
 }
 
 /* ---------- SALES PER CATEGORY FROM MSR ---------- */
-function calcSalesPerCategory(rows) {
+function calcSalesPerCategory(rows, activeDiscounts) {
   const cats = {};
 
   for (let i = 1; i < rows.length; i++) {
@@ -100,9 +164,13 @@ function calcSalesPerCategory(rows) {
 
     const division = getStandardCategory(r);
 
-    // Skip header rows and totals based on common values in column B
+    // Skip header rows and totals based on common values in column A or B
+    const rawCol0 = String(r[0] || "").toUpperCase().trim();
     const rawCol1 = String(r[1] || "").toUpperCase().trim();
     if (
+      !rawCol0 ||
+      rawCol0.startsWith("TOTAL") ||
+      rawCol0.startsWith("GRAND") ||
       !rawCol1 ||
       rawCol1 === "PRODUCT DIVISION" ||
       rawCol1.startsWith("TOTAL") ||
@@ -112,6 +180,14 @@ function calcSalesPerCategory(rows) {
 
     const qty = Math.abs(toNum(r[6]));
     const sales = toNum(r[8]); // Total Rupiah
+    
+    // Extract discount for MSR
+    const discountAmt = toNum(r[7]);
+    const total = discountAmt + sales;
+    const hargaAsli = qty > 0 ? Math.round(total / qty) : 0;
+    const discount = typeof kangodingPrice === 'function' ? kangodingPrice(hargaAsli, division) : "";
+
+    if (activeDiscounts && activeDiscounts.size > 0 && discount && !activeDiscounts.has(discount)) continue;
 
     if (!cats[division]) cats[division] = { qty: 0, sales: 0 };
     cats[division].qty += qty;
@@ -253,8 +329,8 @@ function updateILSummary(rows) {
   const totalAvgSales = filteredRows.reduce((a, b) => a + b.avgSales, 0);
   const overallIL = totalAvgSales > 0 ? totalStock / totalAvgSales : 0;
 
-  document.getElementById("ilTotalCategory").innerText = totalCat.toLocaleString();
-  document.getElementById("ilTotalStock").innerText = totalStock.toLocaleString();
-  document.getElementById("ilAvgSales").innerText = totalAvgSales.toLocaleString();
+  document.getElementById("ilTotalCat").innerText = totalCat.toLocaleString("en-US");
+  document.getElementById("ilTotalStock").innerText = totalStock.toLocaleString("en-US");
+  document.getElementById("ilAvgSales").innerText = totalAvgSales.toLocaleString("en-US");
   document.getElementById("ilOverall").innerText = overallIL.toFixed(2);
 }
