@@ -630,7 +630,9 @@ input[type="file"]::file-selector-button{
 .content > .table-wrap{
     width:100%;
 
-    overflow:auto;
+    max-height:65vh;
+    overflow-y:auto;
+    overflow-x:auto;
 }
 
 #resultTable{
@@ -640,7 +642,9 @@ input[type="file"]::file-selector-button{
 }
 
 #resultTable thead{
-    position:static;
+    position:sticky;
+    top:0;
+    z-index:10;
 
     background:var(--dark);
     color:#fff;
@@ -1525,8 +1529,9 @@ input[type="file"]::file-selector-button{
 .daily-audit-section .table-wrap{
     width:100%;
 
+    max-height:65vh;
+    overflow-y:auto;
     overflow-x:auto;
-    overflow-y:hidden;
 
     background:#ffffff;
 }
@@ -1544,6 +1549,10 @@ input[type="file"]::file-selector-button{
 
 
 .daily-staff-table thead{
+    position:sticky;
+    top:0;
+    z-index:10;
+
     background:var(--dark);
 }
 
