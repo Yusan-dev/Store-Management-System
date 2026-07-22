@@ -225,7 +225,7 @@ function drawILTable(rows) {
       else ratioClass = "il-ratio-warn";
     }
     
-    const fMoney = (val) => val === 0 ? "-" : "Rp " + val.toLocaleString("id-ID");
+    const fMoney = (val) => val === 0 ? "-" : val.toLocaleString("en-US");
 
     body.insertAdjacentHTML(
       "beforeend",
