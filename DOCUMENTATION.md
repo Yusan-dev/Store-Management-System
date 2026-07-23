@@ -1,4 +1,4 @@
-# GT MASTER DASHBOARD — Complete User Guide & Technical Documentation
+# STORE MANAGEMENT SYSTEM DASHBOARD — Complete User Guide & Technical Documentation
 
 **Version:** 2.2 (Enhanced & Optimized)  
 **Platform:** Web-based (Local / Server)  
@@ -46,7 +46,7 @@
 ### Option B: Local Server (Recommended)
 **Using Python:**
 ```bash
-cd GT_MASTER_DASHBOARD
+cd Store-Management-System
 python -m http.server 8080
 # Open browser → http://localhost:8080
 ```
