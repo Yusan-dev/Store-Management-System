@@ -39,7 +39,7 @@
 ## 2. Installation & Setup
 
 ### Option A: Open Directly (No Server)
-1. Download & extract the `GT_MASTER_DASHBOARD` folder
+1. Download & extract the ``Store-Management-System-main`` folder
 2. Open `index.html` in your web browser
 3. Done! ✅
 
@@ -53,7 +53,7 @@ python -m http.server 8080
 
 **Using Node.js:**
 ```bash
-cd GT_MASTER_DASHBOARD
+cd Store-Management-System-main-5
 npx http-server -p 8080
 # Open browser → http://localhost:8080
 ```
@@ -245,4 +245,4 @@ Automatically parses and converts various number formats:
 
 ---
 
-*© 2026 KANGODING.ORG — GT MASTER DASHBOARD v2.2 — All Rights Reserved*
+*© 2026 KANGODING.ORG — SMS MASTER DASHBOARD v2.2 — All Rights Reserved*
