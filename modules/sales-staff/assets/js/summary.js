@@ -1168,10 +1168,63 @@ document.addEventListener("DOMContentLoaded", () => {
     const awardDateInput = document.getElementById("awardDateInput");
     const printCertBtn = document.getElementById("printCertificateBtn");
 
-    function openAwardModal() {
+    function openAwardModal(bestCategory) {
         if (!awardModal) return;
         awardModal.style.display = "flex";
-        if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
+
+        // Auto-select best staff based on category
+        if (bestCategory && window.latestStaffSummaryData) {
+            const summary = window.latestStaffSummaryData;
+            const staffRows = summary.filter(r => r.staff && r.staff !== 'TOTAL' && r.staff !== 'UNKNOWN' && r.staff !== 'O2O');
+
+            let bestStaff = null;
+            let awardTitle = 'BEST SALES OF THE MONTH';
+
+            if (bestCategory === 'sales') {
+                bestStaff = staffRows.sort((a, b) => (b.sales || 0) - (a.sales || 0))[0];
+                awardTitle = 'BEST SALES OF THE MONTH';
+            } else if (bestCategory === 'upt') {
+                bestStaff = staffRows.sort((a, b) => {
+                    const uptA = (a.sm || 0) > 0 ? (a.qty || 0) / a.sm : 0;
+                    const uptB = (b.sm || 0) > 0 ? (b.qty || 0) / b.sm : 0;
+                    return uptB - uptA;
+                })[0];
+                awardTitle = 'BEST UPT OF THE MONTH';
+            } else if (bestCategory === 'aur') {
+                bestStaff = staffRows.sort((a, b) => {
+                    const aurA = (a.qty || 0) > 0 ? (a.sales || 0) / a.qty : 0;
+                    const aurB = (b.qty || 0) > 0 ? (b.sales || 0) / b.qty : 0;
+                    return aurB - aurA;
+                })[0];
+                awardTitle = 'BEST AUR OF THE MONTH';
+            } else if (bestCategory === 'rpt') {
+                bestStaff = staffRows.sort((a, b) => {
+                    const rptA = (a.sm || 0) > 0 ? (a.sales || 0) / a.sm : 0;
+                    const rptB = (b.sm || 0) > 0 ? (b.sales || 0) / b.sm : 0;
+                    return rptB - rptA;
+                })[0];
+                awardTitle = 'BEST RPT / ATV OF THE MONTH';
+            }
+
+            // Pre-fill award title
+            if (awardTitleInput) {
+                awardTitleInput.value = awardTitle;
+            }
+
+            // Init feature first to populate staff dropdown
+            if (typeof initBestSalesAwardFeature === 'function') {
+                initBestSalesAwardFeature(summary);
+            }
+
+            // Auto-select best staff in dropdown
+            if (bestStaff && awardStaffSelect) {
+                awardStaffSelect.value = bestStaff.staff;
+                // Trigger preview update after selection
+                if (typeof initBestSalesAwardFeature === 'function') {
+                    initBestSalesAwardFeature(summary);
+                }
+            }
+        } else if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
             initBestSalesAwardFeature(window.latestStaffSummaryData);
         }
     }
@@ -1187,9 +1240,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Open button
+    // Open button (default: best sales)
     if (openAwardBtn) {
-        openAwardBtn.addEventListener("click", openAwardModal);
+        openAwardBtn.addEventListener("click", () => openAwardModal('sales'));
     }
 
     // Close button
@@ -1251,9 +1304,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (filterSelect) {
         filterSelect.addEventListener("change", () => {
             const val = filterSelect.value;
-            if (val === 'best') {
-                openAwardModal();
-                // Reset dropdown back to previous mode
+            // Handle best_* categories
+            if (val.startsWith('best_')) {
+                const category = val.replace('best_', '');
+                openAwardModal(category);
+                // Reset dropdown back to previous ranking mode
                 filterSelect.value = currentRankingFilterMode || 'top3';
                 return;
             }
