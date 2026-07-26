@@ -1164,19 +1164,32 @@ function initBestSalesAwardFeature(summaryData) {
         const rpt = sm > 0 ? (sales / sm) : (staffRow.rpt || 0);
         const aur = qty > 0 ? (sales / qty) : (staffRow.aur || 0);
 
+        // Determine metric suffix for the title based on the award category
+        let titleSuffix = "";
+        const upperTitle = awardTitle.toUpperCase();
+        if (upperTitle.includes('UPT')) {
+            titleSuffix = " " + (typeof formatDecimal === 'function' ? formatDecimal(upt, 2) : upt.toFixed(2));
+        } else if (upperTitle.includes('AUR')) {
+            titleSuffix = " " + (typeof money === 'function' ? money(Math.round(aur)) : Math.round(aur));
+        } else if (upperTitle.includes('RPT') || upperTitle.includes('ATV')) {
+            titleSuffix = " " + (typeof money === 'function' ? money(Math.round(rpt)) : Math.round(rpt));
+        } else if (upperTitle.includes('SALES')) {
+            titleSuffix = " " + (typeof money === 'function' ? money(sales) : sales);
+        }
+
         // Update Certificate DOM Elements
         const certStoreTitle = document.getElementById("certStoreTitle");
-        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN ${awardTitle.toUpperCase()} — ${storeName.toUpperCase()}`;
+        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN ${upperTitle}${titleSuffix} — ${storeName.toUpperCase()}`;
 
         const certStaffName = document.getElementById("certStaffName");
         if (certStaffName) certStaffName.innerText = staffName.toUpperCase();
 
         const certAwardTitle = document.getElementById("certAwardTitle");
-        if (certAwardTitle) certAwardTitle.innerText = awardTitle.toUpperCase();
+        if (certAwardTitle) certAwardTitle.innerText = `${upperTitle}${titleSuffix}`;
 
         const certAwardCategoryText = document.getElementById("certAwardCategoryText");
         if (certAwardCategoryText) {
-            certAwardCategoryText.innerHTML = `Diberikan atas prestasi dan dedikasi luar biasa sebagai <strong id="certAwardTitle" style="text-decoration:underline;">${awardTitle.toUpperCase()}</strong> di ${storeName.toUpperCase()} berdasarkan analisis performa penjualan staf.`;
+            certAwardCategoryText.innerHTML = `Diberikan atas prestasi dan dedikasi luar biasa sebagai <strong id="certAwardTitle" style="text-decoration:underline;">${upperTitle}${titleSuffix}</strong> di ${storeName.toUpperCase()} berdasarkan analisis performa penjualan staf.`;
         }
 
         const certSalesVal = document.getElementById("certSalesVal");
