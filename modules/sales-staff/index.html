@@ -723,6 +723,7 @@ Belum dipilih
             <option value="top3">🏆 TOP 3 STAFF</option>
             <option value="bottom3">🔻 BOTTOM 3 STAFF</option>
             <option value="all">👥 ALL STAFF RANKING</option>
+            <option value="best">🎖️ BEST SALES AWARD (SERTIFIKAT)</option>
         </select>
         
         <button type="button" id="openAwardModalBtn" style="background:#FFDF00; color:#111; border:3px solid #111; padding:8px 16px; font-weight:900; cursor:pointer; font-family:'Space Mono', monospace, sans-serif; font-size:12px; box-shadow:3px 3px 0px #111; display:flex; align-items:center; gap:6px;">
@@ -883,21 +884,29 @@ Belum dipilih
             </p>
 
             <!-- METRICS BADGES -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; max-width:720px; margin:0 auto 30px auto; background:rgba(0,0,0,0.03); border:2px dashed currentColor; padding:15px; border-radius:8px;">
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:720px; margin:0 auto 30px auto; background:rgba(0,0,0,0.03); border:2px dashed currentColor; padding:15px; border-radius:8px;">
                 <div>
-                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">TOTAL SALES</span>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">💰 TOTAL SALES</span>
                     <strong id="certSalesVal" style="font-size:13px; display:block; margin-top:3px;">Rp 0</strong>
                 </div>
                 <div>
-                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">TOTAL QTY</span>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">📦 TOTAL QTY</span>
                     <strong id="certQtyVal" style="font-size:13px; display:block; margin-top:3px;">0 Pcs</strong>
                 </div>
                 <div>
-                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">UPT</span>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">🧾 TOTAL SM</span>
+                    <strong id="certSmVal" style="font-size:13px; display:block; margin-top:3px;">0</strong>
+                </div>
+                <div>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">📈 UPT</span>
                     <strong id="certUptVal" style="font-size:13px; display:block; margin-top:3px;">0.00</strong>
                 </div>
                 <div>
-                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">RPT</span>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">🏷️ AUR</span>
+                    <strong id="certAurVal" style="font-size:13px; display:block; margin-top:3px;">Rp 0</strong>
+                </div>
+                <div>
+                    <span style="display:block; font-size:9px; font-weight:900; letter-spacing:1px; opacity:0.75;">💳 RPT / ATV</span>
                     <strong id="certRptVal" style="font-size:13px; display:block; margin-top:3px;">Rp 0</strong>
                 </div>
             </div>
@@ -1005,7 +1014,7 @@ Initializing Engine...
 
 <script src="assets/js/runtime.js?v=2"></script>
 
-<script src="assets/js/summary.js?v=8"></script>
+<script src="assets/js/summary.js?v=9"></script>
 <script src="../../libs/Chart.min.js"></script>
 <script src="../../libs/chartjs-plugin-datalabels.min.js"></script>
 <script src="assets/js/process.js?v=6"></script>

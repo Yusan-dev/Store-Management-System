@@ -1098,6 +1098,7 @@ function initBestSalesAwardFeature(summaryData) {
         const sm = staffRow.sm || 0;
         const upt = sm > 0 ? (qty / sm) : (staffRow.upt || 0);
         const rpt = sm > 0 ? (sales / sm) : (staffRow.rpt || 0);
+        const aur = qty > 0 ? (sales / qty) : (staffRow.aur || 0);
 
         // Update Certificate DOM Elements
         const certStoreTitle = document.getElementById("certStoreTitle");
@@ -1115,8 +1116,14 @@ function initBestSalesAwardFeature(summaryData) {
         const certQtyVal = document.getElementById("certQtyVal");
         if (certQtyVal) certQtyVal.innerText = `${typeof formatNumber === 'function' ? formatNumber(qty) : qty} Pcs`;
 
+        const certSmVal = document.getElementById("certSmVal");
+        if (certSmVal) certSmVal.innerText = typeof formatNumber === 'function' ? formatNumber(sm) : sm;
+
         const certUptVal = document.getElementById("certUptVal");
         if (certUptVal) certUptVal.innerText = typeof formatDecimal === 'function' ? formatDecimal(upt, 2) : upt.toFixed(2);
+
+        const certAurVal = document.getElementById("certAurVal");
+        if (certAurVal) certAurVal.innerText = typeof money === 'function' ? money(Math.round(aur)) : Math.round(aur);
 
         const certRptVal = document.getElementById("certRptVal");
         if (certRptVal) certRptVal.innerText = typeof money === 'function' ? money(Math.round(rpt)) : Math.round(rpt);
@@ -1205,7 +1212,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const filterSelect = document.getElementById("rankingFilterMode");
     if (filterSelect) {
         filterSelect.addEventListener("change", () => {
-            currentRankingFilterMode = filterSelect.value;
+            const val = filterSelect.value;
+            if (val === 'best') {
+                // Open Best Sales Award modal when selected from dropdown
+                const modal = document.getElementById("bestSalesAwardModal");
+                if (modal) {
+                    modal.style.display = "flex";
+                    if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
+                        initBestSalesAwardFeature(window.latestStaffSummaryData);
+                    }
+                }
+                // Reset dropdown back to previous mode so ranking stays visible
+                filterSelect.value = currentRankingFilterMode || 'top3';
+                return;
+            }
+            currentRankingFilterMode = val;
             if (window.latestStaffSummaryData) {
                 updateRanking(window.latestStaffSummaryData, window.latestStaffDivisionsData);
             }
