@@ -1213,9 +1213,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-    rankingContainer.appendChild(card);
-  });
-}
 // =====================================================
 // VALIDATION
 // =====================================================
