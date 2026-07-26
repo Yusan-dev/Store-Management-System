@@ -1126,13 +1126,18 @@ function initBestSalesAwardFeature(summaryData) {
 
         // Update Certificate DOM Elements
         const certStoreTitle = document.getElementById("certStoreTitle");
-        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN BEST SALES TOKO ${storeName.toUpperCase()}`;
+        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN ${awardTitle.toUpperCase()} — ${storeName.toUpperCase()}`;
 
         const certStaffName = document.getElementById("certStaffName");
         if (certStaffName) certStaffName.innerText = staffName.toUpperCase();
 
         const certAwardTitle = document.getElementById("certAwardTitle");
         if (certAwardTitle) certAwardTitle.innerText = awardTitle.toUpperCase();
+
+        const certAwardCategoryText = document.getElementById("certAwardCategoryText");
+        if (certAwardCategoryText) {
+            certAwardCategoryText.innerHTML = `Diberikan atas prestasi dan dedikasi luar biasa sebagai <strong id="certAwardTitle" style="text-decoration:underline;">${awardTitle.toUpperCase()}</strong> di ${storeName.toUpperCase()} berdasarkan analisis performa penjualan staf.`;
+        }
 
         const certSalesVal = document.getElementById("certSalesVal");
         if (certSalesVal) certSalesVal.innerText = typeof money === 'function' ? money(sales) : sales;
