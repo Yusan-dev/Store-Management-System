@@ -1328,30 +1328,93 @@ function initBestSalesAwardFeature(summaryData) {
         });
     }
 
-    // Print Button
+    // Print Button — opens certificate in a NEW WINDOW to avoid
+    // blank-page issues with file:// iframes and window.print().
     if (printCertBtn) {
         printCertBtn.addEventListener("click", () => {
-            document.body.classList.add("printing-cert");
+            const printArea = document.getElementById("awardCertificatePrintArea");
+            if (!printArea) { alert("Sertifikat belum tersedia."); return; }
 
-            // window.print() is asynchronous in some browsers (e.g. Firefox),
-            // so removing the class right after calling it can strip the
-            // print-only styling before the page/PDF actually renders,
-            // resulting in a blank or full-page printout instead of the
-            // certificate. Using the "afterprint" event (with a safety
-            // timeout fallback for browsers/WebViews that don't fire it
-            // reliably) ensures the class is removed only after the
-            // print/PDF output has actually been generated.
-            let cleanedUp = false;
-            const cleanup = () => {
-                if (cleanedUp) return;
-                cleanedUp = true;
-                document.body.classList.remove("printing-cert");
-                window.removeEventListener("afterprint", cleanup);
-            };
-            window.addEventListener("afterprint", cleanup);
-            setTimeout(cleanup, 2000); // fallback safety net
+            // Clone the certificate so we don't alter the live DOM
+            const clone = printArea.cloneNode(true);
 
+            // Grab computed styles of the original print area for inline transfer
+            const origStyle = window.getComputedStyle(printArea);
+
+            // Collect all relevant stylesheets from this document
+            let cssText = '';
+            try {
+                for (const sheet of document.styleSheets) {
+                    try {
+                        for (const rule of sheet.cssRules) {
+                            cssText += rule.cssText + '\n';
+                        }
+                    } catch(e) { /* cross-origin sheet, skip */ }
+                }
+            } catch(e) {}
+
+            // Build a standalone HTML document
+            const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Sertifikat Best Sales Award</title>
+    <style>
+        ${cssText}
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #awardCertificatePrintArea {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+        /* Ensure backgrounds and colors print */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+    </style>
+</head>
+<body>
+    ${clone.outerHTML}
+    <script>
+        // Auto-print after a short delay to let styles render
+        setTimeout(function() {
             window.print();
+            // Close window after printing (or if user cancels)
+            setTimeout(function() { window.close(); }, 500);
+        }, 400);
+    <\/script>
+</body>
+</html>`;
+
+            // Open the new window and write the certificate
+            const printWin = window.open('', '_blank', 'width=1000,height=700');
+            if (!printWin) {
+                alert("Pop-up diblokir browser! Izinkan pop-up untuk mencetak sertifikat.");
+                return;
+            }
+            printWin.document.open();
+            printWin.document.write(html);
+            printWin.document.close();
         });
     }
 
