@@ -82,23 +82,36 @@ function formatDecimal(value, digits = 2) {
 // RANKING HELPERS
 // =====================================================
 
+let currentRankingFilterMode = 'top3';
+
 function getTop3(data, getValue) {
-  return [...data]
-
-    .filter((row) => {
-      const value = Number(getValue(row) || 0);
-
-      return value > 0;
-    })
-
-    .sort((a, b) => {
-      return Number(getValue(b) || 0) - Number(getValue(a) || 0);
-    })
-
-    .slice(0, 3);
+  return getRankedData(data, getValue, currentRankingFilterMode);
 }
 
-function renderTop3Ranking(ranking, getValue, formatter) {
+function getRankedData(data, getValue, mode) {
+  const m = mode || currentRankingFilterMode || 'top3';
+  const cleanData = [...data].filter((row) => row && row.staff && row.staff !== 'TOTAL' && row.staff !== 'UNKNOWN' && row.staff !== 'O2O');
+  
+  if (m === 'bottom3') {
+    return cleanData
+      .filter((row) => Number(getValue(row) || 0) >= 0)
+      .sort((a, b) => Number(getValue(a) || 0) - Number(getValue(b) || 0))
+      .slice(0, 3);
+  } else if (m === 'all') {
+    return cleanData
+      .filter((row) => Number(getValue(row) || 0) >= 0)
+      .sort((a, b) => Number(getValue(b) || 0) - Number(getValue(a) || 0));
+  } else {
+    // top3 (default)
+    return cleanData
+      .filter((row) => Number(getValue(row) || 0) > 0)
+      .sort((a, b) => Number(getValue(b) || 0) - Number(getValue(a) || 0))
+      .slice(0, 3);
+  }
+}
+
+function renderTop3Ranking(ranking, getValue, formatter, mode) {
+  const m = mode || currentRankingFilterMode || 'top3';
   if (!Array.isArray(ranking) || ranking.length === 0) {
     return "-";
   }
@@ -106,9 +119,14 @@ function renderTop3Ranking(ranking, getValue, formatter) {
   const medals = ["🥇", "🥈", "🥉"];
 
   return ranking
-
     .map((row, index) => {
       const value = getValue(row);
+      let positionText = "";
+      if (m === 'bottom3') {
+        positionText = `🔻 #${index + 1}`;
+      } else {
+        positionText = medals[index] || `#${index + 1}`;
+      }
 
       return `
 
@@ -116,7 +134,7 @@ function renderTop3Ranking(ranking, getValue, formatter) {
 
                     <span class="rank-position">
 
-                        ${medals[index]}
+                        ${positionText}
 
                     </span>
 
@@ -871,245 +889,329 @@ function updateRanking(filteredSummary, filteredDivisions) {
     return;
   }
 
-  const data = summary
+  window.latestStaffSummaryData = summary;
+  window.latestStaffDivisionsData = divisions;
 
+  const data = summary
     .filter(
       (row) =>
         row.staff !== "TOTAL" && row.staff !== "UNKNOWN" && row.staff !== "O2O",
     )
-
     .map((row) => {
       return {
         ...row,
-
         staff: displayStaffName(row.staff),
-
         ...calculateStaffKPI(row),
       };
     });
 
-  // =================================================
-  // TOP 3 SALES
-  // =================================================
+  const mode = currentRankingFilterMode || 'top3';
+
+  // Title updates based on mode
+  const topSalesTitle = document.getElementById("topSalesTitle");
+  if (topSalesTitle) {
+    topSalesTitle.innerText = mode === 'bottom3' ? '🔻 BOTTOM SALES' : (mode === 'all' ? '👥 ALL SALES RANK' : '🏆 TOP SALES');
+  }
 
   const topSalesElement = document.getElementById("topSales");
-
   if (topSalesElement) {
-    const ranking = getTop3(
-      data,
-
-      (row) => Number(row.sales || 0),
-    );
-
+    const ranking = getRankedData(data, (row) => Number(row.sales || 0), mode);
     topSalesElement.classList.add("rank-list");
-
-    topSalesElement.innerHTML = renderTop3Ranking(
-      ranking,
-
-      (row) => row.sales,
-
-      (value) => `${money(value)}`,
-    );
+    topSalesElement.innerHTML = renderTop3Ranking(ranking, (row) => row.sales, (value) => `${money(value)}`, mode);
   }
 
-  // =================================================
-  // TOP 3 QTY
-  // =================================================
+  const topQtyTitle = document.getElementById("topQtyTitle");
+  if (topQtyTitle) {
+    topQtyTitle.innerText = mode === 'bottom3' ? '🔻 BOTTOM QTY' : (mode === 'all' ? '👥 ALL QTY RANK' : '📦 TOP QTY');
+  }
 
   const topQtyElement = document.getElementById("topQty");
-
   if (topQtyElement) {
-    const ranking = getTop3(
-      data,
-
-      (row) => Number(row.qty || 0),
-    );
-
+    const ranking = getRankedData(data, (row) => Number(row.qty || 0), mode);
     topQtyElement.classList.add("rank-list");
-
-    topQtyElement.innerHTML = renderTop3Ranking(
-      ranking,
-
-      (row) => row.qty,
-
-      (value) => formatNumber(value),
-    );
+    topQtyElement.innerHTML = renderTop3Ranking(ranking, (row) => row.qty, (value) => formatNumber(value), mode);
   }
 
-  // =================================================
-  // REMOVE ALL DYNAMIC RANKING CARDS
-  //
-  // SATU CONTROLLER YANG MEMBERSIHKAN CARD
-  // AGAR TIDAK DUPLIKASI SAAT PROCESS ULANG
-  // =================================================
-
   const rankingContainer = document.querySelector(".ranking");
-
   if (rankingContainer) {
     rankingContainer
-
       .querySelectorAll(".dynamic-kpi-rank, .dynamic-division-rank")
-
       .forEach((card) => {
         card.remove();
       });
   }
 
-  // =================================================
-  // RENDER ORDER
-  //
-  // TOP SALES
-  // TOP QTY
-  // TOP UPT
-  // TOP ATV
-  // TOP AUR
-  // PRODUCT DIVISIONS
-  // =================================================
-
   drawKPIRankings(data);
-
   drawDivisionRankings(data, divisions);
-}
 
-// =====================================================
-// DRAW KPI RANKINGS
-// TOP 3 UPT / ATV / AUR
-// =====================================================
+  if (typeof initBestSalesAwardFeature === 'function') {
+    initBestSalesAwardFeature(summary);
+  }
+}
 
 function drawKPIRankings(data) {
   const rankingContainer = document.querySelector(".ranking");
-
   if (!rankingContainer) {
     return;
   }
 
+  const mode = currentRankingFilterMode || 'top3';
+
   const kpiConfig = [
     {
       key: "upt",
-
-      title: "📈 TOP UPT",
-
+      title: mode === 'bottom3' ? "🔻 BOTTOM UPT" : (mode === 'all' ? "📈 ALL UPT RANK" : "📈 TOP UPT"),
       formatter: (value) => formatDecimal(value, 2),
     },
-
     {
       key: "atv",
-
-      title: "💳 TOP ATV",
-
+      title: mode === 'bottom3' ? "🔻 BOTTOM ATV" : (mode === 'all' ? "💳 ALL ATV RANK" : "💳 TOP ATV"),
       formatter: (value) => `${money(Math.round(value))}`,
     },
-
     {
       key: "aur",
-
-      title: "🏷️ TOP AUR",
-
+      title: mode === 'bottom3' ? "🔻 BOTTOM AUR" : (mode === 'all' ? "🏷️ ALL AUR RANK" : "🏷️ TOP AUR"),
       formatter: (value) => `${money(Math.round(value))}`,
     },
   ];
 
   kpiConfig.forEach((config) => {
-    const ranking = getTop3(
-      data,
-
-      (row) => Number(row[config.key] || 0),
-    );
+    const ranking = getRankedData(data, (row) => Number(row[config.key] || 0), mode);
 
     const card = document.createElement("div");
-
     card.className = "rank-card dynamic-kpi-rank";
 
     const title = document.createElement("h3");
-
     title.innerText = config.title;
 
     const content = document.createElement("div");
-
     content.className = "rank-list";
-
-    content.innerHTML = renderTop3Ranking(
-      ranking,
-
-      (row) => row[config.key],
-
-      config.formatter,
-    );
+    content.innerHTML = renderTop3Ranking(ranking, (row) => row[config.key], config.formatter, mode);
 
     card.appendChild(title);
-
     card.appendChild(content);
-
     rankingContainer.appendChild(card);
   });
 }
 
-// =====================================================
-// DRAW DYNAMIC DIVISION RANKINGS
-// TOP 3 STAFF PER PRODUCT DIVISION
-// =====================================================
-
 function drawDivisionRankings(data, divisions) {
   const rankingContainer = document.querySelector(".ranking");
-
   if (!rankingContainer) {
     return;
   }
 
-  // =================================================
-  // HIDE OLD STATIC TOP FOOTWEAR CARD
-  // =================================================
+  const mode = currentRankingFilterMode || 'top3';
 
   const oldTopFw = document.getElementById("topFw");
-
   if (oldTopFw) {
     const oldCard = oldTopFw.closest(".rank-card");
-
     if (oldCard) {
       oldCard.style.display = "none";
     }
   }
 
-  // =================================================
-  // SAFE DIVISION ARRAY
-  // =================================================
-
   const activeDivisions = Array.isArray(divisions) ? divisions : [];
 
-  // =================================================
-  // CREATE TOP 3 PER DIVISION
-  // =================================================
-
   activeDivisions.forEach((division) => {
-    const ranking = getTop3(
-      data,
-
-      (row) => Number(row.categories?.[division] || 0),
-    );
+    const ranking = getRankedData(data, (row) => Number(row.categories?.[division] || 0), mode);
 
     const card = document.createElement("div");
-
     card.className = "rank-card dynamic-division-rank";
 
     const title = document.createElement("h3");
-
-    title.innerText = `TOP ${division}`;
+    const prefix = mode === 'bottom3' ? '🔻 BOTTOM' : (mode === 'all' ? '👥 ALL' : 'TOP');
+    title.innerText = `${prefix} ${division}`;
 
     const content = document.createElement("div");
-
     content.className = "rank-list";
-
-    content.innerHTML = renderTop3Ranking(
-      ranking,
-
-      (row) => Number(row.categories?.[division] || 0),
-
-      (value) => formatNumber(value),
-    );
+    content.innerHTML = renderTop3Ranking(ranking, (row) => Number(row.categories?.[division] || 0), (value) => formatNumber(value), mode);
 
     card.appendChild(title);
-
     card.appendChild(content);
+    rankingContainer.appendChild(card);
+  });
+}
+
+// =====================================================
+// BEST SALES AWARD CERTIFICATE GENERATOR CONTROLLER
+// =====================================================
+
+function initBestSalesAwardFeature(summaryData) {
+    const openBtn = document.getElementById("openAwardModalBtn");
+    const modal = document.getElementById("bestSalesAwardModal");
+    const closeBtn = document.getElementById("closeAwardModal");
+    const staffSelect = document.getElementById("awardStaffSelect");
+    const storeNameInput = document.getElementById("awardStoreName");
+    const titleInput = document.getElementById("awardTitleInput");
+    const colorSelect = document.getElementById("awardFrameColor");
+    const imageUpload = document.getElementById("awardImageUpload");
+    const dateInput = document.getElementById("awardDateInput");
+    const printBtn = document.getElementById("printCertificateBtn");
+    const printArea = document.getElementById("awardCertificatePrintArea");
+
+    if (!modal) return;
+
+    // Set default date to today if empty
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Populate staff dropdown from summaryData
+    if (staffSelect && Array.isArray(summaryData)) {
+        const currentStaffVal = staffSelect.value;
+        const staffList = summaryData
+            .filter(r => r.staff && r.staff !== 'TOTAL' && r.staff !== 'UNKNOWN' && r.staff !== 'O2O')
+            .sort((a, b) => (b.sales || 0) - (a.sales || 0));
+
+        staffSelect.innerHTML = "";
+        if (staffList.length === 0) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.innerText = "Belum Ada Data Staff";
+            staffSelect.appendChild(opt);
+        } else {
+            staffList.forEach((r, idx) => {
+                const name = typeof displayStaffName === 'function' ? displayStaffName(r.staff) : r.staff;
+                const opt = document.createElement("option");
+                opt.value = r.staff;
+                opt.innerText = `${idx === 0 ? '🏆 ' : ''}${name} (${typeof money === 'function' ? money(r.sales || 0) : r.sales})`;
+                if (r.staff === currentStaffVal) opt.selected = true;
+                staffSelect.appendChild(opt);
+            });
+        }
+    }
+
+    // Function to update certificate preview
+    function updateCertificatePreview() {
+        if (!summaryData || !Array.isArray(summaryData)) return;
+        const selectedStaff = staffSelect ? staffSelect.value : '';
+        const storeName = storeNameInput ? (storeNameInput.value.trim() || 'MAA STORE JAKARTA') : 'MAA STORE JAKARTA';
+        const awardTitle = titleInput ? (titleInput.value.trim() || 'BEST SALES OF THE MONTH') : 'BEST SALES OF THE MONTH';
+        const frameColor = colorSelect ? colorSelect.value : 'gold';
+        const dateVal = dateInput ? dateInput.value : '';
+
+        // Find staff metrics
+        const staffRow = summaryData.find(r => r.staff === selectedStaff) || summaryData.find(r => r.staff !== 'TOTAL' && r.staff !== 'UNKNOWN' && r.staff !== 'O2O') || {};
+        const staffName = staffRow.staff ? (typeof displayStaffName === 'function' ? displayStaffName(staffRow.staff) : staffRow.staff) : '-';
+        const sales = staffRow.sales || 0;
+        const qty = staffRow.qty || 0;
+        const sm = staffRow.sm || 0;
+        const upt = sm > 0 ? (qty / sm) : (staffRow.upt || 0);
+        const rpt = sm > 0 ? (sales / sm) : (staffRow.rpt || 0);
+
+        // Update Certificate DOM Elements
+        const certStoreTitle = document.getElementById("certStoreTitle");
+        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN BEST SALES TOKO ${storeName.toUpperCase()}`;
+
+        const certStaffName = document.getElementById("certStaffName");
+        if (certStaffName) certStaffName.innerText = staffName.toUpperCase();
+
+        const certAwardTitle = document.getElementById("certAwardTitle");
+        if (certAwardTitle) certAwardTitle.innerText = awardTitle.toUpperCase();
+
+        const certSalesVal = document.getElementById("certSalesVal");
+        if (certSalesVal) certSalesVal.innerText = typeof money === 'function' ? money(sales) : sales;
+
+        const certQtyVal = document.getElementById("certQtyVal");
+        if (certQtyVal) certQtyVal.innerText = `${typeof formatNumber === 'function' ? formatNumber(qty) : qty} Pcs`;
+
+        const certUptVal = document.getElementById("certUptVal");
+        if (certUptVal) certUptVal.innerText = typeof formatDecimal === 'function' ? formatDecimal(upt, 2) : upt.toFixed(2);
+
+        const certRptVal = document.getElementById("certRptVal");
+        if (certRptVal) certRptVal.innerText = typeof money === 'function' ? money(Math.round(rpt)) : Math.round(rpt);
+
+        const certDateVal = document.getElementById("certDateVal");
+        if (certDateVal) {
+            if (dateVal) {
+                const parts = dateVal.split('-');
+                if (parts.length === 3) {
+                    const months = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+                    const monthIdx = parseInt(parts[1], 10) - 1;
+                    certDateVal.innerText = `${parseInt(parts[2], 10)} ${months[monthIdx] || ''} ${parts[0]}`;
+                } else {
+                    certDateVal.innerText = dateVal;
+                }
+            } else {
+                certDateVal.innerText = '-';
+            }
+        }
+
+        // Frame Theme
+        if (printArea) {
+            printArea.className = `award-theme-${frameColor}`;
+        }
+    }
+
+    // Attach listeners once
+    if (openBtn && !openBtn.getAttribute('data-has-listener')) {
+        openBtn.setAttribute('data-has-listener', 'true');
+        openBtn.onclick = () => {
+            modal.style.display = "flex";
+            updateCertificatePreview();
+        };
+    }
+    if (closeBtn && !closeBtn.getAttribute('data-has-listener')) {
+        closeBtn.setAttribute('data-has-listener', 'true');
+        closeBtn.onclick = () => {
+            modal.style.display = "none";
+        };
+    }
+
+    if (staffSelect) staffSelect.onchange = updateCertificatePreview;
+    if (storeNameInput) storeNameInput.oninput = updateCertificatePreview;
+    if (titleInput) titleInput.oninput = updateCertificatePreview;
+    if (colorSelect) colorSelect.onchange = updateCertificatePreview;
+    if (dateInput) dateInput.onchange = updateCertificatePreview;
+
+    // Image Upload Listener
+    if (imageUpload && !imageUpload.getAttribute('data-has-listener')) {
+        imageUpload.setAttribute('data-has-listener', 'true');
+        imageUpload.onchange = (e) => {
+            const file = e.target.files[0];
+            const logoImg = document.getElementById("certLogoImage");
+            const defaultBadge = document.getElementById("certDefaultBadge");
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    if (logoImg) {
+                        logoImg.src = evt.target.result;
+                        logoImg.style.display = "block";
+                    }
+                    if (defaultBadge) defaultBadge.style.display = "none";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                if (logoImg) logoImg.style.display = "none";
+                if (defaultBadge) defaultBadge.style.display = "block";
+            }
+        };
+    }
+
+    // Print Button
+    if (printBtn && !printBtn.getAttribute('data-has-listener')) {
+        printBtn.setAttribute('data-has-listener', 'true');
+        printBtn.onclick = () => {
+            document.body.classList.add("printing-cert");
+            window.print();
+            document.body.classList.remove("printing-cert");
+        };
+    }
+
+    updateCertificatePreview();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const filterSelect = document.getElementById("rankingFilterMode");
+    if (filterSelect) {
+        filterSelect.addEventListener("change", () => {
+            currentRankingFilterMode = filterSelect.value;
+            if (window.latestStaffSummaryData) {
+                updateRanking(window.latestStaffSummaryData, window.latestStaffDivisionsData);
+            }
+        });
+    }
+});
 
     rankingContainer.appendChild(card);
   });
@@ -3509,6 +3611,7 @@ function updateStaffChart(summary) {
     const salesData = chartData.map(r => r.sales);
     const qtyData = chartData.map(r => r.qty);
     const smData = chartData.map(r => r.sm);
+    const aurData = chartData.map(r => r.qty > 0 ? r.sales / r.qty : 0);
     // Use manual calculation for aggregated UPT and RPT
     const uptData = chartData.map(r => r.sm > 0 ? r.qty / r.sm : 0);
     const rptData = chartData.map(r => r.sm > 0 ? r.sales / r.sm : 0);
@@ -3553,7 +3656,7 @@ function updateStaffChart(summary) {
                             const percentage = Math.round((value / total) * 100);
                             
                             let formattedVal = value;
-                            if (label.includes('SALES') || label.includes('RPT')) {
+                            if (label.includes('SALES') || label.includes('RPT') || label.includes('AUR')) {
                                 formattedVal = 'Rp' + Math.round(value / 1000).toLocaleString('en-US') + 'k';
                             } else if (label.includes('UPT')) {
                                 formattedVal = value.toFixed(2);
@@ -3574,7 +3677,7 @@ function updateStaffChart(summary) {
                                 const total = dataset.data.reduce((acc, current) => acc + (current || 0), 0);
                                 const percentage = total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
                                 
-                                if (label.includes('SALES') || label.includes('RPT')) val = 'Rp ' + Math.round(val).toLocaleString('en-US');
+                                if (label.includes('SALES') || label.includes('RPT') || label.includes('AUR')) val = 'Rp ' + Math.round(val).toLocaleString('en-US');
                                 else if (label.includes('UPT')) val = val.toFixed(2);
                                 else val = val.toLocaleString('en-US');
                                 
@@ -3588,7 +3691,7 @@ function updateStaffChart(summary) {
     };
 
     chartSales = createPie('staffChartSales', 'SALES CONTRIBUTION', salesData, chartSales);
-    chartQty   = createPie('staffChartQty', 'QTY CONTRIBUTION', qtyData, chartQty);
+    chartQty   = createPie('staffChartQty', 'AUR (AVERAGE UNIT RETAIL)', aurData, chartQty);
     chartUPT   = createPie('staffChartUPT', 'UPT (UNITS PER TRANSACTION)', uptData, chartUPT);
     chartSM    = createPie('staffChartSM', 'RPT (RUPIAH PER TRANSACTION)', rptData, chartSM);
 }
