@@ -1080,12 +1080,52 @@ function initBestSalesAwardFeature(summaryData) {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
 
-    // Populate staff dropdown from summaryData
+    // Populate staff dropdown from summaryData — sort/label dynamically by award category
     if (staffSelect && Array.isArray(summaryData)) {
         const currentStaffVal = staffSelect.value;
+        const currentTitle = (titleInput ? titleInput.value : '').toUpperCase();
+        
+        // Determine sort metric from the current award title
+        let sortKey = 'sales'; // default
+        let metricLabel = 'Sales';
+        let metricFormatter = (r) => typeof money === 'function' ? money(r.sales || 0) : r.sales;
+        
+        if (currentTitle.includes('UPT')) {
+            sortKey = 'upt';
+            metricLabel = 'UPT';
+            metricFormatter = (r) => { const upt = (r.sm || 0) > 0 ? (r.qty || 0) / r.sm : 0; return typeof formatDecimal === 'function' ? formatDecimal(upt, 2) : upt.toFixed(2); };
+        } else if (currentTitle.includes('AUR')) {
+            sortKey = 'aur';
+            metricLabel = 'AUR';
+            metricFormatter = (r) => { const aur = (r.qty || 0) > 0 ? (r.sales || 0) / r.qty : 0; return typeof money === 'function' ? money(Math.round(aur)) : Math.round(aur); };
+        } else if (currentTitle.includes('RPT') || currentTitle.includes('ATV')) {
+            sortKey = 'rpt';
+            metricLabel = 'RPT/ATV';
+            metricFormatter = (r) => { const rpt = (r.sm || 0) > 0 ? (r.sales || 0) / r.sm : 0; return typeof money === 'function' ? money(Math.round(rpt)) : Math.round(rpt); };
+        }
+        
+        // Update label
+        const staffLabel = document.getElementById("awardStaffLabel");
+        if (staffLabel) staffLabel.innerText = `2. PILIH STAFF (BEST ${metricLabel.toUpperCase()})`;
+        
         const staffList = summaryData
             .filter(r => r.staff && r.staff !== 'TOTAL' && r.staff !== 'UNKNOWN' && r.staff !== 'O2O')
-            .sort((a, b) => (b.sales || 0) - (a.sales || 0));
+            .sort((a, b) => {
+                if (sortKey === 'upt') {
+                    const uptA = (a.sm || 0) > 0 ? (a.qty || 0) / a.sm : 0;
+                    const uptB = (b.sm || 0) > 0 ? (b.qty || 0) / b.sm : 0;
+                    return uptB - uptA;
+                } else if (sortKey === 'aur') {
+                    const aurA = (a.qty || 0) > 0 ? (a.sales || 0) / a.qty : 0;
+                    const aurB = (b.qty || 0) > 0 ? (b.sales || 0) / b.qty : 0;
+                    return aurB - aurA;
+                } else if (sortKey === 'rpt') {
+                    const rptA = (a.sm || 0) > 0 ? (a.sales || 0) / a.sm : 0;
+                    const rptB = (b.sm || 0) > 0 ? (b.sales || 0) / b.sm : 0;
+                    return rptB - rptA;
+                }
+                return (b.sales || 0) - (a.sales || 0);
+            });
 
         staffSelect.innerHTML = "";
         if (staffList.length === 0) {
@@ -1098,7 +1138,7 @@ function initBestSalesAwardFeature(summaryData) {
                 const name = typeof displayStaffName === 'function' ? displayStaffName(r.staff) : r.staff;
                 const opt = document.createElement("option");
                 opt.value = r.staff;
-                opt.innerText = `${idx === 0 ? '🏆 ' : ''}${name} (${typeof money === 'function' ? money(r.sales || 0) : r.sales})`;
+                opt.innerText = `${idx === 0 ? '🏆 ' : ''}${name} (${metricFormatter(r)})`;
                 if (r.staff === currentStaffVal) opt.selected = true;
                 staffSelect.appendChild(opt);
             });
@@ -1389,6 +1429,22 @@ function initBestSalesAwardFeature(summaryData) {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+            /* Compact for print to fit A4 landscape */
+            padding: 30px 35px !important;
+            max-width: 100% !important;
+            border-width: 8px !important;
+        }
+        /* Scale down inner elements to fit page */
+        #awardCertificatePrintArea h1 {
+            font-size: 20px !important;
+            margin-bottom: 10px !important;
+        }
+        #awardCertificatePrintArea #certStaffName {
+            font-size: 26px !important;
+        }
+        #awardCertificatePrintArea #certLogoImage {
+            max-height: 130px !important;
+            max-width: 280px !important;
         }
         /* Ensure backgrounds and colors print */
         * {
