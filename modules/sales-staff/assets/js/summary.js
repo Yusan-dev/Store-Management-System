@@ -1176,6 +1176,7 @@ function initBestSalesAwardFeature(summaryData) {
     function openAwardModal(bestCategory) {
         if (!awardModal) return;
         awardModal.style.display = "flex";
+        awardModal.classList.add("show");
 
         // Auto-select best staff based on category
         if (bestCategory && window.latestStaffSummaryData) {
