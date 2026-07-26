@@ -1411,7 +1411,7 @@ function initBestSalesAwardFeature(summaryData) {
                 }
             } catch(e) {}
 
-            // Build a standalone HTML document with auto-scale
+            // Build a standalone HTML document with CSS-based print layout
             const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1420,40 +1420,66 @@ function initBestSalesAwardFeature(summaryData) {
     <style>
         ${cssText}
 
-        @page {
-            margin: 8mm;
+        /* 
+         * PURE CSS PRINT LAYOUT 
+         * 1. Force landscape orientation by default
+         * 2. Set exact physical size (A4 Landscape is 297x210mm)
+         * 3. Let browser's native "Scale to Fit" handle portrait mode
+         */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: #ffffff !important;
+            }
+            #printWrapper {
+                display: block !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            #awardCertificatePrintArea {
+                /* Exact A4 dimensions minus margins */
+                width: 287mm !important;
+                height: 195mm !important;
+                max-width: none !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 12mm 15mm !important;
+                box-sizing: border-box !important;
+                box-shadow: none !important;
+                transform: none !important;
+                page-break-inside: avoid;
+            }
+            /* Adjust internal text for physical mm size */
+            #awardCertificatePrintArea h1 {
+                font-size: 22px !important;
+                margin-bottom: 12px !important;
+            }
+            #awardCertificatePrintArea #certStaffName {
+                font-size: 32px !important;
+            }
+            #awardCertificatePrintArea #certLogoImage {
+                max-height: 120px !important;
+                max-width: 260px !important;
+            }
+            /* Force print backgrounds */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
         }
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background: #ffffff;
-            overflow: hidden;
-        }
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #printWrapper {
-            transform-origin: center center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-        #awardCertificatePrintArea {
-            box-shadow: none !important;
-            max-width: 95%;
-            margin: auto;
-        }
-        /* Force print backgrounds */
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
+
+        /* Screen preview styling inside the popup */
+        @media screen {
+            body { background: #555; display: flex; justify-content: center; padding: 20px; }
+            #awardCertificatePrintArea { max-width: 1000px; }
         }
     </style>
 </head>
@@ -1462,39 +1488,10 @@ function initBestSalesAwardFeature(summaryData) {
         ${clone.outerHTML}
     </div>
     <script>
-        // Auto-scale the certificate to fit the page (works for both portrait & landscape)
-        function autoScale() {
-            var wrapper = document.getElementById('printWrapper');
-            var cert = document.getElementById('awardCertificatePrintArea');
-            if (!cert) return;
-
-            // Reset any previous transform
-            wrapper.style.transform = 'none';
-
-            // Measure available page area (viewport = printable area minus margins)
-            var pageW = window.innerWidth;
-            var pageH = window.innerHeight;
-
-            // Measure actual certificate size
-            var certW = cert.offsetWidth;
-            var certH = cert.offsetHeight;
-
-            // Calculate scale to fit both width and height
-            var scaleX = pageW / (certW + 20);  // +20 for small breathing room
-            var scaleY = pageH / (certH + 20);
-            var scale = Math.min(scaleX, scaleY, 1); // never scale up, only down
-
-            wrapper.style.transform = 'scale(' + scale + ')';
-        }
-
-        // Run scaling then print
         setTimeout(function() {
-            autoScale();
-            setTimeout(function() {
-                window.print();
-                setTimeout(function() { window.close(); }, 500);
-            }, 200);
-        }, 400);
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+        }, 500);
     <\/script>
 </body>
 </html>`;
