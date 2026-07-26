@@ -12,12 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add active to clicked
             link.classList.add('active');
             
-            // Update iframe src
+            // Update iframe src directly with relative path to avoid file:/// unique origin security errors in Chrome
             const target = link.getAttribute('data-target');
-            if (iframe.src && !iframe.src.endsWith(target)) {
-                // Determine absolute path to prevent deep nesting issues
-                const baseUrl = window.location.href.split('index.html')[0];
-                iframe.src = baseUrl + target;
+            if (target) {
+                iframe.src = target;
             }
         });
     });
