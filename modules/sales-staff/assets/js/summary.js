@@ -1398,7 +1398,7 @@ function initBestSalesAwardFeature(summaryData) {
                 }
             } catch(e) {}
 
-            // Build a standalone HTML document
+            // Build a standalone HTML document with auto-scale
             const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1406,9 +1406,9 @@ function initBestSalesAwardFeature(summaryData) {
     <title>Sertifikat Best Sales Award</title>
     <style>
         ${cssText}
+
         @page {
-            size: A4 landscape;
-            margin: 10mm;
+            margin: 8mm;
         }
         html, body {
             margin: 0;
@@ -1416,37 +1416,27 @@ function initBestSalesAwardFeature(summaryData) {
             width: 100%;
             height: 100%;
             background: #ffffff;
+            overflow: hidden;
+        }
+        body {
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        #awardCertificatePrintArea {
+        #printWrapper {
+            transform-origin: center center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
-            max-width: 900px;
-            margin: auto;
+            height: 100%;
+        }
+        #awardCertificatePrintArea {
             box-shadow: none !important;
-            page-break-inside: avoid;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            /* Compact for print to fit A4 landscape */
-            padding: 30px 35px !important;
-            max-width: 100% !important;
-            border-width: 8px !important;
+            max-width: 95%;
+            margin: auto;
         }
-        /* Scale down inner elements to fit page */
-        #awardCertificatePrintArea h1 {
-            font-size: 20px !important;
-            margin-bottom: 10px !important;
-        }
-        #awardCertificatePrintArea #certStaffName {
-            font-size: 26px !important;
-        }
-        #awardCertificatePrintArea #certLogoImage {
-            max-height: 130px !important;
-            max-width: 280px !important;
-        }
-        /* Ensure backgrounds and colors print */
+        /* Force print backgrounds */
         * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -1455,13 +1445,42 @@ function initBestSalesAwardFeature(summaryData) {
     </style>
 </head>
 <body>
-    ${clone.outerHTML}
+    <div id="printWrapper">
+        ${clone.outerHTML}
+    </div>
     <script>
-        // Auto-print after a short delay to let styles render
+        // Auto-scale the certificate to fit the page (works for both portrait & landscape)
+        function autoScale() {
+            var wrapper = document.getElementById('printWrapper');
+            var cert = document.getElementById('awardCertificatePrintArea');
+            if (!cert) return;
+
+            // Reset any previous transform
+            wrapper.style.transform = 'none';
+
+            // Measure available page area (viewport = printable area minus margins)
+            var pageW = window.innerWidth;
+            var pageH = window.innerHeight;
+
+            // Measure actual certificate size
+            var certW = cert.offsetWidth;
+            var certH = cert.offsetHeight;
+
+            // Calculate scale to fit both width and height
+            var scaleX = pageW / (certW + 20);  // +20 for small breathing room
+            var scaleY = pageH / (certH + 20);
+            var scale = Math.min(scaleX, scaleY, 1); // never scale up, only down
+
+            wrapper.style.transform = 'scale(' + scale + ')';
+        }
+
+        // Run scaling then print
         setTimeout(function() {
-            window.print();
-            // Close window after printing (or if user cancels)
-            setTimeout(function() { window.close(); }, 500);
+            autoScale();
+            setTimeout(function() {
+                window.print();
+                setTimeout(function() { window.close(); }, 500);
+            }, 200);
         }, 400);
     <\/script>
 </body>
