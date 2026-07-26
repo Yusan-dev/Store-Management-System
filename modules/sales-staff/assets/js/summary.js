@@ -1153,7 +1153,12 @@ function initBestSalesAwardFeature(summaryData) {
     updateCertificatePreview();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+(function initAwardAndRankingListeners() {
+    // If DOM not ready yet, wait and re-call
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAwardAndRankingListeners);
+        return;
+    }
     // =========================================
     // BEST SALES AWARD MODAL - ALL EVENT WIRING
     // =========================================
@@ -1318,7 +1323,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-});
+})();
 
 // =====================================================
 // VALIDATION
