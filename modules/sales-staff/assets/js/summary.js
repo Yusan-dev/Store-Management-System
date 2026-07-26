@@ -1150,31 +1150,63 @@ function initBestSalesAwardFeature(summaryData) {
         }
     }
 
-    // Attach listeners once
-    if (openBtn && !openBtn.getAttribute('data-has-listener')) {
-        openBtn.setAttribute('data-has-listener', 'true');
-        openBtn.onclick = () => {
-            modal.style.display = "flex";
-            updateCertificatePreview();
-        };
-    }
-    if (closeBtn && !closeBtn.getAttribute('data-has-listener')) {
-        closeBtn.setAttribute('data-has-listener', 'true');
-        closeBtn.onclick = () => {
-            modal.style.display = "none";
-        };
+    updateCertificatePreview();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    // =========================================
+    // BEST SALES AWARD MODAL - ALL EVENT WIRING
+    // =========================================
+    const awardModal = document.getElementById("bestSalesAwardModal");
+    const openAwardBtn = document.getElementById("openAwardModalBtn");
+    const closeAwardBtn = document.getElementById("closeAwardModal");
+    const awardStaffSelect = document.getElementById("awardStaffSelect");
+    const awardStoreNameInput = document.getElementById("awardStoreName");
+    const awardTitleInput = document.getElementById("awardTitleInput");
+    const awardFrameColor = document.getElementById("awardFrameColor");
+    const awardImageUpload = document.getElementById("awardImageUpload");
+    const awardDateInput = document.getElementById("awardDateInput");
+    const printCertBtn = document.getElementById("printCertificateBtn");
+
+    function openAwardModal() {
+        if (!awardModal) return;
+        awardModal.style.display = "flex";
+        if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
+            initBestSalesAwardFeature(window.latestStaffSummaryData);
+        }
     }
 
-    if (staffSelect) staffSelect.onchange = updateCertificatePreview;
-    if (storeNameInput) storeNameInput.oninput = updateCertificatePreview;
-    if (titleInput) titleInput.oninput = updateCertificatePreview;
-    if (colorSelect) colorSelect.onchange = updateCertificatePreview;
-    if (dateInput) dateInput.onchange = updateCertificatePreview;
+    function closeAwardModal() {
+        if (!awardModal) return;
+        awardModal.style.display = "none";
+    }
 
-    // Image Upload Listener
-    if (imageUpload && !imageUpload.getAttribute('data-has-listener')) {
-        imageUpload.setAttribute('data-has-listener', 'true');
-        imageUpload.onchange = (e) => {
+    function triggerCertPreview() {
+        if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
+            initBestSalesAwardFeature(window.latestStaffSummaryData);
+        }
+    }
+
+    // Open button
+    if (openAwardBtn) {
+        openAwardBtn.addEventListener("click", openAwardModal);
+    }
+
+    // Close button
+    if (closeAwardBtn) {
+        closeAwardBtn.addEventListener("click", closeAwardModal);
+    }
+
+    // Form controls trigger preview update
+    if (awardStaffSelect) awardStaffSelect.addEventListener("change", triggerCertPreview);
+    if (awardStoreNameInput) awardStoreNameInput.addEventListener("input", triggerCertPreview);
+    if (awardTitleInput) awardTitleInput.addEventListener("input", triggerCertPreview);
+    if (awardFrameColor) awardFrameColor.addEventListener("change", triggerCertPreview);
+    if (awardDateInput) awardDateInput.addEventListener("change", triggerCertPreview);
+
+    // Image Upload
+    if (awardImageUpload) {
+        awardImageUpload.addEventListener("change", (e) => {
             const file = e.target.files[0];
             const logoImg = document.getElementById("certLogoImage");
             const defaultBadge = document.getElementById("certDefaultBadge");
@@ -1192,37 +1224,36 @@ function initBestSalesAwardFeature(summaryData) {
                 if (logoImg) logoImg.style.display = "none";
                 if (defaultBadge) defaultBadge.style.display = "block";
             }
-        };
+            triggerCertPreview();
+        });
     }
 
     // Print Button
-    if (printBtn && !printBtn.getAttribute('data-has-listener')) {
-        printBtn.setAttribute('data-has-listener', 'true');
-        printBtn.onclick = () => {
+    if (printCertBtn) {
+        printCertBtn.addEventListener("click", () => {
             document.body.classList.add("printing-cert");
             window.print();
             document.body.classList.remove("printing-cert");
-        };
+        });
     }
 
-    updateCertificatePreview();
-}
+    // Close modal on backdrop click
+    if (awardModal) {
+        awardModal.addEventListener("click", (e) => {
+            if (e.target === awardModal) closeAwardModal();
+        });
+    }
 
-document.addEventListener("DOMContentLoaded", () => {
+    // =========================================
+    // RANKING FILTER DROPDOWN
+    // =========================================
     const filterSelect = document.getElementById("rankingFilterMode");
     if (filterSelect) {
         filterSelect.addEventListener("change", () => {
             const val = filterSelect.value;
             if (val === 'best') {
-                // Open Best Sales Award modal when selected from dropdown
-                const modal = document.getElementById("bestSalesAwardModal");
-                if (modal) {
-                    modal.style.display = "flex";
-                    if (window.latestStaffSummaryData && typeof initBestSalesAwardFeature === 'function') {
-                        initBestSalesAwardFeature(window.latestStaffSummaryData);
-                    }
-                }
-                // Reset dropdown back to previous mode so ranking stays visible
+                openAwardModal();
+                // Reset dropdown back to previous mode
                 filterSelect.value = currentRankingFilterMode || 'top3';
                 return;
             }
