@@ -3625,13 +3625,40 @@ function drawMonthlySummaryTable(summary, divisions) {
   }
   const activeDivisions = getActiveDivisions(summary, divisions);
   const thead = document.getElementById("monthlySummaryHead");
-  const isDaily = summary.length > 0 && summary[0].date !== undefined;
+  
+  // Create an aggregated summary (group by staff)
+  const aggregatedMap = new Map();
+  summary.forEach(row => {
+      const staff = row.staff || 'UNKNOWN';
+      if (!aggregatedMap.has(staff)) {
+          aggregatedMap.set(staff, {
+              staff: staff,
+              sales: 0,
+              sm: 0,
+              qty: 0,
+              categories: {}
+          });
+      }
+      const agg = aggregatedMap.get(staff);
+      agg.sales += (row.sales || 0);
+      agg.sm += (row.sm || 0);
+      agg.qty += (row.qty || 0);
+      
+      if (row.categories) {
+          activeDivisions.forEach(div => {
+              if (row.categories[div]) {
+                  agg.categories[div] = (agg.categories[div] || 0) + row.categories[div];
+              }
+          });
+      }
+  });
+
+  const aggregatedSummary = Array.from(aggregatedMap.values());
 
   if (thead) {
     thead.innerHTML = "";
     const tr = document.createElement("tr");
     let staticColumns = [];
-    if (isDaily) staticColumns.push({ key: "date", label: "DATE" });
     staticColumns.push({ key: "staff", label: "STAFF" });
     staticColumns.push({ key: "sales", label: "SALES" });
     staticColumns.push({ key: "sm", label: "SM" });
@@ -3659,18 +3686,9 @@ function drawMonthlySummaryTable(summary, divisions) {
   tbody.innerHTML = "";
 
   // Sort logic
-  const sortedSummary = [...summary].sort((a, b) => {
+  const sortedSummary = [...aggregatedSummary].sort((a, b) => {
     if (a.staff === "TOTAL") return 1;
     if (b.staff === "TOTAL") return -1;
-
-    // if daily, sort by date
-    if (isDaily) {
-      const [d1, m1, y1] = (a.date || "").split("-");
-      const [d2, m2, y2] = (b.date || "").split("-");
-      const dateA = new Date(`${y1}-${m1}-${d1}`);
-      const dateB = new Date(`${y2}-${m2}-${d2}`);
-      if (dateA - dateB !== 0) return dateA - dateB;
-    }
     return (b.sales || 0) - (a.sales || 0);
   });
 
@@ -3681,11 +3699,6 @@ function drawMonthlySummaryTable(summary, divisions) {
       tr.className = "total-row";
     }
     let staticColumns = [];
-    if (isDaily)
-      staticColumns.push({
-        key: "date",
-        value: row.staff === "TOTAL" ? "" : row.date || "",
-      });
     staticColumns.push({ key: "staff", value: row.staff });
     staticColumns.push({
       key: "sales",
@@ -3726,10 +3739,8 @@ function drawMonthlySummaryTable(summary, divisions) {
 function buildPrintMonthlySummary(summary, divisions) {
   if (!Array.isArray(summary)) return "";
   const activeDivisions = getActiveDivisions(summary, divisions);
-  const isDaily = summary.length > 0 && summary[0].date !== undefined;
 
   let headers = [];
-  if (isDaily) headers.push("DATE");
   headers.push(
     "STAFF",
     "SALES",
@@ -3740,17 +3751,39 @@ function buildPrintMonthlySummary(summary, divisions) {
     "AUR",
     ...activeDivisions,
   );
+  
+  // Create an aggregated summary (group by staff)
+  const aggregatedMap = new Map();
+  summary.forEach(row => {
+      const staff = row.staff || 'UNKNOWN';
+      if (!aggregatedMap.has(staff)) {
+          aggregatedMap.set(staff, {
+              staff: staff,
+              sales: 0,
+              sm: 0,
+              qty: 0,
+              categories: {}
+          });
+      }
+      const agg = aggregatedMap.get(staff);
+      agg.sales += (row.sales || 0);
+      agg.sm += (row.sm || 0);
+      agg.qty += (row.qty || 0);
+      
+      if (row.categories) {
+          activeDivisions.forEach(div => {
+              if (row.categories[div]) {
+                  agg.categories[div] = (agg.categories[div] || 0) + row.categories[div];
+              }
+          });
+      }
+  });
 
-  const sortedSummary = [...summary].sort((a, b) => {
+  const aggregatedSummary = Array.from(aggregatedMap.values());
+
+  const sortedSummary = [...aggregatedSummary].sort((a, b) => {
     if (a.staff === "TOTAL") return 1;
     if (b.staff === "TOTAL") return -1;
-    if (isDaily) {
-      const [d1, m1, y1] = (a.date || "").split("-");
-      const [d2, m2, y2] = (b.date || "").split("-");
-      const dateA = new Date(`${y1}-${m1}-${d1}`);
-      const dateB = new Date(`${y2}-${m2}-${d2}`);
-      if (dateA - dateB !== 0) return dateA - dateB;
-    }
     return (b.sales || 0) - (a.sales || 0);
   });
 
@@ -3758,8 +3791,6 @@ function buildPrintMonthlySummary(summary, divisions) {
     .map((row) => {
       const isTotal = row.staff === "TOTAL";
       const cols = [];
-      if (isDaily)
-        cols.push(escapePrintHTML(row.staff === "TOTAL" ? "" : row.date || ""));
       cols.push(
         escapePrintHTML(row.staff),
         `${formatNumber(Math.round(row.sales || 0))}`,
