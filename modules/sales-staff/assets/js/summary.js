@@ -1153,6 +1153,10 @@ function initBestSalesAwardFeature(summaryData) {
         const awardTitle = titleInput ? (titleInput.value.trim() || 'BEST SALES OF THE MONTH') : 'BEST SALES OF THE MONTH';
         const frameColor = colorSelect ? colorSelect.value : 'gold';
         const dateVal = dateInput ? dateInput.value : '';
+        
+        // Grab the Photo Frame Style dropdown element manually since it might be outside the initial scope of the file
+        const awardPhotoFrameStyle = document.getElementById("awardPhotoFrameStyle");
+        const photoFrameStyle = awardPhotoFrameStyle ? awardPhotoFrameStyle.value : 'classic';
 
         // Find staff metrics
         const staffRow = summaryData.find(r => r.staff === selectedStaff) || summaryData.find(r => r.staff !== 'TOTAL' && r.staff !== 'UNKNOWN' && r.staff !== 'O2O') || {};
@@ -1244,6 +1248,42 @@ function initBestSalesAwardFeature(summaryData) {
         // Show/hide the custom color picker depending on selected theme
         if (customColorWrap) {
             customColorWrap.style.display = frameColor === 'custom' ? 'flex' : 'none';
+        }
+
+        // Photo Frame Style
+        const certLogoImage = document.getElementById("certLogoImage");
+        if (certLogoImage) {
+            // Reset base styles first (Classic / Default)
+            certLogoImage.style.borderRadius = "4px";
+            certLogoImage.style.border = "3px double currentColor";
+            certLogoImage.style.padding = "6px";
+            certLogoImage.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+            certLogoImage.style.background = "#fff";
+            certLogoImage.style.aspectRatio = "auto";
+            
+            if (photoFrameStyle === 'minimalist') {
+                certLogoImage.style.border = "1px solid rgba(0,0,0,0.1)";
+                certLogoImage.style.padding = "0";
+                certLogoImage.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
+                certLogoImage.style.borderRadius = "8px";
+            } else if (photoFrameStyle === 'polaroid') {
+                certLogoImage.style.border = "1px solid #e2e8f0";
+                certLogoImage.style.padding = "10px 10px 30px 10px";
+                certLogoImage.style.boxShadow = "2px 4px 15px rgba(0,0,0,0.15)";
+                certLogoImage.style.borderRadius = "2px";
+                certLogoImage.style.background = "#fdfdfd";
+            } else if (photoFrameStyle === 'circle') {
+                certLogoImage.style.border = "4px solid currentColor";
+                certLogoImage.style.padding = "4px";
+                certLogoImage.style.borderRadius = "50%";
+                certLogoImage.style.aspectRatio = "1 / 1";
+                certLogoImage.style.objectFit = "cover";
+            } else if (photoFrameStyle === 'none') {
+                certLogoImage.style.border = "none";
+                certLogoImage.style.padding = "0";
+                certLogoImage.style.boxShadow = "none";
+                certLogoImage.style.background = "transparent";
+            }
         }
     }
 
@@ -1361,6 +1401,8 @@ function initBestSalesAwardFeature(summaryData) {
     if (awardFrameColor) awardFrameColor.addEventListener("change", triggerCertPreview);
     if (awardCustomColor) awardCustomColor.addEventListener("input", triggerCertPreview);
     if (awardDateInput) awardDateInput.addEventListener("change", triggerCertPreview);
+    const awardPhotoFrameStyleNode = document.getElementById("awardPhotoFrameStyle");
+    if (awardPhotoFrameStyleNode) awardPhotoFrameStyleNode.addEventListener("change", triggerCertPreview);
 
     // Image Upload
     if (awardImageUpload) {
@@ -1470,8 +1512,8 @@ function initBestSalesAwardFeature(summaryData) {
                 margin-bottom: 4px !important;
             }
             #awardCertificatePrintArea #certLogoImage {
-                max-height: 100px !important;
-                max-width: 240px !important;
+                max-height: 140px !important;
+                max-width: 300px !important;
             }
             /* Reduce space below metrics grid */
             #awardCertificatePrintArea > div:nth-of-type(8) {
