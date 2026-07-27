@@ -573,19 +573,16 @@ document.getElementById("exportExcelBtn").addEventListener("click", () => {
     const html = getExportData();
     if (!html) { alert("No data to export. Process a file first."); return; }
     
-    const bar = `<div style="background:#0078d4;color:#fff;padding:16px;font-family:sans-serif;font-size:14px;border-radius:6px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <span>✅ Klik <b style="background:#FFDF00;color:#111;padding:2px 8px;">header kolom</b> untuk copy per kolom</span>
-        <a href="https://www.office.com/launch/excel" target="_blank" style="background:#fff;color:#0078d4;border:none;padding:10px 20px;border-radius:4px;font-weight:bold;cursor:pointer;text-decoration:none;">🚀 Buka Excel Online</a>
-        <span style="font-size:12px;opacity:.8;"><b>Ctrl+S</b> simpan file</span>
-    </div>`;
-    
-    const exportHtml = html.replace("</head>", `<style>.eo-link{display:inline-block;background:#0078d4;color:#fff;padding:10px 20px;border-radius:4px;font-weight:bold;text-decoration:none}</style></head>`).replace("<body>", `<body>${bar}`);
-    
-    const w = window.open("", "_blank");
-    w.document.write(exportHtml);
-    w.document.title = "Sales_Hourly_Report";
-    w.document.close();
-    w.focus();
+    // Create a Blob with Excel MIME type and trigger download
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Sales_Hourly_Report.xls";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 });
 
 document.getElementById("exportPdfBtn").addEventListener("click", () => {

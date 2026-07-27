@@ -45,7 +45,7 @@ document.getElementById("print").addEventListener("click", function() {
         <br><br>
         ${topArticlesHtml}
         <script>
-            window.onload = () => { window.print(); window.close(); }
+            window.onload = () => { window.print(); }
         </script>
     </body>
     </html>

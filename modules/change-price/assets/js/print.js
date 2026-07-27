@@ -78,7 +78,7 @@ function printData() {
             </tbody>
         </table>
         <script>
-            window.onload = () => { window.print(); window.close(); }
+            window.onload = () => { window.print(); }
         </script>
     </body>
     </html>
