@@ -1490,9 +1490,27 @@ function initBestSalesAwardFeature(summaryData) {
             body { background: #555; display: flex; justify-content: center; padding: 20px; }
             #awardCertificatePrintArea { max-width: 1000px; }
         }
+        #closePrintPopupBtn {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 9999;
+            padding: 10px 18px;
+            background: #111;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        @media print {
+            #closePrintPopupBtn { display: none !important; }
+        }
     </style>
 </head>
 <body>
+    <button id="closePrintPopupBtn" onclick="window.close()">✕ Tutup</button>
     <div id="printWrapper">
         ${clone.outerHTML}
     </div>
@@ -1504,22 +1522,15 @@ function initBestSalesAwardFeature(summaryData) {
                 window.print();
             }, 500);
 
-            // Close the popup only once printing has actually finished.
-            // window.print() is asynchronous on many mobile browsers (e.g.
-            // Android Chrome) — it hands off to the native print/PDF UI and
-            // returns immediately instead of blocking like on desktop. Closing
-            // the source window on a short fixed delay was killing the
-            // document the native dialog was still rendering from, which is
-            // why the print/PDF sheet flashed and disappeared on phones.
-            // Listening for "afterprint" (with a long safety-net fallback for
-            // browsers that don't fire it reliably) ensures the popup only
-            // closes after printing/saving is actually done.
-            window.addEventListener('afterprint', function() {
-                window.close();
-            });
-            setTimeout(function() {
-                window.close();
-            }, 60000);
+            // Deliberately NOT auto-closing this window anymore.
+            // On Android Chrome, "afterprint" fires as soon as Chrome hands
+            // the document off to the native Android print/PDF UI — not
+            // after the user actually finishes choosing "Save as PDF" and
+            // saving the file. Closing the popup based on that event (or any
+            // short fixed delay) kills the source document while the native
+            // Save-as-PDF flow is still in progress, which is why the dialog
+            // was flashing and disappearing. Leaving the popup open lets that
+            // flow complete safely; the user can close this tab afterwards.
         })();
     <\/script>
 </body>
