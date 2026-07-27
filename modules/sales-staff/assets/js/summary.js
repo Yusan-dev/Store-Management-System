@@ -1179,7 +1179,7 @@ function initBestSalesAwardFeature(summaryData) {
 
         // Update Certificate DOM Elements
         const certStoreTitle = document.getElementById("certStoreTitle");
-        if (certStoreTitle) certStoreTitle.innerText = `PENGHARGAAN ${upperTitle}${titleSuffix} — ${storeName.toUpperCase()}`;
+        if (certStoreTitle) certStoreTitle.innerText = `${upperTitle}${titleSuffix} — ${storeName.toUpperCase()}`;
 
         const certStaffName = document.getElementById("certStaffName");
         if (certStaffName) certStaffName.innerText = staffName.toUpperCase();
@@ -1450,23 +1450,32 @@ function initBestSalesAwardFeature(summaryData) {
                 max-width: none !important;
                 max-height: none !important;
                 margin: 0 !important;
-                padding: 12mm 15mm !important;
+                padding: 8mm 12mm !important;
                 box-sizing: border-box !important;
                 box-shadow: none !important;
                 transform: none !important;
                 page-break-inside: avoid;
             }
-            /* Adjust internal text for physical mm size */
+            /* Adjust internal text for physical mm size to prevent cutoff */
             #awardCertificatePrintArea h1 {
-                font-size: 22px !important;
-                margin-bottom: 12px !important;
+                font-size: 21px !important;
+                margin-bottom: 8px !important;
+            }
+            #awardCertificatePrintArea p#certAwardCategoryText {
+                margin: 10px auto 16px auto !important;
+                font-size: 11px !important;
             }
             #awardCertificatePrintArea #certStaffName {
-                font-size: 32px !important;
+                font-size: 28px !important;
+                margin-bottom: 4px !important;
             }
             #awardCertificatePrintArea #certLogoImage {
-                max-height: 120px !important;
-                max-width: 260px !important;
+                max-height: 100px !important;
+                max-width: 240px !important;
+            }
+            /* Reduce space below metrics grid */
+            #awardCertificatePrintArea > div:nth-of-type(8) {
+                margin-bottom: 15px !important;
             }
             /* Force print backgrounds */
             * {
