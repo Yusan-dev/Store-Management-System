@@ -1497,10 +1497,30 @@ function initBestSalesAwardFeature(summaryData) {
         ${clone.outerHTML}
     </div>
     <script>
-        setTimeout(function() {
-            window.print();
-            setTimeout(function() { window.close(); }, 500);
-        }, 500);
+        (function() {
+            // Give the popup a brief moment to finish laying out fonts/images
+            // before invoking print.
+            setTimeout(function() {
+                window.print();
+            }, 500);
+
+            // Close the popup only once printing has actually finished.
+            // window.print() is asynchronous on many mobile browsers (e.g.
+            // Android Chrome) — it hands off to the native print/PDF UI and
+            // returns immediately instead of blocking like on desktop. Closing
+            // the source window on a short fixed delay was killing the
+            // document the native dialog was still rendering from, which is
+            // why the print/PDF sheet flashed and disappeared on phones.
+            // Listening for "afterprint" (with a long safety-net fallback for
+            // browsers that don't fire it reliably) ensures the popup only
+            // closes after printing/saving is actually done.
+            window.addEventListener('afterprint', function() {
+                window.close();
+            });
+            setTimeout(function() {
+                window.close();
+            }, 60000);
+        })();
     <\/script>
 </body>
 </html>`;
