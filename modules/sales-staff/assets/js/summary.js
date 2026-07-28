@@ -1053,6 +1053,7 @@ function applyCustomCertColor(printArea, hexColor) {
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     const inkColor = luminance > 0.6 ? '#1e1e1e' : `rgb(${Math.round(r * 0.45)}, ${Math.round(g * 0.45)}, ${Math.round(b * 0.45)})`;
 
+    printArea.style.setProperty('--cert-theme-color', hexColor);
     printArea.style.borderColor = hexColor;
     printArea.style.background = `linear-gradient(135deg, #ffffff 0%, ${bgTint} 100%)`;
     printArea.style.color = inkColor;
@@ -1230,24 +1231,19 @@ function initBestSalesAwardFeature(summaryData) {
             }
         }
 
-        // Layout Mode
-        const awardCertLayoutNode = document.getElementById("awardCertLayout");
-        const certLayout = awardCertLayoutNode ? awardCertLayoutNode.value : 'classic';
-
-        // Frame Theme & Layout
+        // Frame Theme
         if (printArea) {
-            let themeClass = frameColor === 'custom' ? 'award-theme-custom' : `award-theme-${frameColor}`;
-            let layoutClass = certLayout === 'modern-dark' ? 'cert-layout-modern-dark' : 'cert-layout-classic';
-            printArea.className = `${themeClass} ${layoutClass}`;
-
             if (frameColor === 'custom') {
                 const customColor = customColorInput ? (customColorInput.value || '#d4af37') : '#d4af37';
+                printArea.className = 'award-theme-custom';
                 applyCustomCertColor(printArea, customColor);
             } else {
+                printArea.className = `award-theme-${frameColor}`;
                 // Clear any inline overrides left over from a previous custom selection
                 printArea.style.borderColor = '';
                 printArea.style.background = '';
                 printArea.style.color = '';
+                printArea.style.removeProperty('--cert-theme-color');
             }
         }
 
@@ -1409,9 +1405,6 @@ function initBestSalesAwardFeature(summaryData) {
     if (awardDateInput) awardDateInput.addEventListener("change", triggerCertPreview);
     const awardPhotoFrameStyleNode = document.getElementById("awardPhotoFrameStyle");
     if (awardPhotoFrameStyleNode) awardPhotoFrameStyleNode.addEventListener("change", triggerCertPreview);
-
-    const awardCertLayoutNode = document.getElementById("awardCertLayout");
-    if (awardCertLayoutNode) awardCertLayoutNode.addEventListener("change", triggerCertPreview);
 
     // Image Upload
     if (awardImageUpload) {

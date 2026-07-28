@@ -3943,36 +3943,42 @@ LICENSE ACCESS SCREEN
 ========================================================= */
 
 .award-theme-gold {
+    --cert-theme-color: #d4af37;
     border-color: #d4af37 !important;
     background: linear-gradient(135deg, #ffffff 0%, #fffdf0 100%) !important;
     color: #1e1e1e !important;
 }
 
 .award-theme-emerald {
+    --cert-theme-color: #059669;
     border-color: #059669 !important;
     background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%) !important;
     color: #064e3b !important;
 }
 
 .award-theme-sapphire {
+    --cert-theme-color: #0284c7;
     border-color: #0284c7 !important;
     background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%) !important;
     color: #0c4a6e !important;
 }
 
 .award-theme-crimson {
+    --cert-theme-color: #dc2626;
     border-color: #dc2626 !important;
     background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%) !important;
     color: #7f1d1d !important;
 }
 
 .award-theme-platinum {
+    --cert-theme-color: #475569;
     border-color: #475569 !important;
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
     color: #0f172a !important;
 }
 
 .award-theme-neobrutalism {
+    --cert-theme-color: #111111;
     border-color: #111111 !important;
     background: #FFDF00 !important;
     color: #111111 !important;
@@ -4040,24 +4046,35 @@ LICENSE ACCESS SCREEN
     border-bottom-width: 10px; border-left-width: 10px;
 }
 
-/* 3. Left Side Seal / Ribbon (Best Employee) */
+/* 3. Left Side Gold Medal Badge (Best Employee) */
 #awardCertificatePrintArea .cert-bg-shapes-3 {
-    position: absolute; top: 15%; left: 8%;
-    width: 90px; height: 90px; 
-    background: #111111;
-    border-radius: 50%; border: 4px solid currentColor; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 2;
+    position: absolute; top: 12%; left: 4%;
+    width: 95px; height: 95px; 
+    background: linear-gradient(135deg, #FDF0A6 0%, var(--cert-theme-color, #D4AF37) 50%, #996515 100%) !important;
+    border-radius: 50%; 
+    border: 3px double #FFFFFF !important; 
+    box-shadow: 0 0 0 3px var(--cert-theme-color, #D4AF37), 0 6px 15px rgba(0,0,0,0.25) !important; 
+    z-index: 2;
     display: flex; align-items: center; justify-content: center; flex-direction: column;
-    color: currentColor; font-weight: 900; font-size: 13px; text-align: center;
+    color: #0F172A !important; 
+    font-weight: 900; font-size: 12px; text-align: center;
 }
 #awardCertificatePrintArea .cert-bg-shapes-3::before {
-    content: 'BEST\A EMPLOYEE'; white-space: pre-wrap; font-family: 'Georgia', serif; letter-spacing: 1px;
+    content: 'BEST\A EMPLOYEE'; 
+    white-space: pre-wrap; 
+    font-family: 'Georgia', serif; 
+    letter-spacing: 1.5px;
+    line-height: 1.25;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+    color: #0F172A !important;
 }
 #awardCertificatePrintArea .cert-bg-shapes-3::after {
-    content: ''; position: absolute; top: 95%; left: 50%; transform: translateX(-50%);
-    width: 30px; height: 40px; 
-    background: currentColor; z-index: -1;
+    content: ''; position: absolute; top: 92%; left: 50%; transform: translateX(-50%);
+    width: 32px; height: 40px; 
+    background: linear-gradient(180deg, var(--cert-theme-color, #D4AF37) 0%, #77520A 100%) !important;
+    z-index: -1;
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 #awardCertificatePrintArea #certStoreTitle {
@@ -4083,97 +4100,6 @@ LICENSE ACCESS SCREEN
 #awardCertificatePrintArea #certAwardTitle {
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
-}
-
-/* =========================================================
-   PREMIUM DARK & MEDALS CERTIFICATE LAYOUT (.cert-layout-modern-dark)
-   Inspired by Reference Certificate Photo
-========================================================= */
-
-#awardCertificatePrintArea.cert-layout-modern-dark {
-    background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 65%, #020617 100%) !important;
-    color: #F8FAFC !important;
-    border-color: var(--cert-theme-color, #D4AF37) !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark .cert-modern-medals-wrapper {
-    display: flex !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark .cert-bg-shapes-3 {
-    display: none !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certStoreTitle {
-    color: var(--cert-theme-color, #FDF0A6) !important;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certPhotoContainer {
-    margin: 15px auto 25px auto !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certLogoImage {
-    border-radius: 50% !important;
-    border: 5px solid var(--cert-theme-color, #D4AF37) !important;
-    padding: 3px !important;
-    background: #0F172A !important;
-    box-shadow: 0 0 0 4px #020617, 0 0 0 7px var(--cert-theme-color, #D4AF37), 0 10px 30px rgba(0,0,0,0.6) !important;
-    width: 170px !important;
-    height: 170px !important;
-    max-width: 170px !important;
-    max-height: 170px !important;
-    object-fit: cover !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certDefaultBadge {
-    width: 150px !important;
-    height: 150px !important;
-    border-radius: 50% !important;
-    border: 5px solid var(--cert-theme-color, #D4AF37) !important;
-    background: #0F172A !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 0 0 4px #020617, 0 0 0 7px var(--cert-theme-color, #D4AF37), 0 10px 30px rgba(0,0,0,0.6) !important;
-}
-
-/* Golden Ribbon Banner for Staff Name */
-#awardCertificatePrintArea.cert-layout-modern-dark #certStaffName {
-    background: linear-gradient(180deg, #FDF0A6 0%, var(--cert-theme-color, #D4AF37) 45%, #996515 100%) !important;
-    color: #0F172A !important;
-    font-style: normal !important;
-    font-weight: 900 !important;
-    font-size: 24px !important;
-    letter-spacing: 2.5px !important;
-    text-transform: uppercase !important;
-    padding: 8px 36px !important;
-    border-radius: 4px !important;
-    border: 1px solid #FFF6BD !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.6) !important;
-    display: inline-block !important;
-    margin-top: -12px !important;
-    margin-bottom: 12px !important;
-    border-bottom: none !important;
-    position: relative !important;
-    z-index: 3 !important;
-    text-shadow: none !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certAwardCategoryText {
-    color: #E2E8F0 !important;
-    opacity: 0.95 !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark #certAwardTitle {
-    color: var(--cert-theme-color, #FDF0A6) !important;
-}
-
-#awardCertificatePrintArea.cert-layout-modern-dark > div:nth-of-type(5) {
-    background: rgba(15, 23, 42, 0.75) !important;
-    border-color: var(--cert-theme-color, #D4AF37) !important;
-    backdrop-filter: blur(4px) !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
 }
 
 @media print {
