@@ -855,20 +855,18 @@ Belum dipilih
 
             <div>
                 <label style="display:block; font-size:10px; font-weight:900; letter-spacing:1px; margin-bottom:6px; color:#475569;">5. WARNA BINGKAI / THEME &amp; COLOR PICKER</label>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <select id="awardFrameColor" style="flex:1; height:40px; border:3px solid #111; padding:6px 10px; font-family:'Space Mono', monospace; font-size:12px; font-weight:bold; outline:none; background:#fff; cursor:pointer; box-sizing:border-box;">
-                        <option value="gold">🥇 Royal Gold &amp; Dark Luxury</option>
-                        <option value="emerald">🟢 Emerald Green &amp; Gold</option>
-                        <option value="sapphire">🔷 Sapphire Blue &amp; Gold</option>
-                        <option value="crimson">🔴 Crimson Red &amp; Gold</option>
-                        <option value="platinum">🥈 Platinum Silver &amp; Navy</option>
-                        <option value="neobrutalism">🖤 Neobrutalism (Black &amp; Yellow)</option>
-                        <option value="custom">🎨 Warna Kustom (Pilih Sendiri)</option>
-                    </select>
-                    <div style="display:flex; align-items:center; gap:6px; background:#fff; border:3px solid #111; padding:2px 8px; height:40px; box-sizing:border-box; flex-shrink:0;">
-                        <input type="color" id="awardCustomColor" value="#d4af37" title="Pilih Warna Kustom (Color Picker)" style="width:30px; height:30px; padding:0; cursor:pointer; border:1px solid #ccc; border-radius:4px;">
-                        <span style="font-size:10px; font-weight:900; color:#475569;">PICKER</span>
-                    </div>
+                <select id="awardFrameColor" style="width:100%; height:40px; border:3px solid #111; padding:6px 10px; font-family:'Space Mono', monospace; font-size:12px; font-weight:bold; outline:none; background:#fff; cursor:pointer; box-sizing:border-box;">
+                    <option value="gold">🥇 Royal Gold &amp; Dark Luxury</option>
+                    <option value="emerald">🟢 Emerald Green &amp; Gold</option>
+                    <option value="sapphire">🔷 Sapphire Blue &amp; Gold</option>
+                    <option value="crimson">🔴 Crimson Red &amp; Gold</option>
+                    <option value="platinum">🥈 Platinum Silver &amp; Navy</option>
+                    <option value="neobrutalism">🖤 Neobrutalism (Black &amp; Yellow)</option>
+                    <option value="custom">🎨 Warna Kustom (Pilih Sendiri)</option>
+                </select>
+                <div style="display:flex; align-items:center; gap:8px; background:#fff; border:3px dashed #cbd5e1; padding:6px 10px; margin-top:8px; box-sizing:border-box; border-radius:4px;">
+                    <span style="font-size:10px; font-weight:900; color:#475569; flex:1;">WARNA KUSTOM:</span>
+                    <input type="color" id="awardCustomColor" value="#d4af37" title="Pilih Warna Kustom (Color Picker)" style="width:36px; height:28px; padding:0; cursor:pointer; border:2px solid #111; border-radius:4px;">
                 </div>
             </div>
 
@@ -1090,7 +1088,7 @@ Initializing Engine...
 <script src="assets/js/runtime.js?v=2"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="assets/js/summary.js?v=37"></script>
+<script src="assets/js/summary.js?v=38"></script>
 <script src="../../libs/Chart.min.js"></script>
 <script src="../../libs/chartjs-plugin-datalabels.min.js"></script>
 <script src="assets/js/process.js?v=6"></script>
