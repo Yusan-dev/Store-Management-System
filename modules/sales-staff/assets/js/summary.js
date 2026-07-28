@@ -1061,21 +1061,28 @@ function applyCustomCertColor(printArea, hexColor) {
 
 window.certPhotoPosX = 50;
 window.certPhotoPosY = 50;
+window.certPhotoZoom = 100;
 let isPhotoDragInitialized = false;
 
 function updateCertPhotoPositionUI() {
     const logoImg = document.getElementById("certLogoImage");
     if (logoImg) {
         logoImg.style.objectPosition = `${window.certPhotoPosX}% ${window.certPhotoPosY}%`;
+        logoImg.style.transform = `scale(${(window.certPhotoZoom || 100) / 100})`;
     }
     const posValX = document.getElementById("posValX");
     const posValY = document.getElementById("posValY");
+    const posValZoom = document.getElementById("posValZoom");
     if (posValX) posValX.innerText = `${Math.round(window.certPhotoPosX)}%`;
     if (posValY) posValY.innerText = `${Math.round(window.certPhotoPosY)}%`;
+    if (posValZoom) posValZoom.innerText = `${Math.round(window.certPhotoZoom || 100)}%`;
+
     const rangeX = document.getElementById("certPhotoPosX");
     const rangeY = document.getElementById("certPhotoPosY");
+    const rangeZoom = document.getElementById("certPhotoZoom");
     if (rangeX) rangeX.value = Math.round(window.certPhotoPosX);
     if (rangeY) rangeY.value = Math.round(window.certPhotoPosY);
+    if (rangeZoom) rangeZoom.value = Math.round(window.certPhotoZoom || 100);
 }
 
 function initCertPhotoDragEvents() {
@@ -1085,6 +1092,7 @@ function initCertPhotoDragEvents() {
     const logoImg = document.getElementById("certLogoImage");
     const rangeX = document.getElementById("certPhotoPosX");
     const rangeY = document.getElementById("certPhotoPosY");
+    const rangeZoom = document.getElementById("certPhotoZoom");
     const resetBtn = document.getElementById("resetCertPhotoPosBtn");
 
     if (rangeX) {
@@ -1099,15 +1107,30 @@ function initCertPhotoDragEvents() {
             updateCertPhotoPositionUI();
         });
     }
+    if (rangeZoom) {
+        rangeZoom.addEventListener("input", (e) => {
+            window.certPhotoZoom = parseFloat(e.target.value);
+            updateCertPhotoPositionUI();
+        });
+    }
     if (resetBtn) {
         resetBtn.addEventListener("click", () => {
             window.certPhotoPosX = 50;
             window.certPhotoPosY = 50;
+            window.certPhotoZoom = 100;
             updateCertPhotoPositionUI();
         });
     }
 
     if (!logoImg) return;
+
+    // Mouse Wheel Zoom on Photo
+    logoImg.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 5 : -5;
+        window.certPhotoZoom = Math.max(100, Math.min(250, (window.certPhotoZoom || 100) + delta));
+        updateCertPhotoPositionUI();
+    }, { passive: false });
 
     let isDragging = false;
     let startX = 0, startY = 0;
@@ -1509,7 +1532,19 @@ function initBestSalesAwardFeature(summaryData) {
     if (awardStoreNameInput) awardStoreNameInput.addEventListener("input", triggerCertPreview);
     if (awardTitleInput) awardTitleInput.addEventListener("input", triggerCertPreview);
     if (awardFrameColor) awardFrameColor.addEventListener("change", triggerCertPreview);
-    if (awardCustomColor) awardCustomColor.addEventListener("input", triggerCertPreview);
+    
+    // Permanent Custom Color Picker Listener (Always Outside)
+    if (awardCustomColor) {
+        awardCustomColor.addEventListener("input", () => {
+            if (awardFrameColor) awardFrameColor.value = "custom";
+            triggerCertPreview();
+        });
+        awardCustomColor.addEventListener("change", () => {
+            if (awardFrameColor) awardFrameColor.value = "custom";
+            triggerCertPreview();
+        });
+    }
+
     if (awardDateInput) awardDateInput.addEventListener("change", triggerCertPreview);
     const awardPhotoFrameStyleNode = document.getElementById("awardPhotoFrameStyle");
     if (awardPhotoFrameStyleNode) awardPhotoFrameStyleNode.addEventListener("change", triggerCertPreview);

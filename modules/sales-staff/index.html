@@ -829,13 +829,13 @@ Belum dipilih
                 <label style="display:block; font-size:10px; font-weight:900; letter-spacing:1px; margin-bottom:6px; color:#475569;">4. UNGGAH LOGO TOKO / FOTO STAFF</label>
                 <input type="file" id="awardImageUpload" accept="image/*" style="width:100%; font-size:11px; font-family:'Space Mono', monospace; box-sizing:border-box;">
                 
-                <!-- PHOTO POSITIONING CONTROLS (SLIDERS & HINT) -->
+                <!-- PHOTO POSITIONING CONTROLS (SLIDERS, ZOOM & HINT) -->
                 <div id="certPhotoPosControls" style="display:none; margin-top:8px; background:#f8fafc; border:2px dashed #cbd5e1; padding:8px 12px; border-radius:4px;">
                     <div style="font-size:10px; font-weight:900; color:#475569; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>📸 ATUR POSISI FOTO (GESER / SLIDER):</span>
+                        <span>📸 ATUR POSISI &amp; ZOOM FOTO:</span>
                         <button type="button" id="resetCertPhotoPosBtn" style="background:#ef4444; color:#fff; border:none; padding:3px 8px; font-size:9px; font-weight:bold; cursor:pointer; border-radius:2px; font-family:'Space Mono', monospace;">↺ Reset</button>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
                         <div>
                             <label style="font-size:9px; font-weight:bold; color:#64748b; display:block;">↔️ Horizontal: <span id="posValX">50%</span></label>
                             <input type="range" id="certPhotoPosX" min="0" max="100" value="50" style="width:100%; cursor:pointer;">
@@ -844,25 +844,31 @@ Belum dipilih
                             <label style="font-size:9px; font-weight:bold; color:#64748b; display:block;">↕️ Vertikal: <span id="posValY">50%</span></label>
                             <input type="range" id="certPhotoPosY" min="0" max="100" value="50" style="width:100%; cursor:pointer;">
                         </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#64748b; display:block;">🔍 Zoom Foto: <span id="posValZoom">100%</span></label>
+                            <input type="range" id="certPhotoZoom" min="100" max="250" value="100" step="5" style="width:100%; cursor:pointer;">
+                        </div>
                     </div>
-                    <div style="font-size:9.5px; color:#0284c7; font-weight:bold; margin-top:5px; line-height:1.3;">💡 Tip: Anda bisa menggunakan slider di atas ATAU langsung klik &amp; geser foto pada sertifikat dengan mouse!</div>
+                    <div style="font-size:9.5px; color:#0284c7; font-weight:bold; margin-top:5px; line-height:1.3;">💡 Tip: Gunakan slider di atas, scroll mouse, ATAU langsung klik &amp; geser foto di area sertifikat!</div>
                 </div>
             </div>
 
             <div>
-                <label style="display:block; font-size:10px; font-weight:900; letter-spacing:1px; margin-bottom:6px; color:#475569;">5. WARNA BINGKAI / THEME</label>
-                <select id="awardFrameColor" style="width:100%; height:40px; border:3px solid #111; padding:6px 10px; font-family:'Space Mono', monospace; font-size:12px; font-weight:bold; outline:none; background:#fff; cursor:pointer; box-sizing:border-box;">
-                    <option value="gold">🥇 Royal Gold &amp; Dark Luxury</option>
-                    <option value="emerald">🟢 Emerald Green &amp; Gold</option>
-                    <option value="sapphire">🔷 Sapphire Blue &amp; Gold</option>
-                    <option value="crimson">🔴 Crimson Red &amp; Gold</option>
-                    <option value="platinum">🥈 Platinum Silver &amp; Navy</option>
-                    <option value="neobrutalism">🖤 Neobrutalism (Black &amp; Yellow)</option>
-                    <option value="custom">🎨 Warna Kustom (Pilih Sendiri)</option>
-                </select>
-                <div id="awardCustomColorWrap" style="display:none; align-items:center; gap:8px; margin-top:8px;">
-                    <input type="color" id="awardCustomColor" value="#d4af37" style="width:48px; height:36px; border:3px solid #111; padding:2px; cursor:pointer; box-sizing:border-box; background:#fff;">
-                    <span style="font-size:10px; font-weight:900; letter-spacing:0.5px; color:#475569;">PILIH WARNA BINGKAI &amp; AKSEN SERTIFIKAT</span>
+                <label style="display:block; font-size:10px; font-weight:900; letter-spacing:1px; margin-bottom:6px; color:#475569;">5. WARNA BINGKAI / THEME &amp; COLOR PICKER</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <select id="awardFrameColor" style="flex:1; height:40px; border:3px solid #111; padding:6px 10px; font-family:'Space Mono', monospace; font-size:12px; font-weight:bold; outline:none; background:#fff; cursor:pointer; box-sizing:border-box;">
+                        <option value="gold">🥇 Royal Gold &amp; Dark Luxury</option>
+                        <option value="emerald">🟢 Emerald Green &amp; Gold</option>
+                        <option value="sapphire">🔷 Sapphire Blue &amp; Gold</option>
+                        <option value="crimson">🔴 Crimson Red &amp; Gold</option>
+                        <option value="platinum">🥈 Platinum Silver &amp; Navy</option>
+                        <option value="neobrutalism">🖤 Neobrutalism (Black &amp; Yellow)</option>
+                        <option value="custom">🎨 Warna Kustom (Pilih Sendiri)</option>
+                    </select>
+                    <div style="display:flex; align-items:center; gap:6px; background:#fff; border:3px solid #111; padding:2px 8px; height:40px; box-sizing:border-box; flex-shrink:0;">
+                        <input type="color" id="awardCustomColor" value="#d4af37" title="Pilih Warna Kustom (Color Picker)" style="width:34px; height:30px; border:none; padding:0; cursor:pointer; background:none;">
+                        <span style="font-size:10px; font-weight:900; color:#475569;">PICKER</span>
+                    </div>
                 </div>
             </div>
 
@@ -1076,7 +1082,7 @@ Initializing Engine...
 
 <script src="assets/js/runtime.js?v=2"></script>
 
-<script src="assets/js/summary.js?v=29"></script>
+<script src="assets/js/summary.js?v=30"></script>
 <script src="../../libs/Chart.min.js"></script>
 <script src="../../libs/chartjs-plugin-datalabels.min.js"></script>
 <script src="assets/js/process.js?v=6"></script>
