@@ -4085,6 +4085,97 @@ LICENSE ACCESS SCREEN
     font-style: italic;
 }
 
+/* =========================================================
+   PREMIUM DARK & MEDALS CERTIFICATE LAYOUT (.cert-layout-modern-dark)
+   Inspired by Reference Certificate Photo
+========================================================= */
+
+#awardCertificatePrintArea.cert-layout-modern-dark {
+    background: radial-gradient(circle at 50% 35%, #1E293B 0%, #0F172A 65%, #020617 100%) !important;
+    color: #F8FAFC !important;
+    border-color: var(--cert-theme-color, #D4AF37) !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark .cert-modern-medals-wrapper {
+    display: flex !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark .cert-bg-shapes-3 {
+    display: none !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certStoreTitle {
+    color: var(--cert-theme-color, #FDF0A6) !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certPhotoContainer {
+    margin: 15px auto 25px auto !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certLogoImage {
+    border-radius: 50% !important;
+    border: 5px solid var(--cert-theme-color, #D4AF37) !important;
+    padding: 3px !important;
+    background: #0F172A !important;
+    box-shadow: 0 0 0 4px #020617, 0 0 0 7px var(--cert-theme-color, #D4AF37), 0 10px 30px rgba(0,0,0,0.6) !important;
+    width: 170px !important;
+    height: 170px !important;
+    max-width: 170px !important;
+    max-height: 170px !important;
+    object-fit: cover !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certDefaultBadge {
+    width: 150px !important;
+    height: 150px !important;
+    border-radius: 50% !important;
+    border: 5px solid var(--cert-theme-color, #D4AF37) !important;
+    background: #0F172A !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 0 0 4px #020617, 0 0 0 7px var(--cert-theme-color, #D4AF37), 0 10px 30px rgba(0,0,0,0.6) !important;
+}
+
+/* Golden Ribbon Banner for Staff Name */
+#awardCertificatePrintArea.cert-layout-modern-dark #certStaffName {
+    background: linear-gradient(180deg, #FDF0A6 0%, var(--cert-theme-color, #D4AF37) 45%, #996515 100%) !important;
+    color: #0F172A !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    font-size: 24px !important;
+    letter-spacing: 2.5px !important;
+    text-transform: uppercase !important;
+    padding: 8px 36px !important;
+    border-radius: 4px !important;
+    border: 1px solid #FFF6BD !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6) !important;
+    display: inline-block !important;
+    margin-top: -12px !important;
+    margin-bottom: 12px !important;
+    border-bottom: none !important;
+    position: relative !important;
+    z-index: 3 !important;
+    text-shadow: none !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certAwardCategoryText {
+    color: #E2E8F0 !important;
+    opacity: 0.95 !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark #certAwardTitle {
+    color: var(--cert-theme-color, #FDF0A6) !important;
+}
+
+#awardCertificatePrintArea.cert-layout-modern-dark > div:nth-of-type(5) {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border-color: var(--cert-theme-color, #D4AF37) !important;
+    backdrop-filter: blur(4px) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+}
+
 @media print {
     @page {
         size: landscape;

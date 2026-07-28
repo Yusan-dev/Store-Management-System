@@ -1230,14 +1230,20 @@ function initBestSalesAwardFeature(summaryData) {
             }
         }
 
-        // Frame Theme
+        // Layout Mode
+        const awardCertLayoutNode = document.getElementById("awardCertLayout");
+        const certLayout = awardCertLayoutNode ? awardCertLayoutNode.value : 'classic';
+
+        // Frame Theme & Layout
         if (printArea) {
+            let themeClass = frameColor === 'custom' ? 'award-theme-custom' : `award-theme-${frameColor}`;
+            let layoutClass = certLayout === 'modern-dark' ? 'cert-layout-modern-dark' : 'cert-layout-classic';
+            printArea.className = `${themeClass} ${layoutClass}`;
+
             if (frameColor === 'custom') {
                 const customColor = customColorInput ? (customColorInput.value || '#d4af37') : '#d4af37';
-                printArea.className = 'award-theme-custom';
                 applyCustomCertColor(printArea, customColor);
             } else {
-                printArea.className = `award-theme-${frameColor}`;
                 // Clear any inline overrides left over from a previous custom selection
                 printArea.style.borderColor = '';
                 printArea.style.background = '';
@@ -1403,6 +1409,9 @@ function initBestSalesAwardFeature(summaryData) {
     if (awardDateInput) awardDateInput.addEventListener("change", triggerCertPreview);
     const awardPhotoFrameStyleNode = document.getElementById("awardPhotoFrameStyle");
     if (awardPhotoFrameStyleNode) awardPhotoFrameStyleNode.addEventListener("change", triggerCertPreview);
+
+    const awardCertLayoutNode = document.getElementById("awardCertLayout");
+    if (awardCertLayoutNode) awardCertLayoutNode.addEventListener("change", triggerCertPreview);
 
     // Image Upload
     if (awardImageUpload) {
