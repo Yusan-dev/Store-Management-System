@@ -1059,6 +1059,109 @@ function applyCustomCertColor(printArea, hexColor) {
     printArea.style.color = inkColor;
 }
 
+window.certPhotoPosX = 50;
+window.certPhotoPosY = 50;
+let isPhotoDragInitialized = false;
+
+function updateCertPhotoPositionUI() {
+    const logoImg = document.getElementById("certLogoImage");
+    if (logoImg) {
+        logoImg.style.objectPosition = `${window.certPhotoPosX}% ${window.certPhotoPosY}%`;
+    }
+    const posValX = document.getElementById("posValX");
+    const posValY = document.getElementById("posValY");
+    if (posValX) posValX.innerText = `${Math.round(window.certPhotoPosX)}%`;
+    if (posValY) posValY.innerText = `${Math.round(window.certPhotoPosY)}%`;
+    const rangeX = document.getElementById("certPhotoPosX");
+    const rangeY = document.getElementById("certPhotoPosY");
+    if (rangeX) rangeX.value = Math.round(window.certPhotoPosX);
+    if (rangeY) rangeY.value = Math.round(window.certPhotoPosY);
+}
+
+function initCertPhotoDragEvents() {
+    if (isPhotoDragInitialized) return;
+    isPhotoDragInitialized = true;
+    
+    const logoImg = document.getElementById("certLogoImage");
+    const rangeX = document.getElementById("certPhotoPosX");
+    const rangeY = document.getElementById("certPhotoPosY");
+    const resetBtn = document.getElementById("resetCertPhotoPosBtn");
+
+    if (rangeX) {
+        rangeX.addEventListener("input", (e) => {
+            window.certPhotoPosX = parseFloat(e.target.value);
+            updateCertPhotoPositionUI();
+        });
+    }
+    if (rangeY) {
+        rangeY.addEventListener("input", (e) => {
+            window.certPhotoPosY = parseFloat(e.target.value);
+            updateCertPhotoPositionUI();
+        });
+    }
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            window.certPhotoPosX = 50;
+            window.certPhotoPosY = 50;
+            updateCertPhotoPositionUI();
+        });
+    }
+
+    if (!logoImg) return;
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let startPosX = 50, startPosY = 50;
+
+    const onStart = (clientX, clientY) => {
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        startPosX = window.certPhotoPosX;
+        startPosY = window.certPhotoPosY;
+        logoImg.style.cursor = 'grabbing';
+    };
+
+    const onMove = (clientX, clientY) => {
+        if (!isDragging) return;
+        const rect = logoImg.getBoundingClientRect();
+        const width = rect.width || 220;
+        const height = rect.height || 220;
+        const dx = ((clientX - startX) / width) * 100;
+        const dy = ((clientY - startY) / height) * 100;
+
+        window.certPhotoPosX = Math.max(0, Math.min(100, startPosX - dx));
+        window.certPhotoPosY = Math.max(0, Math.min(100, startPosY - dy));
+        updateCertPhotoPositionUI();
+    };
+
+    const onEnd = () => {
+        if (isDragging) {
+            isDragging = false;
+            logoImg.style.cursor = 'grab';
+        }
+    };
+
+    logoImg.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        onStart(e.clientX, e.clientY);
+    });
+    window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', onEnd);
+
+    logoImg.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+            onMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
+    window.addEventListener('touchend', onEnd);
+}
+
 function initBestSalesAwardFeature(summaryData) {
     const openBtn = document.getElementById("openAwardModalBtn");
     const modal = document.getElementById("bestSalesAwardModal");
@@ -1252,16 +1355,23 @@ function initBestSalesAwardFeature(summaryData) {
             customColorWrap.style.display = frameColor === 'custom' ? 'flex' : 'none';
         }
 
-        // Photo Frame Style
+        // Photo Frame Style & Ideal Sizing (220px x 220px) with Drag-to-Position
         const certLogoImage = document.getElementById("certLogoImage");
         if (certLogoImage) {
+            certLogoImage.style.width = "220px";
+            certLogoImage.style.height = "220px";
+            certLogoImage.style.maxWidth = "220px";
+            certLogoImage.style.maxHeight = "220px";
+            certLogoImage.style.objectFit = "cover";
+            certLogoImage.style.objectPosition = `${window.certPhotoPosX || 50}% ${window.certPhotoPosY || 50}%`;
+            certLogoImage.style.cursor = "grab";
+
             // Reset base styles first (Classic / Default)
             certLogoImage.style.borderRadius = "4px";
             certLogoImage.style.border = "3px double currentColor";
             certLogoImage.style.padding = "6px";
             certLogoImage.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
             certLogoImage.style.background = "#fff";
-            certLogoImage.style.aspectRatio = "auto";
             
             if (photoFrameStyle === 'minimalist') {
                 certLogoImage.style.border = "1px solid rgba(0,0,0,0.1)";
@@ -1270,7 +1380,7 @@ function initBestSalesAwardFeature(summaryData) {
                 certLogoImage.style.borderRadius = "8px";
             } else if (photoFrameStyle === 'polaroid') {
                 certLogoImage.style.border = "1px solid #e2e8f0";
-                certLogoImage.style.padding = "10px 10px 30px 10px";
+                certLogoImage.style.padding = "8px 8px 24px 8px";
                 certLogoImage.style.boxShadow = "2px 4px 15px rgba(0,0,0,0.15)";
                 certLogoImage.style.borderRadius = "2px";
                 certLogoImage.style.background = "#fdfdfd";
@@ -1278,8 +1388,6 @@ function initBestSalesAwardFeature(summaryData) {
                 certLogoImage.style.border = "4px solid currentColor";
                 certLogoImage.style.padding = "4px";
                 certLogoImage.style.borderRadius = "50%";
-                certLogoImage.style.aspectRatio = "1 / 1";
-                certLogoImage.style.objectFit = "cover";
             } else if (photoFrameStyle === 'none') {
                 certLogoImage.style.border = "none";
                 certLogoImage.style.padding = "0";
@@ -1406,29 +1514,37 @@ function initBestSalesAwardFeature(summaryData) {
     const awardPhotoFrameStyleNode = document.getElementById("awardPhotoFrameStyle");
     if (awardPhotoFrameStyleNode) awardPhotoFrameStyleNode.addEventListener("change", triggerCertPreview);
 
-    // Image Upload
+    // Image Upload & Photo Position Dragging
     if (awardImageUpload) {
         awardImageUpload.addEventListener("change", (e) => {
             const file = e.target.files[0];
             const logoImg = document.getElementById("certLogoImage");
             const defaultBadge = document.getElementById("certDefaultBadge");
+            const photoPosControls = document.getElementById("certPhotoPosControls");
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
                     if (logoImg) {
                         logoImg.src = evt.target.result;
                         logoImg.style.display = "block";
+                        initCertPhotoDragEvents();
+                        updateCertPhotoPositionUI();
                     }
                     if (defaultBadge) defaultBadge.style.display = "none";
+                    if (photoPosControls) photoPosControls.style.display = "block";
                 };
                 reader.readAsDataURL(file);
             } else {
                 if (logoImg) logoImg.style.display = "none";
                 if (defaultBadge) defaultBadge.style.display = "block";
+                if (photoPosControls) photoPosControls.style.display = "none";
             }
             triggerCertPreview();
         });
     }
+
+    // Initialize photo drag handlers globally
+    initCertPhotoDragEvents();
 
     // Print Button — opens certificate in a NEW WINDOW to avoid
     // blank-page issues with file:// iframes and window.print().
