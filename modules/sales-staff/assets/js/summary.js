@@ -1686,7 +1686,7 @@ function initBestSalesAwardFeature(summaryData) {
                 width: 96% !important;
                 max-width: 265mm !important;
                 height: auto !important;
-                max-height: 175mm !important;
+                max-height: none !important;
                 margin: 0 auto !important;
                 padding: 20px 26px !important;
                 box-sizing: border-box !important;
@@ -1696,14 +1696,13 @@ function initBestSalesAwardFeature(summaryData) {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
+                overflow: visible !important;
             }
             #awardCertificatePrintArea .cert-bg-shapes {
                 top: 5px !important; left: 5px !important; right: 5px !important; bottom: 5px !important;
                 border: 2px double currentColor !important;
             }
             #awardCertificatePrintArea #certPhotoWrapper {
-                max-width: 140px !important;
-                max-height: 140px !important;
                 margin: 0 auto 8px auto !important;
             }
             /* Adjust internal text for physical mm size to prevent cutoff */
