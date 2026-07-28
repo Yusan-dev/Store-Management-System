@@ -1629,7 +1629,7 @@ function initBestSalesAwardFeature(summaryData) {
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 5mm;
+                margin: 10mm;
             }
             html, body {
                 margin: 0 !important;
@@ -1637,47 +1637,57 @@ function initBestSalesAwardFeature(summaryData) {
                 width: 100% !important;
                 height: 100% !important;
                 background: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             #printWrapper {
-                display: block !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
                 width: 100% !important;
                 height: 100% !important;
+                box-sizing: border-box !important;
             }
             #awardCertificatePrintArea {
-                /* Exact A4 dimensions minus margins */
-                width: 287mm !important;
-                height: 195mm !important;
-                max-width: none !important;
-                max-height: none !important;
-                margin: 0 !important;
-                padding: 8mm 12mm !important;
+                width: 96% !important;
+                max-width: 265mm !important;
+                height: auto !important;
+                max-height: 175mm !important;
+                margin: 0 auto !important;
+                padding: 20px 26px !important;
                 box-sizing: border-box !important;
-                transform: none !important;
-                page-break-inside: avoid;
+                page-break-inside: avoid !important;
+                border-style: solid !important;
+                border-width: 10px !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
+            #awardCertificatePrintArea .cert-bg-shapes {
+                top: 5px !important; left: 5px !important; right: 5px !important; bottom: 5px !important;
+                border: 2px double currentColor !important;
+            }
+            #awardCertificatePrintArea #certPhotoWrapper {
+                max-width: 140px !important;
+                max-height: 140px !important;
+                margin: 0 auto 8px auto !important;
+            }
             /* Adjust internal text for physical mm size to prevent cutoff */
             #awardCertificatePrintArea h1 {
-                font-size: 21px !important;
-                margin-bottom: 8px !important;
+                font-size: 19px !important;
+                margin-bottom: 6px !important;
             }
             #awardCertificatePrintArea p#certAwardCategoryText {
-                margin: 10px auto 16px auto !important;
-                font-size: 11px !important;
+                margin: 8px auto 12px auto !important;
+                font-size: 10.5px !important;
             }
             #awardCertificatePrintArea #certStaffName {
-                font-size: 28px !important;
+                font-size: 26px !important;
                 margin-bottom: 4px !important;
-            }
-            #awardCertificatePrintArea #certLogoImage {
-                max-height: 140px !important;
-                max-width: 300px !important;
             }
             /* Reduce space below metrics grid */
             #awardCertificatePrintArea > div:nth-of-type(8) {
-                margin-bottom: 15px !important;
+                margin-bottom: 12px !important;
             }
             /* Force print backgrounds */
             * {
