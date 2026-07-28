@@ -1647,9 +1647,11 @@ function initBestSalesAwardFeature(summaryData) {
                 margin: 0 !important;
                 padding: 8mm 12mm !important;
                 box-sizing: border-box !important;
-                box-shadow: none !important;
                 transform: none !important;
                 page-break-inside: avoid;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
             /* Adjust internal text for physical mm size to prevent cutoff */
             #awardCertificatePrintArea h1 {
@@ -1741,6 +1743,126 @@ function initBestSalesAwardFeature(summaryData) {
             printWin.document.write(html);
             printWin.document.close();
         });
+    }
+
+    // Direct Download Button (Mobile Friendly PNG/HD)
+    const downloadCertBtn = document.getElementById("downloadCertBtn");
+    if (downloadCertBtn) {
+        downloadCertBtn.addEventListener("click", () => {
+            downloadCertificateDirect();
+        });
+    }
+
+    function downloadCertificateDirect() {
+        const printArea = document.getElementById("awardCertificatePrintArea");
+        if (!printArea) { alert("Sertifikat belum tersedia."); return; }
+
+        const staffNameEl = document.getElementById("certStaffName");
+        const staffName = staffNameEl ? staffNameEl.innerText.trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'Staf';
+        const fileName = `Sertifikat_Penghargaan_${staffName}.png`;
+
+        const btn = document.getElementById("downloadCertBtn");
+        let origText = '';
+        if (btn) {
+            origText = btn.innerHTML;
+            btn.innerHTML = '⏳ Menyiapkan File...';
+            btn.disabled = true;
+        }
+
+        const restoreBtn = () => {
+            if (btn) {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        };
+
+        if (window.html2canvas) {
+            html2canvas(printArea, {
+                scale: 3,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = canvas.toDataURL('image/png', 0.98);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                restoreBtn();
+            }).catch(() => {
+                fallbackRasterizeDownload(printArea, fileName, restoreBtn);
+            });
+        } else {
+            fallbackRasterizeDownload(printArea, fileName, restoreBtn);
+        }
+    }
+
+    function fallbackRasterizeDownload(element, fileName, callback) {
+        let cssText = '';
+        try {
+            for (const sheet of document.styleSheets) {
+                try {
+                    for (const rule of sheet.cssRules) {
+                        cssText += rule.cssText + '\n';
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+
+        const width = element.offsetWidth || 1000;
+        const height = element.offsetHeight || 700;
+
+        const clone = element.cloneNode(true);
+        clone.setAttribute("style", element.getAttribute("style") || "");
+
+        const svgString = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+                <style>
+                    ${cssText}
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                </style>
+                <foreignObject width="100%" height="100%">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px; height:${height}px;">
+                        ${clone.outerHTML}
+                    </div>
+                </foreignObject>
+            </svg>
+        `;
+
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(2, 2);
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+
+            const a = document.createElement('a');
+            a.download = fileName;
+            a.href = canvas.toDataURL('image/png', 0.95);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            if (callback) callback();
+        };
+
+        img.onerror = function() {
+            const a = document.createElement('a');
+            a.download = fileName.replace('.png', '.svg');
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            if (callback) callback();
+        };
+
+        img.src = url;
     }
 
     // Close modal on backdrop click
