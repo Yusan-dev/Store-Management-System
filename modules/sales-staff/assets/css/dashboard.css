@@ -3984,15 +3984,79 @@ LICENSE ACCESS SCREEN
 }
 
 /* =========================================================
-   PROFESSIONAL CERTIFICATE POLISH
-   (typography + subtle texture only — no layout/logic change)
+   PROFESSIONAL CERTIFICATE POLISH & GEOMETRIC BORDERS
+   (Uses border-color defined in themes)
 ========================================================= */
 
 #awardCertificatePrintArea {
-    background-image:
-        repeating-linear-gradient(45deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 14px);
+    /* Subtle Guilloche / Watermark Pattern */
+    background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 14px);
     background-blend-mode: multiply;
+    
+    /* Elegant Double Outer Border */
+    border-style: solid;
+    border-width: 12px;
+    box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 6px currentColor;
+    position: relative;
 }
+
+/* 1. Universal Background Hooks (Base) */
+#awardCertificatePrintArea .cert-bg-shapes {
+    position: absolute; inset: 15px; pointer-events: none; z-index: 0;
+}
+#awardCertificatePrintArea .cert-bg-shapes-2 {
+    position: absolute; inset: 15px; pointer-events: none; z-index: 0;
+}
+
+/* 2. Elegant Corner Geometries (Art Deco Style) */
+#awardCertificatePrintArea .cert-bg-shapes::before,
+#awardCertificatePrintArea .cert-bg-shapes::after,
+#awardCertificatePrintArea .cert-bg-shapes-2::before,
+#awardCertificatePrintArea .cert-bg-shapes-2::after {
+    content: ''; position: absolute;
+    width: 70px; height: 70px;
+    border: 3px solid currentColor;
+    opacity: 0.8;
+}
+
+/* Top Left */
+#awardCertificatePrintArea .cert-bg-shapes::before {
+    top: 0; left: 0; border-right: none; border-bottom: none;
+    border-top-width: 8px; border-left-width: 8px;
+}
+/* Bottom Right */
+#awardCertificatePrintArea .cert-bg-shapes::after {
+    bottom: 0; right: 0; border-left: none; border-top: none;
+    border-bottom-width: 8px; border-right-width: 8px;
+}
+/* Top Right */
+#awardCertificatePrintArea .cert-bg-shapes-2::before {
+    top: 0; right: 0; border-left: none; border-bottom: none;
+    border-top-width: 8px; border-right-width: 8px;
+}
+/* Bottom Left */
+#awardCertificatePrintArea .cert-bg-shapes-2::after {
+    bottom: 0; left: 0; border-right: none; border-top: none;
+    border-bottom-width: 8px; border-left-width: 8px;
+}
+
+/* 3. Bottom Center Seal / Ribbon */
+#awardCertificatePrintArea .cert-bg-shapes-3 {
+    position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+    width: 65px; height: 65px; 
+    background: radial-gradient(circle, #fff 20%, currentColor 80%);
+    border-radius: 50%; border: 3px solid #fff; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 0;
+    opacity: 0.9;
+}
+#awardCertificatePrintArea .cert-bg-shapes-3::before,
+#awardCertificatePrintArea .cert-bg-shapes-3::after {
+    content: ''; position: absolute; top: 90%; width: 22px; height: 35px; 
+    background: currentColor; z-index: -1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+}
+#awardCertificatePrintArea .cert-bg-shapes-3::before { left: 6px; transform: rotate(15deg); }
+#awardCertificatePrintArea .cert-bg-shapes-3::after { right: 6px; transform: rotate(-15deg); }
 
 #awardCertificatePrintArea #certStoreTitle {
     font-family: Georgia, 'Times New Roman', 'Palatino Linotype', serif;
