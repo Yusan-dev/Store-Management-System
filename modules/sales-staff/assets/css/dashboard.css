@@ -4086,6 +4086,11 @@ LICENSE ACCESS SCREEN
 }
 
 @media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+    
     body.printing-cert * {
         visibility: hidden !important;
     }
