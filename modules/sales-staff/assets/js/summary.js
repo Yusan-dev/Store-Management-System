@@ -1598,10 +1598,43 @@ function initBestSalesAwardFeature(summaryData) {
 
             // Grab computed styles of the original print area for inline transfer
             const origStyle = window.getComputedStyle(printArea);
+            
+            // EXPLICITLY transfer critical frame properties so they aren't lost in PDF or Mobile
+            clone.style.borderWidth = origStyle.borderWidth || "12px";
+            clone.style.borderStyle = origStyle.borderStyle || "solid";
+            clone.style.borderColor = origStyle.borderColor;
+            clone.style.background = origStyle.background;
+            clone.style.color = origStyle.color;
 
-            // Collect all relevant stylesheets from this document
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile && typeof html2canvas !== "undefined") {
+                const btnOriginalText = printCertBtn.innerHTML;
+                printCertBtn.innerHTML = "Processing...";
+                
+                // Directly download as high-res Image using html2canvas for mobile
+                html2canvas(printArea, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+                    const link = document.createElement("a");
+                    link.download = "Sertifikat_Best_Sales.jpg";
+                    link.href = canvas.toDataURL("image/jpeg", 0.9);
+                    link.click();
+                    printCertBtn.innerHTML = btnOriginalText;
+                }).catch(err => {
+                    console.error("Error generating certificate:", err);
+                    printCertBtn.innerHTML = btnOriginalText;
+                    alert("Gagal memproses sertifikat.");
+                });
+                return;
+            }
+
+            // For Desktop: Collect all relevant stylesheets from this document
             let cssText = '';
+            let headTags = '';
             try {
+                document.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                    headTags += node.outerHTML + '\n';
+                });
                 for (const sheet of document.styleSheets) {
                     try {
                         for (const rule of sheet.cssRules) {
@@ -1617,6 +1650,7 @@ function initBestSalesAwardFeature(summaryData) {
 <head>
     <meta charset="UTF-8">
     <title>Sertifikat Best Sales Award</title>
+    ${headTags}
     <style>
         ${cssText}
 
