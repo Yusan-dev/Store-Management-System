@@ -1688,7 +1688,7 @@ function initBestSalesAwardFeature(summaryData) {
                 height: auto !important;
                 max-height: none !important;
                 margin: 0 auto !important;
-                padding: 20px 26px !important;
+                padding: 12px 26px !important;
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 border-style: solid !important;
@@ -1703,24 +1703,45 @@ function initBestSalesAwardFeature(summaryData) {
                 border: 2px double currentColor !important;
             }
             #awardCertificatePrintArea #certPhotoWrapper {
-                margin: 0 auto 8px auto !important;
+                margin: 0 auto 4px auto !important;
+            }
+            #awardCertificatePrintArea #certPhotoContainer {
+                margin-bottom: 6px !important; 
+                min-height: auto !important;
+            }
+            /* Decorative divider below title */
+            #awardCertificatePrintArea > div:nth-of-type(5) {
+                margin-bottom: 8px !important;
+            }
+            /* Congratulations text */
+            #awardCertificatePrintArea > div:nth-of-type(6) {
+                margin-bottom: 4px !important;
             }
             /* Adjust internal text for physical mm size to prevent cutoff */
             #awardCertificatePrintArea h1 {
                 font-size: 19px !important;
-                margin-bottom: 6px !important;
+                margin-bottom: 4px !important;
             }
             #awardCertificatePrintArea p#certAwardCategoryText {
-                margin: 8px auto 12px auto !important;
+                margin: 6px auto 10px auto !important;
                 font-size: 10.5px !important;
             }
             #awardCertificatePrintArea #certStaffName {
                 font-size: 26px !important;
-                margin-bottom: 4px !important;
+                margin-bottom: 2px !important;
+                padding-bottom: 4px !important;
             }
             /* Reduce space below metrics grid */
             #awardCertificatePrintArea > div:nth-of-type(8) {
                 margin-bottom: 12px !important;
+            }
+            /* Bottom Ornamental Divider */
+            #awardCertificatePrintArea > div:nth-of-type(9) {
+                margin-bottom: 8px !important;
+            }
+            /* Footer padding */
+            #awardCertificatePrintArea > div:nth-of-type(10) {
+                padding-top: 4px !important;
             }
             /* Force print backgrounds */
             * {
