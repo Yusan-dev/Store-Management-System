@@ -3945,42 +3945,48 @@ LICENSE ACCESS SCREEN
 .award-theme-gold {
     --cert-theme-color: #d4af37;
     border-color: #d4af37 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #fffdf0 100%) !important;
+    background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #1e1e1e !important;
 }
 
 .award-theme-emerald {
     --cert-theme-color: #059669;
     border-color: #059669 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%) !important;
+    background: linear-gradient(135deg, #fefce8 0%, #ecfdf5 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #064e3b !important;
 }
 
 .award-theme-sapphire {
     --cert-theme-color: #0284c7;
     border-color: #0284c7 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%) !important;
+    background: linear-gradient(135deg, #fefce8 0%, #f0f9ff 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #0c4a6e !important;
 }
 
 .award-theme-crimson {
     --cert-theme-color: #dc2626;
     border-color: #dc2626 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%) !important;
+    background: linear-gradient(135deg, #fefce8 0%, #fef2f2 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #7f1d1d !important;
 }
 
 .award-theme-platinum {
     --cert-theme-color: #475569;
     border-color: #475569 !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    background: linear-gradient(135deg, #fefce8 0%, #f1f5f9 100%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #0f172a !important;
 }
 
 .award-theme-neobrutalism {
     --cert-theme-color: #111111;
     border-color: #111111 !important;
-    background: #FFDF00 !important;
+    background: #fde047 url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E") !important;
+    background-blend-mode: multiply !important;
     color: #111111 !important;
 }
 
