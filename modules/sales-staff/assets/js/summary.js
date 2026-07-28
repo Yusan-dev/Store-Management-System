@@ -1378,44 +1378,50 @@ function initBestSalesAwardFeature(summaryData) {
             customColorWrap.style.display = frameColor === 'custom' ? 'flex' : 'none';
         }
 
-        // Photo Frame Style & Ideal Sizing (220px x 220px) with Drag-to-Position
+        // Photo Frame Style & Ideal Sizing (220px x 220px) with Drag-to-Position & Zoom Clip
+        const certPhotoWrapper = document.getElementById("certPhotoWrapper");
         const certLogoImage = document.getElementById("certLogoImage");
-        if (certLogoImage) {
-            certLogoImage.style.width = "220px";
-            certLogoImage.style.height = "220px";
-            certLogoImage.style.maxWidth = "220px";
-            certLogoImage.style.maxHeight = "220px";
+        if (certPhotoWrapper && certLogoImage) {
+            certPhotoWrapper.style.width = "220px";
+            certPhotoWrapper.style.height = "220px";
+            certPhotoWrapper.style.overflow = "hidden";
+            certPhotoWrapper.style.position = "relative";
+            certPhotoWrapper.style.boxSizing = "border-box";
+
+            certLogoImage.style.width = "100%";
+            certLogoImage.style.height = "100%";
             certLogoImage.style.objectFit = "cover";
             certLogoImage.style.objectPosition = `${window.certPhotoPosX || 50}% ${window.certPhotoPosY || 50}%`;
+            certLogoImage.style.transform = `scale(${(window.certPhotoZoom || 100) / 100})`;
             certLogoImage.style.cursor = "grab";
 
-            // Reset base styles first (Classic / Default)
-            certLogoImage.style.borderRadius = "4px";
-            certLogoImage.style.border = "3px double currentColor";
-            certLogoImage.style.padding = "6px";
-            certLogoImage.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-            certLogoImage.style.background = "#fff";
+            // Reset base styles on container first (Classic / Default)
+            certPhotoWrapper.style.borderRadius = "4px";
+            certPhotoWrapper.style.border = "3px double currentColor";
+            certPhotoWrapper.style.padding = "0";
+            certPhotoWrapper.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+            certPhotoWrapper.style.background = "#fff";
             
             if (photoFrameStyle === 'minimalist') {
-                certLogoImage.style.border = "1px solid rgba(0,0,0,0.1)";
-                certLogoImage.style.padding = "0";
-                certLogoImage.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
-                certLogoImage.style.borderRadius = "8px";
+                certPhotoWrapper.style.border = "1px solid rgba(0,0,0,0.1)";
+                certPhotoWrapper.style.padding = "0";
+                certPhotoWrapper.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
+                certPhotoWrapper.style.borderRadius = "8px";
             } else if (photoFrameStyle === 'polaroid') {
-                certLogoImage.style.border = "1px solid #e2e8f0";
-                certLogoImage.style.padding = "8px 8px 24px 8px";
-                certLogoImage.style.boxShadow = "2px 4px 15px rgba(0,0,0,0.15)";
-                certLogoImage.style.borderRadius = "2px";
-                certLogoImage.style.background = "#fdfdfd";
+                certPhotoWrapper.style.border = "1px solid #e2e8f0";
+                certPhotoWrapper.style.padding = "0";
+                certPhotoWrapper.style.boxShadow = "2px 4px 15px rgba(0,0,0,0.15)";
+                certPhotoWrapper.style.borderRadius = "2px";
+                certPhotoWrapper.style.background = "#fdfdfd";
             } else if (photoFrameStyle === 'circle') {
-                certLogoImage.style.border = "4px solid currentColor";
-                certLogoImage.style.padding = "4px";
-                certLogoImage.style.borderRadius = "50%";
+                certPhotoWrapper.style.border = "4px solid currentColor";
+                certPhotoWrapper.style.padding = "0";
+                certPhotoWrapper.style.borderRadius = "50%";
             } else if (photoFrameStyle === 'none') {
-                certLogoImage.style.border = "none";
-                certLogoImage.style.padding = "0";
-                certLogoImage.style.boxShadow = "none";
-                certLogoImage.style.background = "transparent";
+                certPhotoWrapper.style.border = "none";
+                certPhotoWrapper.style.padding = "0";
+                certPhotoWrapper.style.boxShadow = "none";
+                certPhotoWrapper.style.background = "transparent";
             }
         }
     }
@@ -1554,23 +1560,22 @@ function initBestSalesAwardFeature(summaryData) {
         awardImageUpload.addEventListener("change", (e) => {
             const file = e.target.files[0];
             const logoImg = document.getElementById("certLogoImage");
+            const photoWrapper = document.getElementById("certPhotoWrapper");
             const defaultBadge = document.getElementById("certDefaultBadge");
             const photoPosControls = document.getElementById("certPhotoPosControls");
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
-                    if (logoImg) {
-                        logoImg.src = evt.target.result;
-                        logoImg.style.display = "block";
-                        initCertPhotoDragEvents();
-                        updateCertPhotoPositionUI();
-                    }
+                    if (logoImg) logoImg.src = evt.target.result;
+                    if (photoWrapper) photoWrapper.style.display = "block";
+                    initCertPhotoDragEvents();
+                    updateCertPhotoPositionUI();
                     if (defaultBadge) defaultBadge.style.display = "none";
                     if (photoPosControls) photoPosControls.style.display = "block";
                 };
                 reader.readAsDataURL(file);
             } else {
-                if (logoImg) logoImg.style.display = "none";
+                if (photoWrapper) photoWrapper.style.display = "none";
                 if (defaultBadge) defaultBadge.style.display = "block";
                 if (photoPosControls) photoPosControls.style.display = "none";
             }
