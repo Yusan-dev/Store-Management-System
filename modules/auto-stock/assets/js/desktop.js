@@ -134,16 +134,25 @@
       (sum, item) => sum + (Number(item.qty) || 0),
       0,
     );
+
+    function normalizeNumberForCopy(v) {
+      if (v == null) return "";
+      return String(v).trim().replace(/[^0-9\-]/g, "");
+    }
+
     const body = data
       .map(
         (item) => `
           <tr>
             ${printableColumns
               .map(([key]) => {
-                const value =
-                  key === "price" || key === "qty"
-                    ? Number(item[key] || 0).toLocaleString()
-                    : item[key];
+                let value;
+                if (key === "price" || key === "qty") {
+                  // tampilkan angka murni tanpa pemisah ribuan agar copy->Excel tetap utuh
+                  value = normalizeNumberForCopy(item[key] || 0);
+                } else {
+                  value = item[key] || "";
+                }
                 return `<td>${escapeHtml(value)}</td>`;
               })
               .join("")}
@@ -383,6 +392,3 @@ tr { break-inside: avoid; }
     ensurePresetControls();
   });
 })();
-
-
-
