@@ -200,7 +200,6 @@ ${rows.reduce((a, b) => a + b.qty, 0)}
 
 
 
-
 <table>
 
 <thead>
@@ -264,7 +263,7 @@ ${r.desc}
 
 <td>
 
-${Number(r.price).toLocaleString()}
+${Number(r.price).toLocaleString("en-US")}
 
 </td>
 
@@ -276,7 +275,7 @@ ${r.status}
 
 <td>
 
-${r.qty}
+${Number(r.qty).toLocaleString("en-US")}
 
 </td>
 
@@ -322,6 +321,3 @@ KANGODING.ORG © 2026
     400,
   );
 }
-
-
-
