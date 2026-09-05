@@ -32,13 +32,15 @@ async function exportFiltered() {
     </head>
     <body>
     <table>
-        <tr><td colspan="8" class="title">KANGODING.ORG - SMS AUTO STOCK</td></tr>
-        <tr><td colspan="8" class="meta">GENERATED: ${generatedAt}</td></tr>
+        <tr><td colspan="10" class="title">KANGODING.ORG - SMS AUTO STOCK</td></tr>
+        <tr><td colspan="10" class="meta">GENERATED: ${generatedAt}</td></tr>
         <tr></tr>
         <tr>
             <th class="th-bg">BRAND</th>
             <th class="th-bg">CATEGORY</th>
             <th class="th-bg">ARTIKEL</th>
+            <th class="th-bg">GENERIC ARTICLE</th>
+            <th class="th-bg">VARIANT</th>
             <th class="th-bg">DESCRIPTION</th>
             <th class="th-bg">PRICE</th>
             <th class="th-bg">STATUS</th>
@@ -52,6 +54,8 @@ async function exportFiltered() {
             <td class="td-border">${x.brand || ""}</td>
             <td class="td-border">${x.category || ""}</td>
             <td class="td-border">${x.artikel || ""}</td>
+            <td class="td-border">${x.generic || ""}</td>
+            <td class="td-border">${x.variant || ""}</td>
             <td class="td-border">${x.desc || ""}</td>
             <td class="td-border">${x.price || ""}</td>
             <td class="td-border">${x.status || ""}</td>
@@ -60,7 +64,6 @@ async function exportFiltered() {
         </tr>`;
   });
 
-  html += `</table></body></html>`;
   html += `</table></body></html>`;
 
   await saveFile(html, `AUTO_STOCK_${stamp}.xls`);

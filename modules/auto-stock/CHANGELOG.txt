@@ -9,6 +9,7 @@ Features:
 - Print PDF
 - Sort
 - Gender Detection
+- Generic Article & Variant
 - Preset
 
 Build:

@@ -76,6 +76,8 @@ function processRows(rows) {
         brand,
         category,
         artikel,
+        generic: variant,
+        variant: raw,
         desc,
         price,
         status,
@@ -101,7 +103,7 @@ function drawTable(rows) {
     body.innerHTML = `
 <tr>
 <td
-colspan="8">
+colspan="10">
 NO DATA
 </td>
 </tr>
@@ -121,6 +123,12 @@ ${r.category}
 </td>
 <td>
 ${r.artikel}
+</td>
+<td>
+${r.generic || ""}
+</td>
+<td>
+${r.variant || ""}
 </td>
 <td>
 ${r.desc}

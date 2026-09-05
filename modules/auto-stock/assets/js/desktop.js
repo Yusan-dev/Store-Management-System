@@ -4,6 +4,8 @@
     ["brand", "BRAND"],
     ["category", "CATEGORY"],
     ["artikel", "ARTIKEL"],
+    ["generic", "GENERIC ARTICLE"],
+    ["variant", "VARIANT"],
     ["desc", "DESCRIPTION"],
     ["price", "PRICE"],
     ["status", "STATUS"],
@@ -177,7 +179,7 @@ body { margin: 0; font-family: Arial, sans-serif; color: #111; }
 table { width: 100%; border-collapse: collapse; font-size: 9px; }
 th { background: #111827; color: #fff; }
 th, td { border: 1px solid #d6dbe3; padding: 5px 6px; text-align: left; vertical-align: top; }
-td:nth-child(5), td:nth-child(8) { text-align: right; white-space: nowrap; }
+td:nth-child(7), td:nth-child(10) { text-align: right; white-space: nowrap; }
 tr { break-inside: avoid; }
 .footer { margin-top: 12px; text-align: center; color: #555; font-size: 10px; }
 </style>

@@ -214,6 +214,18 @@ ARTIKEL
 
 <th>
 
+GENERIC ARTICLE
+
+</th>
+
+<th>
+
+VARIANT
+
+</th>
+
+<th>
+
 DESCRIPTION
 
 </th>
@@ -252,6 +264,18 @@ QTY
 <td>
 
 ${r.artikel}
+
+</td>
+
+<td>
+
+${r.generic || ""}
+
+</td>
+
+<td>
+
+${r.variant || ""}
 
 </td>
 
