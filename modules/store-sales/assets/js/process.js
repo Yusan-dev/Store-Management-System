@@ -396,6 +396,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.reRender = reRender;
 
+  // Toggle VIEW chart (DAILY / MONTHLY vs TARGET): re-render chart saja
+  // memakai tanggal terfilter terakhir (tidak perlu proses ulang file).
+  const chartViewSel = document.getElementById("chartViewMode");
+  if (chartViewSel)
+    chartViewSel.addEventListener("change", () => {
+      if (window.lastFilteredDates) updateStoreChart(window.lastFilteredDates);
+    });
+
   const applyBtn = document.getElementById("applyPerformanceDateRange");
   if (applyBtn) applyBtn.addEventListener("click", reRender);
 
@@ -2022,7 +2030,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 let storeChartInstance = null;
+
+// VIEW MODE chart: "daily" (default, perilaku lama) atau "monthly" (agregat per bulan vs target).
 function updateStoreChart(selectedDates) {
+    if (!window.storeData || !window.storeData.dates) return;
+
+    // Simpan tanggal terfilter terakhir supaya toggle view bisa re-render tanpa proses ulang.
+    window.lastFilteredDates = selectedDates;
+
+    const viewSel = document.getElementById('chartViewMode');
+    const viewMode = viewSel ? viewSel.value : 'daily';
+
+    if (viewMode === 'monthly') {
+        renderMonthlyVsTargetChart(selectedDates);
+    } else {
+        renderDailyPerformanceChart(selectedDates);
+    }
+}
+
+// Agregasi per bulan (YYYY-MM) dari tanggal yang SUDAH terfilter periode
+// (ALL / This Month / Quarter / Custom -> ikut periode aktif).
+// Target per bulan memakai logika yang SAMA dengan summary card (periodTargetSales):
+// - Bulan lampau   -> target bulanan penuh dari SET MONTHLY TARGETS.
+// - Bulan berjalan -> prorata AKUMULASI PERSENTASE harian dari file DAILY TARGET
+//                     (tgl 1 s.d tanggal data terakhir); fallback rasio kalender polos.
+function buildMonthlyPerformanceData(selectedDates) {
+    const monthAgg = {};   // "YYYY-MM" -> { sales, qty, sm, month, year, target }
+    const monthOrder = [];
+
+    const sortedDates = [...selectedDates].sort((a, b) => {
+        const pa = a.split('-'); const pb = b.split('-');
+        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+    });
+
+    sortedDates.forEach(d => {
+        const data = window.storeData.dates[d];
+        if (!data) return;
+        const p = d.split('-');
+        if (p.length !== 3) return;
+        const key = p[2] + '-' + p[1];
+        if (!monthAgg[key]) {
+            monthAgg[key] = {
+                sales: 0, qty: 0, sm: 0,
+                month: parseInt(p[1], 10),
+                year: parseInt(p[2], 10)
+            };
+            monthOrder.push(key);
+        }
+        monthAgg[key].sales += data.sales || 0;
+        monthAgg[key].qty += data.qty || 0;
+        monthAgg[key].sm += data.sm || 0;
+    });
+
+    // Resolve target per bulan (identik dengan logika periodTargetSales di renderDashboard)
+    const cyTargets = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
+    const dailyTargets = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
+    const maxActualStr = (window.storeData && window.storeData.maxActualDateStr) || "";
+    const mp = maxActualStr.split("-");
+    const hasMax = mp.length === 3;
+    const maxDay = hasMax ? parseInt(mp[0], 10) : 0;
+    const maxMonth = hasMax ? parseInt(mp[1], 10) : 0;
+    const maxYear = hasMax ? parseInt(mp[2], 10) : 0;
+
+    monthOrder.forEach(key => {
+        const m = monthAgg[key];
+        const monthData = cyTargets[m.month] || {};
+        const targetSales = monthData.sales || 0;
+        const isRunningMonth = hasMax && m.month === maxMonth && m.year === maxYear;
+
+        if (!isRunningMonth) {
+            m.target = targetSales;
+            return;
+        }
+
+        const monthDailyInfo = dailyTargets[m.month] || {};
+        const monthTargetMap = monthDailyInfo.targetMap || {};
+        if (Object.keys(monthTargetMap).length > 0) {
+            // Jumlahkan persentase harian ASLI dari file, tanggal 1 s.d tanggal data terakhir.
+            let accumulatedPct = 0;
+            for (let day = 1; day <= maxDay; day++) {
+                accumulatedPct += monthTargetMap[String(day)] || 0;
+            }
+            m.target = targetSales * accumulatedPct;
+        } else {
+            // Fallback: belum ada file DAILY TARGET -> rasio kalender polos.
+            const daysInMonth = new Date(m.year, m.month, 0).getDate();
+            const elapsedRatio = Math.min(Math.max(maxDay / daysInMonth, 0), 1);
+            m.target = targetSales * elapsedRatio;
+        }
+    });
+
+    return monthOrder.map(key => monthAgg[key]);
+}
+
+const MONTH_SHORT_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+// Chart DAILY (perilaku lama, tidak berubah).
+function renderDailyPerformanceChart(selectedDates) {
     if (!window.storeData || !window.storeData.dates) return;
     
     const sortedDates = [...selectedDates].sort((a, b) => {
@@ -2076,6 +2180,68 @@ function updateStoreChart(selectedDates) {
                 y: { type: 'linear', display: true, position: 'left', ticks: { font: { family: 'monospace' } } },
                 y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: 'monospace' } } },
                 x: { ticks: { font: { family: 'monospace' } } }
+            }
+        }
+    });
+}
+
+// Chart MONTHLY vs TARGET: bar Target vs bar Sales + garis Achievement % (axis kanan).
+function renderMonthlyVsTargetChart(selectedDates) {
+    const months = buildMonthlyPerformanceData(selectedDates);
+    const ctx = document.getElementById('storeChart');
+    if (!ctx) return;
+    if (storeChartInstance) storeChartInstance.destroy();
+
+    const labels = months.map(m => MONTH_SHORT_NAMES[m.month - 1] + " " + m.year);
+    const salesData = months.map(m => Math.round(m.sales));
+    const targetData = months.map(m => Math.round(m.target));
+    const achData = months.map(m => m.target > 0 ? (m.sales / m.target) * 100 : 0);
+
+    const fmtRp = (val) => "Rp " + Math.round(val).toLocaleString("en-US");
+
+    storeChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Target (Rp)', data: targetData, backgroundColor: 'rgba(17, 17, 17, 0.15)', borderColor: '#111111', borderWidth: 2, yAxisID: 'y' },
+                { label: 'Sales (Rp)', data: salesData, backgroundColor: 'rgba(22, 163, 74, 0.55)', borderColor: '#16a34a', borderWidth: 2, yAxisID: 'y' },
+                { label: 'Achievement %', data: achData, type: 'line', borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, tension: 0.3, yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { font: { family: 'monospace', weight: 'bold' } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let lbl = context.dataset.label || '';
+                            if (lbl) lbl += ': ';
+                            if (context.dataset.yAxisID === 'y1') {
+                                lbl += context.parsed.y.toFixed(1) + '%';
+                            } else {
+                                lbl += fmtRp(context.parsed.y);
+                            }
+                            return lbl;
+                        },
+                        afterBody: function(items) {
+                            if (!items || items.length === 0) return '';
+                            const idx = items[0].dataIndex;
+                            const m = months[idx];
+                            if (!m || m.target <= 0) return '';
+                            const diff = m.sales - m.target;
+                            const sign = diff >= 0 ? '+' : '-';
+                            return 'Selisih vs Target: ' + sign + ' ' + fmtRp(Math.abs(diff)) + (diff >= 0 ? ' (SURPLUS)' : ' (GAP)');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { type: 'linear', display: true, position: 'left', ticks: { font: { family: 'monospace' }, callback: (val) => (val >= 1000000000 ? (val / 1000000000) + 'M' : val >= 1000000 ? (val / 1000000) + 'JT' : val >= 1000 ? (val / 1000) + 'RB' : val) } },
+                y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, min: 0, ticks: { font: { family: 'monospace' }, callback: (val) => val + '%' } },
+                x: { ticks: { font: { family: 'monospace', weight: 'bold' } } }
             }
         }
     });
