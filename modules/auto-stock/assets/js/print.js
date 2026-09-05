@@ -9,6 +9,20 @@ function printPDF() {
     return;
   }
 
+  const cols =
+    typeof gtGetVisibleColumnList === "function" &&
+    gtGetVisibleColumnList().length
+      ? gtGetVisibleColumnList()
+      : [
+          { key: "artikel", label: "ARTIKEL" },
+          { key: "generic", label: "GENERIC ARTICLE" },
+          { key: "variant", label: "VARIANT" },
+          { key: "desc", label: "DESCRIPTION" },
+          { key: "price", label: "PRICE" },
+          { key: "status", label: "STATUS" },
+          { key: "qty", label: "QTY" },
+        ];
+
   let html = `
 
 <html>
@@ -206,47 +220,7 @@ ${rows.reduce((a, b) => a + b.qty, 0)}
 
 <tr>
 
-<th>
-
-ARTIKEL
-
-</th>
-
-<th>
-
-GENERIC ARTICLE
-
-</th>
-
-<th>
-
-VARIANT
-
-</th>
-
-<th>
-
-DESCRIPTION
-
-</th>
-
-<th>
-
-PRICE
-
-</th>
-
-<th>
-
-STATUS
-
-</th>
-
-<th>
-
-QTY
-
-</th>
+${cols.map((c) => `<th>${c.label}</th>`).join("")}
 
 </tr>
 
@@ -261,47 +235,19 @@ QTY
 
 <tr>
 
-<td>
+${cols
+  .map((c) => {
+    let v = r[c.key];
 
-${r.artikel}
+    if (v === undefined || v === null) v = "";
 
-</td>
+    if (c.key === "price" || c.key === "qty") {
+      v = Number(v).toLocaleString("en-US");
+    }
 
-<td>
-
-${r.generic || ""}
-
-</td>
-
-<td>
-
-${r.variant || ""}
-
-</td>
-
-<td>
-
-${r.desc}
-
-</td>
-
-<td>
-
-${Number(r.price).toLocaleString("en-US")}
-
-</td>
-
-<td>
-
-${r.status}
-
-</td>
-
-<td>
-
-${Number(r.qty).toLocaleString("en-US")}
-
-</td>
+    return `<td>${v}</td>`;
+  })
+  .join("")}
 
 </tr>
 

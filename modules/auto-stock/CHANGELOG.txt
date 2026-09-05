@@ -10,6 +10,7 @@ Features:
 - Sort
 - Gender Detection
 - Generic Article & Variant
+- Column Chooser (Show/Hide Columns)
 - Preset
 
 Build:

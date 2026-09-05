@@ -11,6 +11,23 @@ async function exportFiltered() {
     return;
   }
 
+  let cols = [
+    { key: "brand", label: "BRAND" },
+    { key: "category", label: "CATEGORY" },
+    { key: "artikel", label: "ARTIKEL" },
+    { key: "generic", label: "GENERIC ARTICLE" },
+    { key: "variant", label: "VARIANT" },
+    { key: "desc", label: "DESCRIPTION" },
+    { key: "price", label: "PRICE" },
+    { key: "status", label: "STATUS" },
+    { key: "gender", label: "GENDER" },
+    { key: "qty", label: "QTY" },
+  ];
+  if (typeof gtGetVisibleColumnList === "function") {
+    const visibleCols = gtGetVisibleColumnList();
+    if (visibleCols.length) cols = visibleCols;
+  }
+
   const now = new Date();
   const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const generatedAt = now.toLocaleString("id-ID", {
@@ -32,35 +49,24 @@ async function exportFiltered() {
     </head>
     <body>
     <table>
-        <tr><td colspan="10" class="title">KANGODING.ORG - SMS AUTO STOCK</td></tr>
-        <tr><td colspan="10" class="meta">GENERATED: ${generatedAt}</td></tr>
+        <tr><td colspan="${cols.length}" class="title">KANGODING.ORG - SMS AUTO STOCK</td></tr>
+        <tr><td colspan="${cols.length}" class="meta">GENERATED: ${generatedAt}</td></tr>
         <tr></tr>
         <tr>
-            <th class="th-bg">BRAND</th>
-            <th class="th-bg">CATEGORY</th>
-            <th class="th-bg">ARTIKEL</th>
-            <th class="th-bg">GENERIC ARTICLE</th>
-            <th class="th-bg">VARIANT</th>
-            <th class="th-bg">DESCRIPTION</th>
-            <th class="th-bg">PRICE</th>
-            <th class="th-bg">STATUS</th>
-            <th class="th-bg">GENDER</th>
-            <th class="th-bg">QTY</th>
+            ${cols.map((c) => `<th class="th-bg">${c.label}</th>`).join("")}
         </tr>
     `;
 
   rows.forEach((x) => {
     html += `<tr>
-            <td class="td-border">${x.brand || ""}</td>
-            <td class="td-border">${x.category || ""}</td>
-            <td class="td-border">${x.artikel || ""}</td>
-            <td class="td-border">${x.generic || ""}</td>
-            <td class="td-border">${x.variant || ""}</td>
-            <td class="td-border">${x.desc || ""}</td>
-            <td class="td-border">${x.price || ""}</td>
-            <td class="td-border">${x.status || ""}</td>
-            <td class="td-border">${x.gender || ""}</td>
-            <td class="td-border">${x.qty || ""}</td>
+            ${cols
+              .map(
+                (c) =>
+                  `<td class="td-border">${
+                    x[c.key] !== undefined && x[c.key] !== null ? x[c.key] : ""
+                  }</td>`,
+              )
+              .join("")}
         </tr>`;
   });
 

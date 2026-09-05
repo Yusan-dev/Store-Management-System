@@ -115,36 +115,16 @@ NO DATA
       "beforeend",
       `
 <tr>
-<td>
-${r.brand}
-</td>
-<td>
-${r.category}
-</td>
-<td>
-${r.artikel}
-</td>
-<td>
-${r.generic || ""}
-</td>
-<td>
-${r.variant || ""}
-</td>
-<td>
-${r.desc}
-</td>
-<td>
-${Number(r.price).toLocaleString()}
-</td>
-<td>
-${r.status}
-</td>
-<td>
-${r.gender}
-</td>
-<td>
-${Number(r.qty).toLocaleString()}
-</td>
+${gtTd("brand", r.brand)}
+${gtTd("category", r.category)}
+${gtTd("artikel", r.artikel)}
+${gtTd("generic", r.generic || "")}
+${gtTd("variant", r.variant || "")}
+${gtTd("desc", r.desc)}
+${gtTd("price", Number(r.price).toLocaleString())}
+${gtTd("status", r.status)}
+${gtTd("gender", r.gender)}
+${gtTd("qty", Number(r.qty).toLocaleString())}
 </tr>
 `,
     );

@@ -1,17 +1,27 @@
 (function () {
   const storageKey = "gtAutoStock.filterPresets";
-  const printableColumns = [
-    ["brand", "BRAND"],
-    ["category", "CATEGORY"],
-    ["artikel", "ARTIKEL"],
-    ["generic", "GENERIC ARTICLE"],
-    ["variant", "VARIANT"],
-    ["desc", "DESCRIPTION"],
-    ["price", "PRICE"],
-    ["status", "STATUS"],
-    ["gender", "GENDER"],
-    ["qty", "QTY"],
-  ];
+  function getPrintableColumns() {
+    if (typeof window.gtGetVisibleColumnList === "function") {
+      const list = window.gtGetVisibleColumnList();
+
+      if (list && list.length) {
+        return list;
+      }
+    }
+
+    return [
+      ["brand", "BRAND"],
+      ["category", "CATEGORY"],
+      ["artikel", "ARTIKEL"],
+      ["generic", "GENERIC ARTICLE"],
+      ["variant", "VARIANT"],
+      ["desc", "DESCRIPTION"],
+      ["price", "PRICE"],
+      ["status", "STATUS"],
+      ["gender", "GENDER"],
+      ["qty", "QTY"],
+    ];
+  }
 
   function rows() {
     return Array.isArray(window.filteredData) ? window.filteredData : [];
@@ -137,6 +147,8 @@
       0,
     );
 
+    const printableColumns = getPrintableColumns();
+
     function normalizeNumberForCopy(v) {
       if (v == null) return "";
       return String(v).trim().replace(/[^0-9\-]/g, "");
@@ -149,13 +161,15 @@
             ${printableColumns
               .map(([key]) => {
                 let value;
+                let extraStyle = "";
                 if (key === "price" || key === "qty") {
                   // tampilkan angka murni tanpa pemisah ribuan agar copy->Excel tetap utuh
                   value = normalizeNumberForCopy(item[key] || 0);
+                  extraStyle = ' style="text-align:right; white-space:nowrap;"';
                 } else {
                   value = item[key] || "";
                 }
-                return `<td>${escapeHtml(value)}</td>`;
+                return `<td${extraStyle}>${escapeHtml(value)}</td>`;
               })
               .join("")}
           </tr>`,
@@ -179,7 +193,7 @@ body { margin: 0; font-family: Arial, sans-serif; color: #111; }
 table { width: 100%; border-collapse: collapse; font-size: 9px; }
 th { background: #111827; color: #fff; }
 th, td { border: 1px solid #d6dbe3; padding: 5px 6px; text-align: left; vertical-align: top; }
-td:nth-child(7), td:nth-child(10) { text-align: right; white-space: nowrap; }
+/* perataan kolom angka diatur inline mengikuti seleksi kolom (column chooser) */
 tr { break-inside: avoid; }
 .footer { margin-top: 12px; text-align: center; color: #555; font-size: 10px; }
 </style>
