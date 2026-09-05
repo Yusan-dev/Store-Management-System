@@ -2128,6 +2128,10 @@ const MONTH_SHORT_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP"
 // Chart DAILY (perilaku lama, tidak berubah).
 function renderDailyPerformanceChart(selectedDates) {
     if (!window.storeData || !window.storeData.dates) return;
+
+    // Mode DAILY: sembunyikan tabel achievement bulanan (hanya untuk mode MONTHLY).
+    const achWrap = document.getElementById("monthlyAchievementWrap");
+    if (achWrap) achWrap.style.display = "none";
     
     const sortedDates = [...selectedDates].sort((a, b) => {
         const pa = a.split('-'); const pb = b.split('-');
@@ -2185,9 +2189,88 @@ function renderDailyPerformanceChart(selectedDates) {
     });
 }
 
+// Tabel achievement bulanan di bawah chart (mode MONTHLY): actual vs target + selisih + status.
+// Target dihitung oleh buildMonthlyPerformanceData dengan logika yang sama dengan summary card.
+function renderMonthlyAchievementTable(months) {
+    const wrap = document.getElementById("monthlyAchievementWrap");
+    const thead = document.getElementById("monthlyAchievementHead");
+    const tbody = document.getElementById("monthlyAchievementBody");
+    const note = document.getElementById("monthlyAchievementNote");
+    if (!wrap || !thead || !tbody) return;
+
+    const fmtRp = (val) => Math.round(val).toLocaleString("en-US");
+    const noTargetMonths = [];
+
+    if (!Array.isArray(months) || months.length === 0) {
+        thead.innerHTML = "";
+        tbody.innerHTML = "<tr><td style=\"padding:6px; border:1px solid #111; text-align:center;\">NO DATA AVAILABLE</td></tr>";
+        if (note) note.innerText = "";
+    } else {
+        thead.innerHTML = "<tr>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff;\">MONTH</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">SALES (Rp)</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">TARGET (Rp)</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">ACH %</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">SELISIH (Rp)</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:center;\">STATUS</th>" +
+            "</tr>";
+
+        let htmlRows = "";
+        let totSales = 0, totTarget = 0;
+
+        months.forEach(m => {
+            totSales += m.sales || 0;
+            totTarget += m.target || 0;
+            const hasTarget = m.target > 0;
+            const ach = hasTarget ? (m.sales / m.target) * 100 : 0;
+            const diff = m.sales - m.target;
+            let statusHtml = "";
+            if (!hasTarget) {
+                statusHtml = "<span style=\"color:#6b7280; font-weight:bold;\">NO TARGET</span>";
+                noTargetMonths.push(MONTH_SHORT_NAMES[m.month - 1] + " " + m.year);
+            } else if (m.sales >= m.target) {
+                statusHtml = "<span style=\"color:#16a34a; font-weight:bold;\">ACHIEVED</span>";
+            } else {
+                statusHtml = "<span style=\"color:#dc2626; font-weight:bold;\">BELOW TARGET</span>";
+            }
+            htmlRows += "<tr>" +
+                "<td style=\"padding:6px; border:1px solid #111; font-weight:bold;\">" + MONTH_SHORT_NAMES[m.month - 1] + " " + m.year + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + fmtRp(m.sales) + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + (hasTarget ? fmtRp(m.target) : "-") + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right; color:" + (hasTarget ? (ach >= 100 ? "#16a34a" : "#dc2626") : "#6b7280") + "; font-weight:bold;\">" + (hasTarget ? ach.toFixed(1) + "%" : "-") + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + (hasTarget ? ((diff >= 0 ? "+ " : "- ") + fmtRp(Math.abs(diff))) : "-") + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:center;\">" + statusHtml + "</td>" +
+                "</tr>";
+        });
+
+        const totHasTarget = totTarget > 0;
+        const totAch = totHasTarget ? (totSales / totTarget) * 100 : 0;
+        const totDiff = totSales - totTarget;
+
+        htmlRows += "<tr style=\"background:#111; color:#fff;\">" +
+            "<td style=\"padding:6px; border:1px solid #111; font-weight:bold;\">TOTAL</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + fmtRp(totSales) + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? fmtRp(totTarget) : "-") + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? totAch.toFixed(1) + "%" : "-") + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? ((totDiff >= 0 ? "+ " : "- ") + fmtRp(Math.abs(totDiff))) : "-") + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:center; font-weight:bold;\">" + (totHasTarget ? (totAch >= 100 ? "ACHIEVED" : "BELOW TARGET") : "-") + "</td>" +
+            "</tr>";
+
+        tbody.innerHTML = htmlRows;
+
+        let noteText = "Target bulan lampau = target bulanan penuh (SET MONTHLY TARGETS); bulan berjalan = prorata akumulasi DAILY TARGET s.d tanggal data terakhir.";
+        if (noTargetMonths.length > 0) noteText += " Target belum di-set untuk: " + noTargetMonths.join(", ") + ".";
+        if (note) note.innerText = noteText;
+    }
+
+    wrap.style.display = "block";
+}
+
+
 // Chart MONTHLY vs TARGET: bar Target vs bar Sales + garis Achievement % (axis kanan).
 function renderMonthlyVsTargetChart(selectedDates) {
     const months = buildMonthlyPerformanceData(selectedDates);
+    renderMonthlyAchievementTable(months);
     const ctx = document.getElementById('storeChart');
     if (!ctx) return;
     if (storeChartInstance) storeChartInstance.destroy();
@@ -2199,13 +2282,17 @@ function renderMonthlyVsTargetChart(selectedDates) {
 
     const fmtRp = (val) => "Rp " + Math.round(val).toLocaleString("en-US");
 
+    // Warna bar Sales mengikuti pencapaian: hijau >= target, merah < target,
+    // abu-abu bila target bulan itu belum di-set.
+    const salesBarColors = months.map(m => m.target > 0 ? (m.sales >= m.target ? "#16a34a" : "#dc2626") : "#9ca3af");
+
     storeChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
                 { label: 'Target (Rp)', data: targetData, backgroundColor: 'rgba(17, 17, 17, 0.15)', borderColor: '#111111', borderWidth: 2, yAxisID: 'y' },
-                { label: 'Sales (Rp)', data: salesData, backgroundColor: 'rgba(22, 163, 74, 0.55)', borderColor: '#16a34a', borderWidth: 2, yAxisID: 'y' },
+                { label: 'Sales (Rp)', data: salesData, backgroundColor: salesBarColors, borderColor: '#111111', borderWidth: 1, yAxisID: 'y' },
                 { label: 'Achievement %', data: achData, type: 'line', borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, tension: 0.3, yAxisID: 'y1' }
             ]
         },

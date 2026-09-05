@@ -213,6 +213,17 @@
     <div style="width:100%; height:300px;">
         <canvas id="storeChart"></canvas>
     </div>
+    <!-- TABEL ACHIEVEMENT BULANAN (muncul saat VIEW: MONTHLY vs TARGET) -->
+    <div id="monthlyAchievementWrap" style="display:none; margin-top:15px; border-top:2px solid #111; padding-top:12px;">
+        <h3 style="font-size:12px; letter-spacing:1px; color:#111; margin:0 0 8px 0;">MONTHLY ACHIEVEMENT vs TARGET</h3>
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-family:monospace; font-size:11px;">
+                <thead id="monthlyAchievementHead"></thead>
+                <tbody id="monthlyAchievementBody"></tbody>
+            </table>
+        </div>
+        <div id="monthlyAchievementNote" style="font-size:10px; color:#666; margin-top:6px;"></div>
+    </div>
 </section>
 
 <!-- ===================================== -->
@@ -359,7 +370,7 @@
 <script src="assets/js/engine.js?v=1"></script>
 <script src="assets/js/runtime.js"></script>
 <script src="assets/js/db-cache.js?v=7"></script>
-<script src="assets/js/process.js?v=16"></script>
+<script src="assets/js/process.js?v=17"></script>
 <script src="assets/js/summary.js?v=7"></script>
 <script src="assets/js/export.js?v=7"></script>
 <script src="assets/js/print.js?v=7"></script>
