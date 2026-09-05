@@ -213,12 +213,21 @@ document.getElementById("export").addEventListener("click", async function() {
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
     
-    // Auto-copy clean table ke clipboard
-    navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": new Blob([exportTable.outerHTML], { type: "text/html" }),
-        "text/plain": new Blob([exportTable.innerText], { type: "text/plain" })
-      })
-    ]).catch(() => {});
+    // Auto-copy clean table ke clipboard. Dibungkus try/catch + feature
+    // detect karena constructor ClipboardItem bisa melempar error secara
+    // SINKRON (mis. DataCloneError) di beberapa browser bila tipe/objek
+    // tidak didukung — .catch() saja tidak menangkap error sinkron.
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([exportTable.outerHTML], { type: "text/html" }),
+            "text/plain": new Blob([exportTable.innerText], { type: "text/plain" })
+          })
+        ]).catch(() => {});
+      }
+    } catch (e) {
+      // Clipboard bersifat opsional — kegagalan diabaikan.
+    }
 });
 

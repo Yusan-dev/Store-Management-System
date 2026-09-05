@@ -139,10 +139,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const saved = localStorage.getItem("gt_store_target_data");
       if (saved) {
         targetData = JSON.parse(saved);
-      } else {
-        alert("Upload Target Harian");
-        return;
       }
+      // CATATAN: input file "Target Harian" terpisah (#target) sudah TIDAK ADA
+      // lagi di index.html. Target harian resmi diisi lewat modal
+      // "SET MONTHLY TARGETS" (disimpan ke gt_store_targets_cy +
+      // gt_store_daily_targets_cy). Validasi lama yang mewajibkan file target
+      // / gt_store_target_data membuat tombol PROSES selalu terblokir
+      // notif "Upload Target Harian" walau target sudah diisi via modal.
+    }
+    // Target dianggap tersedia bila ada salah satu:
+    // 1) file Target Harian legacy yang diupload saat ini (files.target)
+    // 2) cache file target lama (gt_store_target_data)
+    // 3) target bulanan dari modal SET MONTHLY TARGETS (gt_store_targets_cy)
+    const hasModalTargets = (() => {
+      try {
+        const cy = JSON.parse(
+          localStorage.getItem("gt_store_targets_cy") || "{}"
+        );
+        return Object.keys(cy).length > 0;
+      } catch (e) {
+        return false;
+      }
+    })();
+    if (!files.target && !targetData && !hasModalTargets) {
+      alert(
+        "Set Monthly Targets dulu (klik tombol SET MONTHLY TARGETS) atau upload file Target Harian"
+      );
+      return;
     }
 
     if (!files.dailyCash) {
@@ -173,9 +196,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const dailyCashData = await readExcel(files.dailyCash);
       const advOrdData = await readExcel(files.advOrd);
 
+      // Ekstraksi data ke GTEngine — sumber untuk modal detail staf,
+      // Daily Validation Audit & performance filter (summary.js).
+      // Pola sama dengan modul sales-staff:
+      // clear -> parseDailyCash -> parseMSR -> parseSalesPerson.
+      // Guard typeof: jika engine.js tidak termuat, modul tetap jalan
+      // dengan fitur legacy (dashboard) tanpa fitur engine.
+      if (typeof GTEngine !== "undefined") {
+        GTEngine.clear();
+        GTEngine.parseDailyCash(dailyCashData);
+        GTEngine.parseMSR(msrData);
+        GTEngine.parseSalesPerson(advOrdData);
+      }
+
+      // targetData bisa null (jalur modal SET MONTHLY TARGETS) ->
+      // kirim array kosong agar loop parse target di parseAllData aman;
+      // perhitungan target dashboard memakai gt_store_targets_cy +
+      // gt_store_daily_targets_cy, bukan array legacy ini.
       window.storeData = parseAllData(
         msrData,
-        targetData,
+        targetData || [],
         dailyCashData,
         advOrdData
       );
@@ -480,7 +520,7 @@ function parseDate(rawDate) {
 // =============================================
 // PRICE TYPE DETECTOR (dari logika auto stock)
 // =============================================
-function gesttechPrice(price, division) {
+function detectPriceType(price, division) {
   price = Number(price);
   if (!price || isNaN(price)) return "unknown";
 
@@ -1670,7 +1710,7 @@ function renderDashboard(
   renderCompare("o2oLy", totalO2OSales, compO2OSales, true, false, compLabel);
   // ===================================
   // Render SALES BY DISCOUNT table (collapsible per kategori)
-  // Sumber: discountData dari MSR (gesttechPrice logic)
+  // Sumber: discountData dari MSR (price type detector logic)
   // ===================================
   const discAgg = {}; // { ACC: { MEN: { normal: {qty,sales}, ... }, WOMEN: ... } }
   selectedDates.forEach((d) => {

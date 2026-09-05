@@ -224,65 +224,10 @@ const GTRuntime = (() => {
   // =====================================================
 
   function checkIntegrity() {
+    // Integrity check dinonaktifkan (selalu lolos) oleh pemilik modul.
+    // Body lama setelah "return true" sebelumnya unreachable code
+    // (warning console: "unreachable code after return statement").
     return true;
-
-    if (state.dead) {
-      return false;
-    }
-
-    const ownerId = getOwnerId();
-
-    const brand = getBrand();
-
-    const productCode = getProductCode();
-
-    const meta = document.querySelector('meta[name="gt-runtime"]');
-
-    const anchor = document.getElementById("gt-runtime-anchor");
-
-    const watermark = document.getElementById("KANGODING.ORGWatermark");
-
-    const logo = document.querySelector("img.logo");
-
-    const metaValid =
-      meta && meta.content === `${brand}:${ownerId}:${productCode}`;
-
-    const anchorValid =
-      anchor &&
-      anchor.dataset.owner === ownerId &&
-      anchor.dataset.product === productCode;
-
-    const watermarkText = text(watermark?.textContent);
-
-    const watermarkValid = Boolean(
-      watermark &&
-      watermark.dataset.owner === ownerId &&
-      watermarkText.includes(brand) &&
-      watermarkText.includes(ownerId),
-    );
-    const logoValid = logo && logo.getAttribute("src") === "img/logo.png";
-
-    console.table({
-      metaValid,
-
-      anchorValid,
-
-      watermarkValid,
-
-      logoValid,
-
-      metaContent: meta?.content || "NOT FOUND",
-
-      anchorOwner: anchor?.dataset.owner || "NOT FOUND",
-
-      anchorProduct: anchor?.dataset.product || "NOT FOUND",
-
-      watermarkText,
-
-      logoSrc: logo?.getAttribute("src") || "NOT FOUND",
-    });
-
-    return Boolean(metaValid && anchorValid && watermarkValid && logoValid);
   }
 
   // =====================================================
