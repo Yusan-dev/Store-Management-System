@@ -2189,7 +2189,7 @@ function renderDailyPerformanceChart(selectedDates) {
     });
 }
 
-// Tabel achievement bulanan di bawah chart (mode MONTHLY): actual vs target + selisih + status.
+// Tabel achievement bulanan di bawah chart (mode MONTHLY): actual vs target + selisih + status + UPT, ATV, RPT.
 // Target dihitung oleh buildMonthlyPerformanceData dengan logika yang sama dengan summary card.
 function renderMonthlyAchievementTable(months) {
     const wrap = document.getElementById("monthlyAchievementWrap");
@@ -2212,18 +2212,27 @@ function renderMonthlyAchievementTable(months) {
             "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">TARGET (Rp)</th>" +
             "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">ACH %</th>" +
             "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">SELISIH (Rp)</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">UPT</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">ATV (Rp)</th>" +
+            "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:right;\">RPT (Rp)</th>" +
             "<th style=\"padding:6px; border:1px solid #111; background:#111; color:#fff; text-align:center;\">STATUS</th>" +
             "</tr>";
 
         let htmlRows = "";
-        let totSales = 0, totTarget = 0;
+        let totSales = 0, totTarget = 0, totQty = 0, totSM = 0;
 
         months.forEach(m => {
             totSales += m.sales || 0;
             totTarget += m.target || 0;
+            totQty += m.qty || 0;
+            totSM += m.sm || 0;
             const hasTarget = m.target > 0;
             const ach = hasTarget ? (m.sales / m.target) * 100 : 0;
             const diff = m.sales - m.target;
+            const upt = m.sm > 0 ? (m.qty / m.sm) : 0;
+            const atv = m.sm > 0 ? (m.sales / m.sm) : 0;
+            const rpt = atv;
+
             let statusHtml = "";
             if (!hasTarget) {
                 statusHtml = "<span style=\"color:#6b7280; font-weight:bold;\">NO TARGET</span>";
@@ -2239,6 +2248,9 @@ function renderMonthlyAchievementTable(months) {
                 "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + (hasTarget ? fmtRp(m.target) : "-") + "</td>" +
                 "<td style=\"padding:6px; border:1px solid #111; text-align:right; color:" + (hasTarget ? (ach >= 100 ? "#16a34a" : "#dc2626") : "#6b7280") + "; font-weight:bold;\">" + (hasTarget ? ach.toFixed(1) + "%" : "-") + "</td>" +
                 "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + (hasTarget ? ((diff >= 0 ? "+ " : "- ") + fmtRp(Math.abs(diff))) : "-") + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + upt.toFixed(2) + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + fmtRp(atv) + "</td>" +
+                "<td style=\"padding:6px; border:1px solid #111; text-align:right;\">" + fmtRp(rpt) + "</td>" +
                 "<td style=\"padding:6px; border:1px solid #111; text-align:center;\">" + statusHtml + "</td>" +
                 "</tr>";
         });
@@ -2246,6 +2258,9 @@ function renderMonthlyAchievementTable(months) {
         const totHasTarget = totTarget > 0;
         const totAch = totHasTarget ? (totSales / totTarget) * 100 : 0;
         const totDiff = totSales - totTarget;
+        const totUPT = totSM > 0 ? (totQty / totSM) : 0;
+        const totATV = totSM > 0 ? (totSales / totSM) : 0;
+        const totRPT = totATV;
 
         htmlRows += "<tr style=\"background:#111; color:#fff;\">" +
             "<td style=\"padding:6px; border:1px solid #111; font-weight:bold;\">TOTAL</td>" +
@@ -2253,6 +2268,9 @@ function renderMonthlyAchievementTable(months) {
             "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? fmtRp(totTarget) : "-") + "</td>" +
             "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? totAch.toFixed(1) + "%" : "-") + "</td>" +
             "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + (totHasTarget ? ((totDiff >= 0 ? "+ " : "- ") + fmtRp(Math.abs(totDiff))) : "-") + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + totUPT.toFixed(2) + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + fmtRp(totATV) + "</td>" +
+            "<td style=\"padding:6px; border:1px solid #111; text-align:right; font-weight:bold;\">" + fmtRp(totRPT) + "</td>" +
             "<td style=\"padding:6px; border:1px solid #111; text-align:center; font-weight:bold;\">" + (totHasTarget ? (totAch >= 100 ? "ACHIEVED" : "BELOW TARGET") : "-") + "</td>" +
             "</tr>";
 
@@ -2267,7 +2285,7 @@ function renderMonthlyAchievementTable(months) {
 }
 
 
-// Chart MONTHLY vs TARGET: bar Target vs bar Sales + garis Achievement % (axis kanan).
+// Chart MONTHLY vs TARGET: bar Target vs bar Sales + garis RPT/ATV, AUR, Achievement % + bar UPT (seperti di DAILY).
 function renderMonthlyVsTargetChart(selectedDates) {
     const months = buildMonthlyPerformanceData(selectedDates);
     renderMonthlyAchievementTable(months);
@@ -2279,6 +2297,9 @@ function renderMonthlyVsTargetChart(selectedDates) {
     const salesData = months.map(m => Math.round(m.sales));
     const targetData = months.map(m => Math.round(m.target));
     const achData = months.map(m => m.target > 0 ? (m.sales / m.target) * 100 : 0);
+    const uptData = months.map(m => m.sm > 0 ? (m.qty / m.sm) : 0);
+    const rptData = months.map(m => m.sm > 0 ? Math.round(m.sales / m.sm) : 0);
+    const aurData = months.map(m => m.qty > 0 ? Math.round(m.sales / m.qty) : 0);
 
     const fmtRp = (val) => "Rp " + Math.round(val).toLocaleString("en-US");
 
@@ -2293,7 +2314,10 @@ function renderMonthlyVsTargetChart(selectedDates) {
             datasets: [
                 { label: 'Target (Rp)', data: targetData, backgroundColor: 'rgba(17, 17, 17, 0.15)', borderColor: '#111111', borderWidth: 2, yAxisID: 'y' },
                 { label: 'Sales (Rp)', data: salesData, backgroundColor: salesBarColors, borderColor: '#111111', borderWidth: 1, yAxisID: 'y' },
-                { label: 'Achievement %', data: achData, type: 'line', borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, tension: 0.3, yAxisID: 'y1' }
+                { label: 'RPT (Rp)', data: rptData, type: 'line', borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y' },
+                { label: 'AUR (Rp)', data: aurData, type: 'line', borderColor: '#3b82f6', backgroundColor: '#3b82f6', borderWidth: 2, tension: 0.3, fill: false, yAxisID: 'y' },
+                { label: 'Achievement %', data: achData, type: 'line', borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', borderWidth: 2, borderDash: [5, 5], tension: 0.3, fill: false, yAxisID: 'y1' },
+                { label: 'UPT', data: uptData, type: 'bar', backgroundColor: 'rgba(239, 68, 68, 0.45)', borderColor: '#ef4444', borderWidth: 1, yAxisID: 'y1' }
             ]
         },
         options: {
@@ -2306,8 +2330,10 @@ function renderMonthlyVsTargetChart(selectedDates) {
                         label: function(context) {
                             let lbl = context.dataset.label || '';
                             if (lbl) lbl += ': ';
-                            if (context.dataset.yAxisID === 'y1') {
+                            if (lbl.indexOf('Achievement %') !== -1) {
                                 lbl += context.parsed.y.toFixed(1) + '%';
+                            } else if (lbl.indexOf('UPT') !== -1) {
+                                lbl += context.parsed.y.toFixed(2);
                             } else {
                                 lbl += fmtRp(context.parsed.y);
                             }
@@ -2327,7 +2353,7 @@ function renderMonthlyVsTargetChart(selectedDates) {
             },
             scales: {
                 y: { type: 'linear', display: true, position: 'left', ticks: { font: { family: 'monospace' }, callback: (val) => (val >= 1000000000 ? (val / 1000000000) + 'M' : val >= 1000000 ? (val / 1000000) + 'JT' : val >= 1000 ? (val / 1000) + 'RB' : val) } },
-                y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, min: 0, ticks: { font: { family: 'monospace' }, callback: (val) => val + '%' } },
+                y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, min: 0, ticks: { font: { family: 'monospace' } } },
                 x: { ticks: { font: { family: 'monospace', weight: 'bold' } } }
             }
         }
