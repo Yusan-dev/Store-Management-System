@@ -587,6 +587,18 @@ function parseAllData(
   let o2oInvoices = {};
   const targetMap = {};
 
+  // Lookup kode artikel -> key artikel MSR ("KODE / NAMA") per tanggal.
+  // Salesperson Wise hanya memuat KODE artikel, sedangkan key di
+  // dataByDate[date].articles adalah teks lengkap kolom MSR.
+  const articleKeyByDateCode = {};
+  const articleCode = (v) =>
+    String(v || "").split("/")[0].trim().toUpperCase();
+
+  // Nominal NETT per invoice penjualan (Daily Cash) dan item per invoice
+  // (Salesperson Wise) untuk menghitung diskon invoice.
+  const dailyInvoiceAmount = {};
+  const invoiceLines = {};
+
   // 1. Parse Target
   for (let i = 1; i < targetData.length; i++) {
     const row = targetData[i];
@@ -730,6 +742,9 @@ function parseAllData(
     }
 
     if (article) {
+      if (!articleKeyByDateCode[date]) articleKeyByDateCode[date] = {};
+      articleKeyByDateCode[date][articleCode(article)] = article;
+
       if (!dataByDate[date].articles[article]) {
         dataByDate[date].articles[article] = {
           qty: 0,
@@ -759,12 +774,18 @@ function parseAllData(
 
     if (!currentDate || !dataByDate[currentDate]) continue;
 
+    // Lewati baris "Total For ..." / "GrandTotal" / "Page": kolom ke-2 berisi
+    // nominal total (bisa 6+ digit & berawalan 100) dan BUKAN invoice.
+    if (/^(TOTAL|GRAND|PAGE)/i.test(firstCell)) continue;
+
     const counter = parseInt(row[0], 10);
     const invoice = String(row[1] || "").trim();
     const sales = parseRupiah(row[2]);
 
     if (!/^\d{6,}$/.test(invoice)) continue; // harus angka 6+
     if (!invoice.startsWith("100")) continue; // hanya struk PENJUALAN (bukan return)
+
+    dailyInvoiceAmount[invoice] = sales;
 
     if (!smSets[currentDate]) smSets[currentDate] = new Set();
     smSets[currentDate].add(invoice);
@@ -785,7 +806,11 @@ function parseAllData(
     const row = advOrdData[i];
     if (!row) continue;
     const firstCell = String(row[0] || "").trim();
-    
+
+    // Baris "Total For <staf>" / "Grand Total": kolom ke-2 berisi nominal
+    // total, bukan invoice -> jangan diproses sebagai transaksi.
+    if (/^(TOTAL|GRAND|PAGE)/i.test(firstCell)) continue;
+
     let isAdvDate = false;
     if (firstCell.includes("-") || firstCell.includes("/") || firstCell.includes(".")) {
       isAdvDate = true;
@@ -827,6 +852,16 @@ function parseAllData(
 
     if (!invoice || !/^\d{6,}$/.test(invoice)) continue;
 
+    // Kumpulkan item per invoice untuk alokasi diskon invoice
+    if (unitPrice > 0 && currentAdvDate) {
+      if (!invoiceLines[invoice]) invoiceLines[invoice] = [];
+      invoiceLines[invoice].push({
+        date: currentAdvDate,
+        article: currentArticle,
+        sales,
+      });
+    }
+
     // Process O2O
     if (o2oInvoices[invoice]) {
       let qty = Math.round(sales / unitPrice);
@@ -840,7 +875,10 @@ function parseAllData(
 
     // Process Category SM
     if (currentAdvDate && dataByDate[currentAdvDate] && currentArticle) {
-      const artData = dataByDate[currentAdvDate].articles[currentArticle];
+      const artKey =
+        (articleKeyByDateCode[currentAdvDate] || {})[articleCode(currentArticle)] ||
+        currentArticle;
+      const artData = dataByDate[currentAdvDate].articles[artKey];
       if (artData) {
         const catKey = getCatKey(artData.division);
         if (
@@ -852,6 +890,59 @@ function parseAllData(
       }
     }
   }
+
+  // 5. Diskon invoice -> SALES NETT (sesuai Daily Cash)
+  //
+  // MSR & Salesperson Wise mencatat harga KOTOR per item, sedangkan
+  // Daily Cash mencatat nominal invoice NETT. Diskon invoice =
+  // total item invoice - nominal Daily Cash, dibebankan proporsional ke
+  // item MD (paper bag / Non-MD tidak ikut diskon). Hasilnya:
+  //   sales per tanggal = Daily Cash - paper bag = MSR MD - diskon.
+  const dynamicCatKey = (division) => {
+    const d = String(division || "").toUpperCase();
+    if (d.includes("ACC") || d.includes("ACCESSORIES")) return "ACC";
+    if (d.includes("BAG") || d.includes("TAS")) return "BAG";
+    if (d.includes("SHOES") || d.includes("FOOTWEAR")) return "FTW";
+    if (d.includes("APP") || d.includes("APPAREL") || d.includes("CLOTHING"))
+      return "APP";
+    return d;
+  };
+
+  Object.keys(invoiceLines).forEach((invoice) => {
+    if (!Object.prototype.hasOwnProperty.call(dailyInvoiceAmount, invoice)) return;
+
+    const lines = invoiceLines[invoice];
+    const grossInvoice = lines.reduce((sum, l) => sum + l.sales, 0);
+    const discount = grossInvoice - dailyInvoiceAmount[invoice];
+    if (discount <= 0) return;
+
+    // hanya item MD yang ada di MSR
+    const mdLines = lines.filter((l) => {
+      const key = (articleKeyByDateCode[l.date] || {})[articleCode(l.article)];
+      return key && dataByDate[l.date] && dataByDate[l.date].articles[key];
+    });
+    const mdBase = mdLines.reduce((sum, l) => sum + l.sales, 0);
+    if (mdLines.length === 0 || mdBase <= 0) return;
+
+    let allocated = 0;
+    mdLines.forEach((l, idx) => {
+      const share =
+        idx === mdLines.length - 1
+          ? discount - allocated
+          : Math.round((discount * l.sales) / mdBase);
+      allocated += share;
+
+      const d = dataByDate[l.date];
+      const key = articleKeyByDateCode[l.date][articleCode(l.article)];
+      const art = d.articles[key];
+      const cat = dynamicCatKey(art.division);
+
+      d.sales -= share;
+      art.sales -= share;
+      if (d.dynamicCats && d.dynamicCats[cat]) d.dynamicCats[cat].sales -= share;
+      d.discountTotal = (d.discountTotal || 0) + share;
+    });
+  });
 
   // Get actual max date before extrapolation
   const actualDates = Object.keys(dataByDate).sort((a, b) => {

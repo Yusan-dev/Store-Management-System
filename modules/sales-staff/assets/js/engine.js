@@ -283,6 +283,21 @@ const GTEngine = (() => {
       const counter = number(row[0]);
 
       // ============================================
+      // BARIS TOTAL / GRAND TOTAL / PAGE
+      //
+      // Pada baris "Total For ..." kolom ke-2 berisi
+      // NOMINAL TOTAL (angka 6+ digit), bukan invoice.
+      // Tanpa guard ini total terbaca sebagai invoice
+      // palsu dan menggelembungkan Daily Cash.
+      // ============================================
+
+      const rawCounter = String(row[0] ?? "").trim();
+
+      if (rawCounter !== "" && !/^\d+$/.test(rawCounter)) {
+        continue;
+      }
+
+      // ============================================
       // INVOICE
       // ============================================
 
@@ -963,6 +978,85 @@ const GTEngine = (() => {
   }
 
   // =====================================================
+  // INVOICE DISCOUNT ALLOCATION
+  //
+  // Salesperson Wise & MSR mencatat harga KOTOR per item.
+  // Daily Cash Collection mencatat nominal invoice NETT
+  // (setelah diskon header).
+  //
+  // diskon invoice = total item invoice (Salesperson Wise)
+  //                  - nominal invoice (Daily Cash)
+  //
+  // Diskon dibebankan proporsional ke item MD saja
+  // (Non-MD / paper bag tetap utuh), lalu disimpan di
+  // t.discount dan t.netSales. Idempotent: aman dipanggil
+  // berulang.
+  // =====================================================
+
+  function computeInvoiceDiscounts() {
+    transactions.forEach((t) => {
+      t.discount = 0;
+
+      t.netSales = Number(t.sales || 0);
+    });
+
+    const linesByInvoice = new Map();
+
+    transactions.forEach((t) => {
+      if (t.isGeneratedReturn || t.isReturn) {
+        return;
+      }
+
+      if (!linesByInvoice.has(t.invoice)) {
+        linesByInvoice.set(t.invoice, []);
+      }
+
+      linesByInvoice.get(t.invoice).push(t);
+    });
+
+    linesByInvoice.forEach((lines, invoice) => {
+      const inv = invoiceMap.get(invoice);
+
+      // hanya invoice penjualan yang ada di Daily Cash
+
+      if (!inv || !inv.isSale || !invoiceSales.has(invoice)) {
+        return;
+      }
+
+      const grossInvoice = lines.reduce((sum, t) => sum + Number(t.sales || 0), 0);
+
+      const discount = grossInvoice - Number(inv.sales || 0);
+
+      if (discount <= 0) {
+        return;
+      }
+
+      const mdLines = lines.filter((t) => !t.isNonMD);
+
+      const mdBase = mdLines.reduce((sum, t) => sum + Number(t.sales || 0), 0);
+
+      if (mdLines.length === 0 || mdBase <= 0) {
+        return;
+      }
+
+      let allocated = 0;
+
+      mdLines.forEach((t, index) => {
+        const share =
+          index === mdLines.length - 1
+            ? discount - allocated
+            : Math.round((discount * Number(t.sales || 0)) / mdBase);
+
+        allocated += share;
+
+        t.discount = share;
+
+        t.netSales = Number(t.sales || 0) - share;
+      });
+    });
+  }
+
+  // =====================================================
   // GET DAILY CASH INVOICES BY DATE
   // =====================================================
 
@@ -1000,6 +1094,10 @@ const GTEngine = (() => {
   function generateSummary(dateFilter = "") {
     const summary = new Map();
 
+    // SALES = NETT (setelah diskon invoice), sesuai Daily Cash
+
+    computeInvoiceDiscounts();
+
     // =====================================================
     // 1. STAFF PERFORMANCE
     // SOURCE = SALESPERSON WISE
@@ -1034,6 +1132,10 @@ const GTEngine = (() => {
 
           sales: 0,
 
+          grossSales: 0,
+
+          discount: 0,
+
           sm: 0,
 
           qty: 0,
@@ -1046,7 +1148,11 @@ const GTEngine = (() => {
 
       const row = summary.get(staffName);
 
-      row.sales += Number(t.sales || 0);
+      row.sales += Number(t.netSales ?? t.sales ?? 0);
+
+      row.grossSales += Number(t.sales || 0);
+
+      row.discount += Number(t.discount || 0);
 
       row.qty += Number(t.qty || 0);
 
@@ -1147,7 +1253,21 @@ const GTEngine = (() => {
     // FINAL QTY   = NET MD QTY
     // =====================================================
 
-    const finalSales = mdBaseSales;
+    // NETT: Daily Cash (semua invoice, sale + return)
+    // dikurangi Non-MD (paper bag) dari MSR.
+    // Jika Daily Cash kosong untuk filter ini, fallback ke MSR MD.
+
+    const dailyCashInFilter = [...invoiceMap.values()].filter(
+      (inv) => invoiceSales.has(inv.invoice) && matchDateFilter(inv.date, dateFilter),
+    );
+
+    const dailyCashTotal = dailyCashInFilter.reduce(
+      (sum, inv) => sum + Number(inv.sales || 0),
+      0,
+    );
+
+    const finalSales =
+      dailyCashInFilter.length > 0 ? dailyCashTotal - nonMDSales : mdBaseSales;
 
     const finalQty = mdBaseQty;
 
@@ -1198,6 +1318,10 @@ const GTEngine = (() => {
       staff: "TOTAL",
 
       sales: finalSales,
+
+      grossSales: mdBaseSales,
+
+      discount: mdBaseSales - finalSales,
 
       sm: dailySaleInvoices.size,
 
@@ -1687,6 +1811,8 @@ const GTEngine = (() => {
   // =====================================================
 
   function getValidation(dateFilter = "") {
+    computeInvoiceDiscounts();
+
     // =================================================
     // FILTER TRANSACTIONS
     // =================================================
@@ -1928,11 +2054,28 @@ const GTEngine = (() => {
     // TRANSACTION RECONCILIATION
     // =================================================
 
+    // NETT (setelah diskon invoice) agar sebanding dengan
+    // engineSales yang berpatokan pada Daily Cash.
+
     const transactionSales = mdTransactions.reduce(
-      (sum, t) => sum + Number(t.sales || 0),
+      (sum, t) => sum + Number(t.netSales ?? t.sales ?? 0),
 
       0,
     );
+
+    const discountTotal = mdTransactions.reduce(
+      (sum, t) => sum + Number(t.discount || 0),
+
+      0,
+    );
+
+    const msrMDSales = msrTransactions
+      .filter(
+        (item) =>
+          matchDateFilter(item.date, dateFilter) &&
+          text(item.division) !== "NON-MD",
+      )
+      .reduce((sum, item) => sum + Number(item.value || 0), 0);
 
     const transactionQty = mdTransactions.reduce(
       (sum, t) => sum + Number(t.qty || 0),
@@ -1968,7 +2111,12 @@ const GTEngine = (() => {
 
     const reconstructedGrossSales = engineSales + nonMDSales;
 
-    const grossReconciliation = dailyCashSales === reconstructedGrossSales;
+    // Daily Cash = MD nett + Non-MD, DAN
+    // MSR MD (kotor) - diskon invoice = MD nett.
+
+    const grossReconciliation =
+      dailyCashSales === reconstructedGrossSales &&
+      msrMDSales - discountTotal === engineSales;
 
     // =================================================
     // CORE VALID
@@ -2106,6 +2254,12 @@ const GTEngine = (() => {
       nonMDQty,
 
       reconstructedGrossSales,
+
+      // DISCOUNT
+
+      discountTotal,
+
+      msrMDSales,
 
       // VALIDATION FLAGS
 
