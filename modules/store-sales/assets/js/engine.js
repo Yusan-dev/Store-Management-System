@@ -496,27 +496,6 @@ const GTEngine = (() => {
       const invoice = text(row[1]);
 
       const sales = number(row[2]);
-      if (currentDate === "08-06-2026" && text(row[1]) === "100037367") {
-        console.log(
-          "RAW INVOICE 100037367:",
-
-          {
-            rowIndex: i,
-
-            rawRow: [...row],
-
-            currentStaff: currentStaff?.name || "UNKNOWN",
-
-            currentArticle,
-
-            parsedUnitPrice: unitPrice,
-
-            parsedInvoice: invoice,
-
-            parsedSales: sales,
-          },
-        );
-      }
 
       // ============================================
       // VALID INVOICE
@@ -754,16 +733,6 @@ const GTEngine = (() => {
 
         isReturn: qty < 0 || value < 0,
       });
-
-      console.log(
-        article,
-
-        "=>",
-
-        division,
-      );
-
-      console.log(article, articleCategory.get(article));
     }
 
     console.log(
@@ -773,19 +742,6 @@ const GTEngine = (() => {
     );
   }
 
-  console.log(
-    "MSR AVAILABLE DATES:",
-
-    [
-      ...new Set(
-        msrTransactions
-
-          .map((item) => item.date)
-
-          .filter(Boolean),
-      ),
-    ],
-  );
   // =====================================================
   // MATCH RETURN
   //
@@ -964,25 +920,6 @@ const GTEngine = (() => {
       },
     );
 
-    console.log(
-      "GENERATED RETURN TRANSACTIONS:",
-
-      transactions
-
-        .filter((t) => t.isGeneratedReturn === true)
-
-        .map((t) => ({
-          date: t.date,
-
-          invoice: t.invoice,
-
-          article: t.article,
-
-          sales: t.sales,
-
-          qty: t.qty,
-        })),
-    );
   }
 
   // =====================================================

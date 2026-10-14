@@ -599,6 +599,11 @@ function parseAllData(
   const dailyInvoiceAmount = {};
   const invoiceLines = {};
 
+  // Meta artikel per tanggal: dipakai agar diskon invoice juga mengurangi
+  // tabel SALES BY DISCOUNT (discountData) di kategori/divisi/tipe harga
+  // yang sama dengan artikelnya.
+  const articleMetaByDateCode = {};
+
   // 1. Parse Target
   for (let i = 1; i < targetData.length; i++) {
     const row = targetData[i];
@@ -728,6 +733,13 @@ function parseAllData(
 
       const catKey = getCatKey(division);
       const productDivision = String(row[3] || "UNKNOWN").trim().toUpperCase();
+
+      if (!articleMetaByDateCode[date]) articleMetaByDateCode[date] = {};
+      articleMetaByDateCode[date][articleCode(article)] = {
+        catKey,
+        productDivision,
+        priceType,
+      };
 
       if (!dataByDate[date].discountData) dataByDate[date].discountData = {};
       if (!dataByDate[date].discountData[catKey])
@@ -941,6 +953,16 @@ function parseAllData(
       art.sales -= share;
       if (d.dynamicCats && d.dynamicCats[cat]) d.dynamicCats[cat].sales -= share;
       d.discountTotal = (d.discountTotal || 0) + share;
+
+      // tabel SALES BY DISCOUNT ikut nett
+      const meta = (articleMetaByDateCode[l.date] || {})[articleCode(l.article)];
+      const cell =
+        meta &&
+        d.discountData &&
+        d.discountData[meta.catKey] &&
+        d.discountData[meta.catKey][meta.productDivision] &&
+        d.discountData[meta.catKey][meta.productDivision][meta.priceType];
+      if (cell) cell.sales -= share;
     });
   });
 
