@@ -966,6 +966,30 @@ function parseAllData(
     });
   });
 
+  // 6. Samakan TOTAL SALES per tanggal dengan modul Sales Staff.
+  //
+  // Sales Staff menghitung total dari engine (GTEngine): Daily Cash
+  // Collection dikurangi Non-MD (paper bag). Hitungan MSR di atas hanya
+  // dipakai untuk rincian (kategori, artikel, tipe harga), jadi total harian
+  // diambil dari engine yang sama agar angkanya selalu identik. Tanggal yang
+  // tidak ada di engine (hari kosong / belum berjalan) dibiarkan apa adanya.
+  if (
+    typeof GTEngine !== "undefined" &&
+    typeof GTEngine.generateSummary === "function" &&
+    typeof GTEngine.getAvailableDates === "function"
+  ) {
+    const engineDates = new Set(GTEngine.getAvailableDates());
+    Object.keys(dataByDate).forEach((date) => {
+      if (!engineDates.has(date)) return;
+      const total = GTEngine.generateSummary(date).find(
+        (row) => row.staff === "TOTAL"
+      );
+      if (total && Number.isFinite(Number(total.sales))) {
+        dataByDate[date].sales = Number(total.sales);
+      }
+    });
+  }
+
   // Get actual max date before extrapolation
   const actualDates = Object.keys(dataByDate).sort((a, b) => {
     const pa = a.split("-"); const pb = b.split("-");
