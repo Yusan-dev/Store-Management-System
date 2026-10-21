@@ -557,7 +557,9 @@ function getCatKey(division) {
   if (d.includes("SHOES") || d.includes("FOOTWEAR")) return "FTW";
   if (d.includes("APP") || d.includes("APPAREL") || d.includes("CLOTHING"))
     return "APP";
-  return "OTHER";
+  // Divisi lain memakai nama divisinya sendiri (sama dengan kunci dynamicCats),
+  // supaya tabel kategori, SM per kategori, dan tabel diskon memakai kunci yang sama.
+  return d || "OTHER";
 }
 
 function dateToComparable(val) {
@@ -696,7 +698,8 @@ function parseAllData(
     dataByDate[date].dynamicCats[catKey].sales += netAmt;
 
     // *** DISCOUNT DETECTION FROM MSR ***
-    if (qty > 0) {
+    // Retur (qty negatif) ikut dihitung supaya total tabel diskon = total sales.
+    if (qty !== 0) {
       const discountAmt = parseRupiah(row[7]);
       const total = discountAmt + netAmt;
       const hargaAsli = Math.round(total / qty);
@@ -990,6 +993,51 @@ function parseAllData(
     });
   }
 
+  // 7. Samakan rincian (kategori, artikel, tabel diskon) dengan total harian.
+  //
+  // Setelah total harian diambil dari engine (langkah 6), jumlah rincian dari MSR bisa
+  // berbeda tipis (invoice yang tidak cocok antar laporan, selisih retur, dll). Selisihnya
+  // dibagi proporsional ke seluruh baris rincian tanggal itu, sehingga SUM kategori =
+  // SUM tabel diskon = SUM artikel = total sales. Selisih dicatat di console untuk ditelusuri.
+  const spreadDelta = (items, delta) => {
+    if (!delta || items.length === 0) return;
+    const weight = items.reduce((sum, it) => sum + Math.abs(it.sales || 0), 0);
+    let allocated = 0;
+    items.forEach((it, idx) => {
+      const share =
+        idx === items.length - 1
+          ? delta - allocated
+          : weight > 0
+          ? Math.round((delta * Math.abs(it.sales || 0)) / weight)
+          : 0;
+      allocated += share;
+      it.sales = (it.sales || 0) + share;
+    });
+  };
+
+  Object.keys(dataByDate).forEach((date) => {
+    const d = dataByDate[date];
+    if (!d || !d.articles) return;
+
+    const catItems = Object.values(d.dynamicCats || {});
+    const artItems = Object.values(d.articles || {});
+    const discItems = [];
+    Object.values(d.discountData || {}).forEach((divs) =>
+      Object.values(divs).forEach((types) =>
+        Object.values(types).forEach((cell) => discItems.push(cell))
+      )
+    );
+
+    const sumOf = (items) => items.reduce((sum, it) => sum + (it.sales || 0), 0);
+    const deltaCat = d.sales - sumOf(catItems);
+    if (deltaCat !== 0) {
+      console.warn("SELISIH TOTAL vs KATEGORI", date, deltaCat);
+    }
+    spreadDelta(catItems, deltaCat);
+    spreadDelta(artItems, d.sales - sumOf(artItems));
+    spreadDelta(discItems, d.sales - sumOf(discItems));
+  });
+
   // Get actual max date before extrapolation
   const actualDates = Object.keys(dataByDate).sort((a, b) => {
     const pa = a.split("-"); const pb = b.split("-");
@@ -1187,63 +1235,16 @@ function renderDashboard(
     }
   });
 
-  // TARGET TOTAL SALES untuk periode = jumlah "Target Sales" bulanan (yang diisi di SET MONTHLY
-  // TARGETS) untuk semua bulan yang termasuk dalam periode ini.
+  // TARGET TOTAL SALES untuk periode = jumlah "Target Sales" bulanan PENUH (yang diisi di
+  // SET MONTHLY TARGETS) untuk semua bulan yang termasuk dalam periode ini.
   //
-  // BULAN YANG SUDAH SELESAI (semua tanggalnya sudah lewat dari tanggal data actual terakhir)
-  // -> target penuh 1 bulan.
-  //
-  // BULAN YANG SEDANG BERJALAN (bulan & tahun yang sama dengan tanggal data actual TERAKHIR yang
-  // sudah diproses -- BUKAN jam sistem, supaya konsisten dengan baris "TARGET (UP TO DAY-X)" dan
-  // tidak menghitung hari yang datanya belum diupload sebagai "sudah lewat") -> target di-prorata
-  // dengan AKUMULASI PERSENTASE HARIAN ASLI dari file "DAILY TARGET (EXCEL)" (tanggal 1 s.d tanggal
-  // data terakhir), karena pola sales per-hari biasanya TIDAK rata (weekend > weekday), jadi lebih
-  // akurat dibanding rasio kalender polos (hari-berjalan / jumlah-hari-di-bulan).
-  //
-  // Kalau bulan berjalan itu BELUM ada file DAILY TARGET yang diupload, baru fallback ke rasio
-  // kalender polos supaya card tidak menampilkan 0.
-  //
-  // Logika ini otomatis "pindah" mengikuti bulan berjalan yang baru setiap kali bulan berganti
-  // (tidak di-hardcode), dan berlaku sama untuk semua mode periode (This Month, This Quarter,
-  // This Semester, This Year, Custom) karena sumbernya sama-sama dari monthsInPeriod.
-  const savedDailyForTarget = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
-
-  const maxActualDateStr = (window.storeData && window.storeData.maxActualDateStr) || "";
-  const maxActualParts = maxActualDateStr.split("-");
-  const hasMaxActualDate = maxActualParts.length === 3;
-  const maxActualDay = hasMaxActualDate ? parseInt(maxActualParts[0], 10) : 0;
-  const maxActualMonth = hasMaxActualDate ? parseInt(maxActualParts[1], 10) : 0;
-  const maxActualYear = hasMaxActualDate ? parseInt(maxActualParts[2], 10) : 0;
-
+  // Dipakai sebagai pembagi ACHIEVEMENT: Achievement = ACTUAL TOTAL / target bulanan penuh
+  // (misal target Oktober 1.250.000.000), BUKAN target prorata sampai hari ke-N. Target
+  // prorata hanya dipakai di baris "TARGET (UP TO DAY-N)" dan "VARIANCE".
   let periodTargetSales = 0;
   monthsInPeriod.forEach((m) => {
     const monthData = cyTargets[m] || {};
-    const monthTargetSales = monthData.sales || 0;
-    const isRunningMonth =
-      hasMaxActualDate && m === maxActualMonth && monthYearInPeriod[m] === maxActualYear;
-
-    if (!isRunningMonth) {
-      periodTargetSales += monthTargetSales;
-      return;
-    }
-
-    const monthDailyInfo = savedDailyForTarget[m] || {};
-    const monthTargetMap = monthDailyInfo.targetMap || {};
-    const hasDailyFile = Object.keys(monthTargetMap).length > 0;
-
-    if (hasDailyFile) {
-      // Jumlahkan persentase harian ASLI dari file, tanggal 1 s.d tanggal data terakhir.
-      let accumulatedPct = 0;
-      for (let day = 1; day <= maxActualDay; day++) {
-        accumulatedPct += monthTargetMap[String(day)] || 0;
-      }
-      periodTargetSales += monthTargetSales * accumulatedPct;
-    } else {
-      // Fallback: belum ada file DAILY TARGET untuk bulan ini -> pakai rasio kalender polos.
-      const daysInThisMonth = new Date(maxActualYear, m, 0).getDate();
-      const elapsedRatio = Math.min(Math.max(maxActualDay / daysInThisMonth, 0), 1);
-      periodTargetSales += monthTargetSales * elapsedRatio;
-    }
+    periodTargetSales += monthData.sales || 0;
   });
 
 
@@ -1368,8 +1369,8 @@ function renderDashboard(
 
   let htmlRows = "";
   let maxIncludedDay = 0;
-  // Total target sales untuk periode ini = jumlah target bulanan (lihat periodTargetSales di atas),
-  // tidak lagi tergantung file breakdown harian.
+  // Total target sales periode = jumlah target bulanan PENUH (lihat periodTargetSales di atas),
+  // dipakai sebagai pembagi ACHIEVEMENT.
   let fullPeriodTargetSales = periodTargetSales;
 
   displayDates.forEach((d) => {
@@ -1891,6 +1892,12 @@ function renderDashboard(
   if (catBody) {
     catBody.innerHTML = "";
     let CATS = ["ACC", "BAG", "APP", "FTW"];
+    // Kategori/divisi lain (di luar 4 standar) juga ditampilkan agar total tabel = total sales.
+    Object.keys(discAgg)
+      .sort()
+      .forEach((c) => {
+        if (!CATS.includes(c)) CATS.push(c);
+      });
     if (catFilter !== "ALL") {
       CATS = CATS.filter((c) => catFilter.has(c));
     }
@@ -1942,14 +1949,14 @@ function renderDashboard(
       
       if (catTotalQty === 0 && catTotalSales === 0) return; // Hidden by filter
 
-      const groupId = "disc-group-" + cat;
+      const groupId = "disc-group-" + cat.replace(/[^A-Za-z0-9]/g, "-");
 
       // Category header row (clickable)
       const catContrib = grandTotalSales > 0 ? ((catTotalSales / grandTotalSales) * 100).toFixed(2) + "%" : "0.00%";
       catBody.innerHTML += `<tr class="disc-cat-header" onclick="toggleDiscGroup('${groupId}')"
                 style="background:#111; color:#fff; cursor:pointer; user-select:none;">
                 <td style="padding:10px; font-weight:bold; letter-spacing:1px;">
-                    ▼ ${CAT_LABELS[cat]}
+                    ▼ ${CAT_LABELS[cat] || cat}
                 </td>
                 <td style="padding:10px; font-weight:bold;">ALL TYPES</td>
                 <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(catTotalQty).toLocaleString("en-US")}</td>
@@ -2187,10 +2194,8 @@ function updateStoreChart(selectedDates) {
 
 // Agregasi per bulan (YYYY-MM) dari tanggal yang SUDAH terfilter periode
 // (ALL / This Month / Quarter / Custom -> ikut periode aktif).
-// Target per bulan memakai logika yang SAMA dengan summary card (periodTargetSales):
-// - Bulan lampau   -> target bulanan penuh dari SET MONTHLY TARGETS.
-// - Bulan berjalan -> prorata AKUMULASI PERSENTASE harian dari file DAILY TARGET
-//                     (tgl 1 s.d tanggal data terakhir); fallback rasio kalender polos.
+// Target per bulan = target bulanan PENUH dari SET MONTHLY TARGETS (termasuk bulan berjalan),
+// sehingga ACH % = actual bulan tsb / target bulanan penuh.
 function buildMonthlyPerformanceData(selectedDates) {
     const monthAgg = {};   // "YYYY-MM" -> { sales, qty, sm, month, year, target }
     const monthOrder = [];
@@ -2219,42 +2224,13 @@ function buildMonthlyPerformanceData(selectedDates) {
         monthAgg[key].sm += data.sm || 0;
     });
 
-    // Resolve target per bulan (identik dengan logika periodTargetSales di renderDashboard)
+    // Target per bulan = target bulanan penuh (identik dengan periodTargetSales di renderDashboard)
     const cyTargets = JSON.parse(localStorage.getItem("gt_store_targets_cy") || "{}");
-    const dailyTargets = JSON.parse(localStorage.getItem("gt_store_daily_targets_cy") || "{}");
-    const maxActualStr = (window.storeData && window.storeData.maxActualDateStr) || "";
-    const mp = maxActualStr.split("-");
-    const hasMax = mp.length === 3;
-    const maxDay = hasMax ? parseInt(mp[0], 10) : 0;
-    const maxMonth = hasMax ? parseInt(mp[1], 10) : 0;
-    const maxYear = hasMax ? parseInt(mp[2], 10) : 0;
 
     monthOrder.forEach(key => {
         const m = monthAgg[key];
         const monthData = cyTargets[m.month] || {};
-        const targetSales = monthData.sales || 0;
-        const isRunningMonth = hasMax && m.month === maxMonth && m.year === maxYear;
-
-        if (!isRunningMonth) {
-            m.target = targetSales;
-            return;
-        }
-
-        const monthDailyInfo = dailyTargets[m.month] || {};
-        const monthTargetMap = monthDailyInfo.targetMap || {};
-        if (Object.keys(monthTargetMap).length > 0) {
-            // Jumlahkan persentase harian ASLI dari file, tanggal 1 s.d tanggal data terakhir.
-            let accumulatedPct = 0;
-            for (let day = 1; day <= maxDay; day++) {
-                accumulatedPct += monthTargetMap[String(day)] || 0;
-            }
-            m.target = targetSales * accumulatedPct;
-        } else {
-            // Fallback: belum ada file DAILY TARGET -> rasio kalender polos.
-            const daysInMonth = new Date(m.year, m.month, 0).getDate();
-            const elapsedRatio = Math.min(Math.max(maxDay / daysInMonth, 0), 1);
-            m.target = targetSales * elapsedRatio;
-        }
+        m.target = monthData.sales || 0;
     });
 
     return monthOrder.map(key => monthAgg[key]);
@@ -2413,7 +2389,7 @@ function renderMonthlyAchievementTable(months) {
 
         tbody.innerHTML = htmlRows;
 
-        let noteText = "Target bulan lampau = target bulanan penuh (SET MONTHLY TARGETS); bulan berjalan = prorata akumulasi DAILY TARGET s.d tanggal data terakhir.";
+        let noteText = "Target = target bulanan penuh (SET MONTHLY TARGETS); ACH % = actual bulan tsb / target bulanan penuh.";
         if (noTargetMonths.length > 0) noteText += " Target belum di-set untuk: " + noTargetMonths.join(", ") + ".";
         if (note) note.innerText = noteText;
     }
