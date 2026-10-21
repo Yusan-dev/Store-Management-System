@@ -1921,12 +1921,14 @@ function renderDashboard(
 
     // Calculate Grand Total Sales for % contribution
     let grandTotalSales = 0;
+    let grandTotalQty = 0;
     CATS.forEach((c) => {
       if (discAgg[c]) {
         Object.keys(discAgg[c]).forEach(div => {
           Object.keys(discAgg[c][div]).forEach(ptype => {
             if (discFilter !== "ALL" && !discFilter.has(ptype)) return;
             grandTotalSales += discAgg[c][div][ptype].sales;
+            grandTotalQty += discAgg[c][div][ptype].qty;
           });
         });
       }
@@ -2014,6 +2016,17 @@ function renderDashboard(
       });
     });
 
+    // Baris TOTAL: jumlah seluruh kategori & tipe yang sedang tampil (ikut filter)
+    if (catBody.innerHTML !== "") {
+      catBody.innerHTML += `<tr style="background:#111; color:#fff; border-top:3px solid #111;">
+                <td style="padding:10px; font-weight:bold; letter-spacing:1px;">TOTAL</td>
+                <td style="padding:10px; font-weight:bold;">ALL TYPES</td>
+                <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(grandTotalQty).toLocaleString("en-US")}</td>
+                <td style="padding:10px; text-align:right; font-weight:bold;">${Math.round(grandTotalSales).toLocaleString("en-US")}</td>
+                <td style="padding:10px; text-align:right; font-weight:bold;">${grandTotalSales > 0 ? "100.00%" : "0.00%"}</td>
+            </tr>`;
+    }
+
     // O2O row dihilangkan dari tabel kategori (Breakdown by Category and Type)
     if (catBody.innerHTML === "") {
       catBody.innerHTML =
@@ -2021,7 +2034,7 @@ function renderDashboard(
     }
   }
 
-  // Render TOP 5 Articles
+  // Render TOP 10 Articles
   renderTopArticles(articleAgg);
 
   // Update Chart
@@ -2053,24 +2066,72 @@ function toggleDiscGroup(groupId) {
   }
 }
 
+// Kategori yang sedang dipilih di dropdown TOP 10 ARTIKEL ("ALL" = semua kategori).
+// Disimpan di window agar pilihan tidak hilang saat dashboard dirender ulang.
+window.topArticleCategory = window.topArticleCategory || "ALL";
+const TOP_ARTICLE_LIMIT = 10;
+const TOP_ARTICLE_CAT_LABELS = {
+  ACC: "ACCESSORIES",
+  BAG: "BAG",
+  APP: "APPAREL",
+  FTW: "FOOTWEAR",
+};
+
+function onTopArticleCategoryChange() {
+  const sel = document.getElementById("topArticleCategory");
+  window.topArticleCategory = sel ? sel.value : "ALL";
+  renderTopArticles(window.lastArticleAgg || {});
+}
+
 function renderTopArticles(articleAgg) {
-  const arr = Object.keys(articleAgg).map((art) => ({
-    article: art,
-    sales: articleAgg[art].sales,
-    qty: articleAgg[art].qty,
-    division: articleAgg[art].division,
-  }));
+  window.lastArticleAgg = articleAgg;
+
+  // Isi dropdown kategori dari kategori yang ada di data (pilihan sebelumnya dipertahankan).
+  const sel = document.getElementById("topArticleCategory");
+  const cats = (window.storeData && window.storeData.categories) || [];
+  if (sel) {
+    if (window.topArticleCategory !== "ALL" && !cats.includes(window.topArticleCategory)) {
+      window.topArticleCategory = "ALL";
+    }
+    sel.innerHTML =
+      '<option value="ALL">SEMUA KATEGORI</option>' +
+      cats
+        .map(
+          (c) =>
+            `<option value="${c}">${TOP_ARTICLE_CAT_LABELS[c] || c}</option>`,
+        )
+        .join("");
+    sel.value = window.topArticleCategory;
+  }
+
+  const selectedCat = window.topArticleCategory;
+  const arr = Object.keys(articleAgg)
+    .map((art) => ({
+      article: art,
+      sales: articleAgg[art].sales,
+      qty: articleAgg[art].qty,
+      division: articleAgg[art].division,
+    }))
+    .filter(
+      (a) => selectedCat === "ALL" || getCatKey(a.division || "") === selectedCat,
+    );
 
   const topSales = arr
     .slice()
     .sort((a, b) => b.sales - a.sales)
-    .slice(0, 5);
+    .slice(0, TOP_ARTICLE_LIMIT);
   const topQty = arr
     .slice()
     .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5);
-  const topFootwear = arr
-    .slice()
+    .slice(0, TOP_ARTICLE_LIMIT);
+  // Kartu FOOTWEAR tetap khusus footwear (tidak ikut dropdown).
+  const topFootwear = Object.keys(articleAgg)
+    .map((art) => ({
+      article: art,
+      sales: articleAgg[art].sales,
+      qty: articleAgg[art].qty,
+      division: articleAgg[art].division || "",
+    }))
     .filter(
       (a) =>
         a.division.includes("FOOTWEAR") ||
@@ -2078,7 +2139,7 @@ function renderTopArticles(articleAgg) {
         a.division.includes("SEPATU"),
     )
     .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5);
+    .slice(0, TOP_ARTICLE_LIMIT);
 
   const renderList = (items, isSales) => {
     if (items.length === 0) return "-";
@@ -2094,13 +2155,13 @@ function renderTopArticles(articleAgg) {
     return html;
   };
 
-  const elSales = document.getElementById("topSales");
+  const elSales = document.getElementById("topArticleSales");
   if (elSales) elSales.innerHTML = renderList(topSales, true);
 
-  const elQty = document.getElementById("topQty");
+  const elQty = document.getElementById("topArticleQty");
   if (elQty) elQty.innerHTML = renderList(topQty, false);
 
-  const elFootwear = document.getElementById("topFootwear");
+  const elFootwear = document.getElementById("topArticleFootwear");
   if (elFootwear) elFootwear.innerHTML = renderList(topFootwear, false);
 }
 

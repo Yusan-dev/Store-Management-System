@@ -344,19 +344,27 @@
 <!-- TOP ARTICLES -->
 <!-- ===================================== -->
 <section id="topArticlesSection" class="validation-card" style="margin-top:20px; border:4px solid #111; padding:15px; background:#fff;">
-    <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">TOP 5 ARTIKEL</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 15px 0; border-bottom:2px solid #111; padding-bottom:10px;">
+        <h2 style="font-size:13px; letter-spacing:1px; color:#111; margin:0;">TOP 10 ARTIKEL</h2>
+        <label style="font-size:11px; font-weight:bold; letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+            KATEGORI
+            <select id="topArticleCategory" onchange="onTopArticleCategoryChange()" style="font-family:monospace; font-size:12px; font-weight:bold; padding:4px 8px; border:2px solid #111; background:#fff; cursor:pointer;">
+                <option value="ALL">SEMUA KATEGORI</option>
+            </select>
+        </label>
+    </div>
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px;">
         <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 BY SALES (Rp)</div>
-            <div id="topSales">-</div>
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 10 BY SALES (Rp)</div>
+            <div id="topArticleSales">-</div>
         </div>
         <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 BY QTY</div>
-            <div id="topQty">-</div>
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 10 BY QTY</div>
+            <div id="topArticleQty">-</div>
         </div>
         <div style="border:2px solid #111; padding:12px;">
-            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 5 FOOTWEAR</div>
-            <div id="topFootwear">-</div>
+            <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">TOP 10 FOOTWEAR</div>
+            <div id="topArticleFootwear">-</div>
         </div>
     </div>
 </section>
@@ -370,7 +378,7 @@
 <script src="assets/js/engine.js?v=2"></script>
 <script src="assets/js/runtime.js"></script>
 <script src="assets/js/db-cache.js?v=7"></script>
-<script src="assets/js/process.js?v=21"></script>
+<script src="assets/js/process.js?v=22"></script>
 <script src="assets/js/summary.js?v=7"></script>
 <script src="assets/js/export.js?v=7"></script>
 <script src="assets/js/print.js?v=7"></script>
