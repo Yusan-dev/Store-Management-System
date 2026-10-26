@@ -2077,6 +2077,50 @@ const TOP_ARTICLE_CAT_LABELS = {
   FTW: "FOOTWEAR",
 };
 
+// Kelompokkan baris MSR per ARTIKEL (semua size jadi 1 artikel).
+// Aturan "artikel" sama dengan modul Broken Size / Auto Stock / Change Price:
+// kode varian (bagian sebelum "/") dipotong 6 karakter terakhir (warna+size).
+// Contoh: CONA08263C00506H + CONA08263C00509H  ->  CONA08263C (2 size).
+function groupArticlesByStyle(articleAgg) {
+  const groups = {};
+  Object.keys(articleAgg).forEach((key) => {
+    const slash = key.indexOf("/");
+    const variant = (slash >= 0 ? key.substring(0, slash) : key).trim();
+    const desc = slash >= 0 ? key.substring(slash + 1).trim() : "";
+    const base = variant.length > 6 ? variant.slice(0, -6) : variant;
+    const row = articleAgg[key];
+
+    if (!groups[base]) {
+      groups[base] = {
+        article: base,
+        desc,
+        sales: 0,
+        qty: 0,
+        division: row.division,
+        variants: new Set(),
+        bestSales: -Infinity,
+      };
+    }
+    const g = groups[base];
+    g.sales += row.sales;
+    g.qty += row.qty;
+    g.variants.add(variant);
+    // deskripsi dipakai dari varian dengan sales terbesar
+    if (row.sales > g.bestSales) {
+      g.bestSales = row.sales;
+      g.desc = desc;
+    }
+  });
+  return Object.values(groups).map((g) => ({
+    article: g.article,
+    desc: g.desc,
+    sales: g.sales,
+    qty: g.qty,
+    division: g.division,
+    sizeCount: g.variants.size,
+  }));
+}
+
 function onTopArticleCategoryChange() {
   const sel = document.getElementById("topArticleCategory");
   window.topArticleCategory = sel ? sel.value : "ALL";
@@ -2105,16 +2149,10 @@ function renderTopArticles(articleAgg) {
   }
 
   const selectedCat = window.topArticleCategory;
-  const arr = Object.keys(articleAgg)
-    .map((art) => ({
-      article: art,
-      sales: articleAgg[art].sales,
-      qty: articleAgg[art].qty,
-      division: articleAgg[art].division,
-    }))
-    .filter(
-      (a) => selectedCat === "ALL" || getCatKey(a.division || "") === selectedCat,
-    );
+  const allArticles = groupArticlesByStyle(articleAgg);
+  const arr = allArticles.filter(
+    (a) => selectedCat === "ALL" || getCatKey(a.division || "") === selectedCat,
+  );
 
   const topSales = arr
     .slice()
@@ -2125,19 +2163,15 @@ function renderTopArticles(articleAgg) {
     .sort((a, b) => b.qty - a.qty)
     .slice(0, TOP_ARTICLE_LIMIT);
   // Kartu FOOTWEAR tetap khusus footwear (tidak ikut dropdown).
-  const topFootwear = Object.keys(articleAgg)
-    .map((art) => ({
-      article: art,
-      sales: articleAgg[art].sales,
-      qty: articleAgg[art].qty,
-      division: articleAgg[art].division || "",
-    }))
-    .filter(
-      (a) =>
-        a.division.includes("FOOTWEAR") ||
-        a.division.includes("SHOES") ||
-        a.division.includes("SEPATU"),
-    )
+  const topFootwear = allArticles
+    .filter((a) => {
+      const div = a.division || "";
+      return (
+        div.includes("FOOTWEAR") ||
+        div.includes("SHOES") ||
+        div.includes("SEPATU")
+      );
+    })
     .sort((a, b) => b.qty - a.qty)
     .slice(0, TOP_ARTICLE_LIMIT);
 
@@ -2149,7 +2183,12 @@ function renderTopArticles(articleAgg) {
       const val = isSales
         ? Math.round(it.sales).toLocaleString("en-US")
         : Math.round(it.qty).toLocaleString("en-US") + " pcs";
-      html += `<li><strong>${it.article}</strong> : ${val}</li>`;
+      const name = it.desc ? ` / ${it.desc}` : "";
+      const sizes =
+        it.sizeCount > 1
+          ? ` <span style="font-size:11px;color:#777;">(${it.sizeCount} size)</span>`
+          : "";
+      html += `<li><strong>${it.article}${name}</strong> : ${val}${sizes}</li>`;
     });
     html += "</ol>";
     return html;
