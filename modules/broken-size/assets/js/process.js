@@ -108,32 +108,45 @@ function extractVariant(desc) {
 }
 
 /**
- * Mengekstrak artikel semua brand secara dinamis.
- * PERINGATAN: Jangan merubah fungsi ini.
- * Memotong 6 karakter terakhir dari variant.
- * @param {string} variant - String varian
- * @returns {string} String artikel utama
+ * Mengekstrak artikel (Generic Article) untuk semua brand.
+ *
+ * Aturan (dipelajari dari Price List seluruh brand: 27.851 generic article,
+ * 59 brand, sheet Sport/Golf, Fashion Footwear, Footwear Xpress, Adidas):
+ * - Generic Article selalu diawali kode brand 3 karakter dan panjangnya
+ *   7 s.d. 12 karakter (tidak ada yang lebih pendek dari 7 atau lebih panjang dari 12).
+ * - Kode varian = Generic Article + 6 karakter terakhir (warna/size, atau "000000"
+ *   untuk barang tanpa size). Jadi varian bisa dipotong 6 karakter HANYA jika
+ *   panjangnya > 12 (13 s.d. 18).
+ * - Kode 12 karakter atau kurang sudah berupa Generic Article itu sendiri; kalau
+ *   dipotong 6 karakter hasilnya cuma 1-6 karakter dan banyak artikel berbeda
+ *   tergabung jadi satu (contoh: CCR100-15666 -> "CCR100", ADIHT3469 -> "ADI").
+ * @param {string} variant - Varian yang telah diekstrak
+ * @returns {string} String artikel
  */
-//jangan pernah ganggu function dibawah ini karena mengekstrak artikel semua brand dengan pintar
+const GENERIC_ARTICLE_MAX_LENGTH = 12;
+const VARIANT_SUFFIX_LENGTH = 6;
 function extractArtikel(variant) {
   if (!variant) return "";
   variant = String(variant).trim();
-
-  if (variant.length <= 6) {
+  if (variant.length <= GENERIC_ARTICLE_MAX_LENGTH) {
     return variant;
   }
-
-  return variant.slice(0, -6);
+  return variant.slice(0, -VARIANT_SUFFIX_LENGTH);
 }
 
 /* ---------- EXTRACT SIZE ---------- */
 /**
- * Mengekstrak size / ukuran dari string varian berdasarkan 6 karakter terakhir.
+ * Mengekstrak size / ukuran dari string varian berdasarkan 6 karakter terakhir
+ * (hanya untuk varian > 12 karakter; selain itu tidak ada size).
  * @param {string} variant - String varian
  * @returns {string} String ukuran yang terekstrak
  */
 function extractSize(variant) {
   if (!variant) return "";
+
+  // Kode 12 karakter atau kurang adalah Generic Article tanpa suffix warna/size,
+  // jadi tidak ada size yang bisa diambil (hindari mengambil potongan kode artikel sebagai size).
+  if (String(variant).trim().length <= GENERIC_ARTICLE_MAX_LENGTH) return "N/A";
 
   // Based on the smart extractArtikel, the suffix is the last 6 characters
   const suffix = variant.length > 6 ? variant.slice(-6) : variant;

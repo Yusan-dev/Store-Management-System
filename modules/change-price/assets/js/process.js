@@ -45,6 +45,26 @@ function readExcel(file) {
 }
 
 /**
+ * Mencari baris header dan posisi kolom "Generic Article" dan "Price" pada satu sheet price list.
+ * @param {Array<Array>} rows - Baris sheet (header: 1)
+ * @returns {{startRow:number, articleCol:number, priceCol:number}} Baris awal data dan indeks kolom.
+ *   Fallback ke perilaku lama (data mulai baris ke-2, kolom 3 dan 5) jika header tidak ada.
+ */
+function findPriceListColumns(rows) {
+  const norm = (c) => String(c || "").trim().toLowerCase();
+  const limit = Math.min(rows.length, 15);
+  for (let i = 0; i < limit; i++) {
+    const row = rows[i] || [];
+    const articleCol = row.findIndex((c) => norm(c) === "generic article");
+    const priceCol = row.findIndex((c) => norm(c) === "price");
+    if (articleCol >= 0 && priceCol >= 0) {
+      return { startRow: i + 1, articleCol, priceCol };
+    }
+  }
+  return { startRow: 1, articleCol: 2, priceCol: 4 };
+}
+
+/**
  * Menjalankan proses pembacaan file excel stock (A) dan pricelist (B).
  */
 async function runProcess() {
@@ -86,15 +106,19 @@ async function runProcess() {
     const rowsA = XLSX.utils.sheet_to_json(wsA, { header: 1, defval: "" });
 
     // 2. Buat priceMap dari ALL sheet di File B
+    // Kolom "Generic Article" dan "Price" dicari dari baris header tiap sheet, karena tata letak
+    // kolom berbeda antar sheet (SPORT/GOLF punya kolom SBU di depan, sheet lain tidak, Adidas
+    // punya kolom Disc Price). Jika header tidak ditemukan, pakai posisi lama (kolom 3 dan 5).
     const priceMap = new Map();
     wbB.SheetNames.forEach((sheetName) => {
       const wsB = wbB.Sheets[sheetName];
       const rowsB = XLSX.utils.sheet_to_json(wsB, { header: 1, defval: "" });
-      for (let i = 1; i < rowsB.length; i++) {
+      const { startRow, articleCol, priceCol } = findPriceListColumns(rowsB);
+      for (let i = startRow; i < rowsB.length; i++) {
         const r = rowsB[i];
         if (!r) continue;
-        const article = String(r[2] || "").trim(); // Generic Article (Kolom 3)
-        const price = Math.round(toNum(r[4])); // Price (Kolom 5)
+        const article = String(r[articleCol] || "").trim(); // Generic Article
+        const price = Math.round(toNum(r[priceCol])); // Price
         // Simpan harga pertama jika ada duplikat artikel
         if (article && price > 0 && !priceMap.has(article)) {
           priceMap.set(article, price);
