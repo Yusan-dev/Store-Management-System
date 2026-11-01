@@ -74,10 +74,33 @@ function kangodingPrice(price, category) {
   return String(price).slice(-3, -1) + "%";
 }
 /**
+ * Membaca kode gender resmi di deskripsi barang, formatnya "(Usia/Gender)":
+ *   A/M, O/M = pria      A/W, O/W, F = wanita     A/U, O/U, U = unisex
+ *   K/x, GS, PS, TD, K  = anak (apa pun gendernya)
+ * Juga menerima bentuk satu huruf: (M) (W) (U) (F).
+ * Dipelajari dari Price List (98,7% deskripsi punya kode ini) dan file stok.
+ * @param {string} txt - Deskripsi (huruf besar)
+ * @returns {string} MEN / WOMEN / KIDS / UNISEX, atau "" jika tidak ada kode
+ */
+function genderFromCode(txt) {
+  const parens = txt.match(/\(([^()]*)\)/g) || [];
+  for (const p of parens) {
+    const c = p.slice(1, -1).trim();
+    if (/^K\/[A-Z]$/.test(c) || c === "K" || c === "GS" || c === "PS" || c === "TD")
+      return "KIDS";
+    const m = c.match(/^(?:([AO])\/)?([MWUF])$/);
+    if (m) return { M: "MEN", W: "WOMEN", F: "WOMEN", U: "UNISEX" }[m[2]];
+  }
+  return "";
+}
+
+/**
  * Mendeteksi gender/divisi dari deskripsi sel.
- * Memeriksa kode khas (REEM, REEW) atau kata kunci (MEN, WOMEN, KIDS).
+ * Urutan: kode khas brand (REEM, REEW...) -> kode resmi "(A/M)" -> kata kunci -> UNISEX.
+ * Tidak lagi menebak dari warna: barang unisex berwarna hitam/abu bukan MEN
+ * (price list: 1.554 barang A/U salah jadi MEN, 460 salah jadi WOMEN).
  * @param {string} cell - Deskripsi dari sel Excel
- * @returns {string} Gender yang terdeteksi (MEN, WOMEN, KIDS, UNISEX, dll)
+ * @returns {string} Gender yang terdeteksi (MEN, WOMEN, KIDS, UNISEX, NON-MD)
  */
 function detectGender(cell) {
   let txt = String(cell || "")
@@ -85,12 +108,12 @@ function detectGender(cell) {
     .toUpperCase();
   let gender = "";
   if (txt === "") return "UNISEX";
-  // 1
+  // 1 kode khas brand
   if (txt.includes("REEM")) return "MEN";
   if (txt.includes("REEW")) return "WOMEN";
   if (txt.includes("REEK")) return "KIDS";
   if (txt.includes("REEG")) return "KIDS";
-  if (txt.includes("REEB")) return "KIDS";
+  if (/REEB(?!OK)/.test(txt)) return "KIDS"; // "REEBOK" bukan kode anak
   if (txt.includes("ZSP")) return "NON-MD";
   if (txt.includes("ZZZ")) return "NON-MD";
   // 2 REEX
@@ -103,53 +126,25 @@ function detectGender(cell) {
       if (ch === "K") return "KIDS";
     }
   }
-  // 3
-  if (txt.includes("A/M")) gender = "MEN";
-  else if (txt.includes("A/W")) gender = "WOMEN";
-  else if (txt.includes("A/K")) gender = "KIDS";
-  else if (txt.includes("K/")) gender = "KIDS";
-  else if (txt.includes("M/")) gender = "MEN";
-  else if (txt.includes("W/")) gender = "WOMEN";
-  else if (txt.includes("BOY")) gender = "KIDS";
-  else if (txt.includes("GIRL")) gender = "KIDS";
-  else if (txt.includes("MEN")) gender = "MEN";
+  // 3 kode resmi (Usia/Gender)
+  const coded = genderFromCode(txt);
+  if (coded) return coded;
+  // 4 kata kunci (untuk deskripsi tanpa kode). Huruf M/W/K harus berdiri sendiri,
+  // supaya "BLACK/WHITE" tidak terbaca KIDS/WOMEN dan ukuran "M10/W12" tidak terbaca WOMEN.
+  if (/(^|[^A-Z])K\//.test(txt)) gender = "KIDS";
+  else if (txt.includes("BOY") || txt.includes("GIRL")) gender = "KIDS";
   else if (txt.includes("WOMEN")) gender = "WOMEN";
-  else if (txt.includes("(M,")) gender = "MEN";
-  else if (txt.includes("(W,")) gender = "WOMEN";
-  else if (txt.includes("(K,")) gender = "KIDS";
-  else if (txt.includes("(M)")) gender = "MEN";
-  else if (txt.includes("(W)")) gender = "WOMEN";
-  else if (txt.includes("(K)")) gender = "KIDS";
-  else if (txt.includes("M)")) gender = "MEN";
-  else if (txt.includes("W)")) gender = "WOMEN";
-  else if (txt.includes("K)")) gender = "KIDS";
-  else if (txt.includes(",M")) gender = "MEN";
-  else if (txt.includes(",W")) gender = "WOMEN";
-  else if (txt.includes(",K")) gender = "KIDS";
-  else if (txt.includes("/M")) gender = "MEN";
-  else if (txt.includes("/W")) gender = "WOMEN";
-  else if (txt.includes("/K")) gender = "KIDS";
-  else if (txt.includes("ZSP")) gender = "NON-MD";
-  // 4 warna fallback
-  if (gender === "") {
-    if (
-      txt.includes("PINK") ||
-      txt.includes("PURPLE") ||
-      txt.includes("MAUVE") ||
-      txt.includes("MAGENTA") ||
-      txt.includes("BLUE") ||
-      txt.includes("YELLOW")
-    )
-      gender = "WOMEN";
-    else if (
-      txt.includes("BLACK") ||
-      txt.includes("BROWN") ||
-      txt.includes("NAVY") ||
-      txt.includes("GREY")
-    )
-      gender = "MEN";
+  else if (txt.includes("MEN")) gender = "MEN";
+  else if (/(^|[^A-Z])M\//.test(txt)) gender = "MEN";
+  else if (/(^|[^A-Z])W\//.test(txt)) gender = "WOMEN";
+  else if (/\([MWK],/.test(txt) || /[MWK]\)/.test(txt) || /,[MWK](?![A-Z0-9])/.test(txt)) {
+    const t = (txt.match(/\(([MWK]),|(?:[^A-Z]|^)([MWK])\)|,([MWK])(?![A-Z0-9])/) || []).slice(1).find(Boolean);
+    gender = { M: "MEN", W: "WOMEN", K: "KIDS" }[t] || "";
+  } else if (/\/[MWK](?![A-Z0-9])/.test(txt)) {
+    const t = txt.match(/\/([MWK])(?![A-Z0-9])/)[1];
+    gender = { M: "MEN", W: "WOMEN", K: "KIDS" }[t];
   }
-  // 5
+  // 5 tidak ada petunjuk -> UNISEX (termasuk aksesori)
   if (gender === "") gender = "UNISEX";
   return gender;
 }
