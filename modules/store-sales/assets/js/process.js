@@ -2038,6 +2038,7 @@ function renderDashboard(
   renderTopArticles(articleAgg);
 
   // Render SALES BY GENDER
+  window.lastGenderDates = selectedDates;
   renderSalesByGender(articleAgg);
 
   // Update Chart
@@ -2338,6 +2339,34 @@ function renderSalesByGender(articleAgg) {
       <td style="${cell}">${fmt(totalQty)}</td>
       <td style="${cell}">${fmt(totalSales)}</td>
       <td style="${cell}">100.0%</td></tr>`;
+
+  // Paper bag (Non-MD) hanya keterangan: sudah dikurangkan dari total sales, jadi tidak
+  // dijumlahkan ke TOTAL. Hanya tampil jika filter kategori = semua.
+  if (window.genderCategory === "ALL") {
+    let pbSales = 0;
+    let pbQty = 0;
+    try {
+      if (typeof GTEngine !== "undefined" && typeof GTEngine.getValidation === "function") {
+        const engineDates = new Set(GTEngine.getAvailableDates());
+        (window.lastGenderDates || []).forEach((date) => {
+          if (!engineDates.has(date)) return;
+          const v = GTEngine.getValidation(date) || {};
+          pbSales += Number(v.nonMDSales) || 0;
+          pbQty += Number(v.nonMDQty) || 0;
+        });
+      }
+    } catch (e) {
+      pbSales = 0;
+      pbQty = 0;
+    }
+    if (pbSales !== 0 || pbQty !== 0) {
+      html += `<tr style="color:#666; font-style:italic;">
+        <td style="padding:8px 10px;">PAPER BAG (NON-MD)</td>
+        <td style="${cell}">${fmt(pbQty)}</td>
+        <td style="${cell}">${fmt(pbSales)}</td>
+        <td style="${cell}">tidak masuk total</td></tr>`;
+    }
+  }
   body.innerHTML = html;
 }
 
