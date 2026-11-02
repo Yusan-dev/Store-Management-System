@@ -2037,6 +2037,9 @@ function renderDashboard(
   // Render TOP 10 Articles
   renderTopArticles(articleAgg);
 
+  // Render SALES BY GENDER
+  renderSalesByGender(articleAgg);
+
   // Update Chart
   if (typeof updateStoreChart === 'function') {
       updateStoreChart(selectedDates);
@@ -2202,6 +2205,139 @@ function renderTopArticles(articleAgg) {
 
   const elFootwear = document.getElementById("topArticleFootwear");
   if (elFootwear) elFootwear.innerHTML = renderList(topFootwear, false);
+}
+
+// =============================================
+// SALES BY GENDER
+// =============================================
+const GENDER_ORDER = ["MEN", "WOMEN", "KIDS", "UNISEX", "TANPA KODE"];
+
+/**
+ * Menentukan gender dari deskripsi barang di MSR.
+ * Aturan sama dengan modul Auto Stock (dipelajari dari price list semua brand):
+ * kode "(Usia/Gender)" -> A/M, O/M = MEN | A/W, O/W, F = WOMEN | A/U, O/U, U = UNISEX |
+ * K/x, GS, PS, TD = KIDS. Deskripsi di MSR terpotong ±40 karakter, jadi kode boleh
+ * berakhir dengan ")", "," atau langsung terpotong di akhir teks, mis. "(A/U, MAR".
+ * Tidak menebak dari warna. Jika tidak ada petunjuk -> "TANPA KODE" (tidak dipaksa jadi UNISEX).
+ * @param {string} desc - Deskripsi artikel dari MSR (kolom Article)
+ * @returns {string} MEN | WOMEN | KIDS | UNISEX | TANPA KODE
+ */
+function detectGenderFromDesc(desc) {
+  const txt = String(desc || "").toUpperCase();
+  if (!txt.trim()) return "TANPA KODE";
+
+  // kode khas Reebok di kode artikel
+  if (txt.includes("REEM")) return "MEN";
+  if (txt.includes("REEW")) return "WOMEN";
+  if (txt.includes("REEK") || txt.includes("REEG") || /REEB(?!OK)/.test(txt)) return "KIDS";
+
+  // kode resmi (Usia/Gender)
+  const m = txt.match(/\(\s*([AKO]\/[MWUF]|[MWUFK]|GS|PS|TD)\s*(?:[,)]|$)/);
+  if (m) {
+    const c = m[1];
+    if (c.startsWith("K/") || c === "K" || c === "GS" || c === "PS" || c === "TD") return "KIDS";
+    return { M: "MEN", W: "WOMEN", F: "WOMEN", U: "UNISEX" }[c.slice(-1)];
+  }
+
+  // kata kunci (kode terpotong / tidak ada)
+  if (/(^|[^A-Z])(KIDS?|YTHS?|YOUTH|BOYS?|GIRLS?|INFANT|TODDLER)([^A-Z]|$)/.test(txt)) return "KIDS";
+  if (/(^|[^A-Z])(WOMEN'?S?|WOMAN|LADIES)([^A-Z]|$)/.test(txt)) return "WOMEN";
+  if (/(^|[^A-Z])MEN'?S?([^A-Z]|$)/.test(txt)) return "MEN";
+  return "TANPA KODE";
+}
+
+function onGenderCategoryChange() {
+  const sel = document.getElementById("genderCategory");
+  window.genderCategory = sel ? sel.value : "ALL";
+  renderSalesByGender(window.lastArticleAgg || {});
+}
+
+/**
+ * Tabel SALES BY GENDER. Dihitung dari rincian artikel periode terpilih
+ * (jumlahnya = total sales, sama dengan tabel kategori), dengan filter kategori.
+ * @param {Object} articleAgg - { artikel: {qty, sales, division} }
+ */
+function renderSalesByGender(articleAgg) {
+  const body = document.getElementById("tableGenderBody");
+  if (!body) return;
+
+  const sel = document.getElementById("genderCategory");
+  const cats = (window.storeData && window.storeData.categories) || [];
+  if (window.genderCategory === undefined) window.genderCategory = "ALL";
+  if (window.genderCategory !== "ALL" && !cats.includes(window.genderCategory)) {
+    window.genderCategory = "ALL";
+  }
+  if (sel) {
+    sel.innerHTML =
+      '<option value="ALL">SEMUA KATEGORI</option>' +
+      cats
+        .map((c) => `<option value="${c}">${TOP_ARTICLE_CAT_LABELS[c] || c}</option>`)
+        .join("");
+    sel.value = window.genderCategory;
+  }
+
+  // Deskripsi MSR terpotong, jadi sebagian size kehilangan kode gender. Artikel yang sama
+  // (kode varian minus 6 karakter terakhir) pasti gender-nya sama, jadi gender diambil dari
+  // size lain yang kodenya terbaca. Hanya dipakai jika hasilnya tidak ambigu.
+  const styleOf = (key) => {
+    const v = String(key).split("/")[0].trim();
+    return v.length > 12 ? v.slice(0, -6) : v;
+  };
+  const styleGender = {};
+  Object.keys(articleAgg || {}).forEach((key) => {
+    const g = detectGenderFromDesc(key);
+    if (g === "TANPA KODE") return;
+    const st = styleOf(key);
+    if (styleGender[st] === undefined) styleGender[st] = g;
+    else if (styleGender[st] !== g) styleGender[st] = null; // ambigu
+  });
+  const genderOf = (key) => {
+    const g = detectGenderFromDesc(key);
+    if (g !== "TANPA KODE") return g;
+    return styleGender[styleOf(key)] || "TANPA KODE";
+  };
+
+  const agg = {};
+  GENDER_ORDER.forEach((g) => (agg[g] = { qty: 0, sales: 0 }));
+  Object.keys(articleAgg || {}).forEach((key) => {
+    const row = articleAgg[key];
+    if (
+      window.genderCategory !== "ALL" &&
+      getCatKey(row.division || "") !== window.genderCategory
+    )
+      return;
+    const g = genderOf(key);
+    agg[g].qty += row.qty || 0;
+    agg[g].sales += row.sales || 0;
+  });
+
+  const totalQty = GENDER_ORDER.reduce((sum, g) => sum + agg[g].qty, 0);
+  const totalSales = GENDER_ORDER.reduce((sum, g) => sum + agg[g].sales, 0);
+  const fmt = (n) => Math.round(n).toLocaleString("en-US");
+  const cell = "padding:8px 10px; text-align:right;";
+
+  if (totalQty === 0 && totalSales === 0) {
+    body.innerHTML =
+      '<tr><td colspan="4" style="text-align:center; padding:20px;">NO DATA AVAILABLE</td></tr>';
+    return;
+  }
+
+  let html = "";
+  GENDER_ORDER.forEach((g) => {
+    if (g === "TANPA KODE" && agg[g].qty === 0 && agg[g].sales === 0) return;
+    const pct = totalSales ? ((agg[g].sales / totalSales) * 100).toFixed(1) : "0.0";
+    html += `<tr style="border-bottom:1px solid #ddd;">
+      <td style="padding:8px 10px; font-weight:bold;">${g}</td>
+      <td style="${cell}">${fmt(agg[g].qty)}</td>
+      <td style="${cell}">${fmt(agg[g].sales)}</td>
+      <td style="${cell}">${pct}%</td></tr>`;
+  });
+  html += `<tr style="border-top:2px solid #111; background:#f0f0f0; font-weight:bold;">
+      <td style="padding:8px 10px;">TOTAL</td>
+      <td style="${cell}">${fmt(totalQty)}</td>
+      <td style="${cell}">${fmt(totalSales)}</td>
+      <td style="${cell}">100.0%</td></tr>`;
+  body.innerHTML = html;
 }
 
 // =============================================
