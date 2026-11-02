@@ -2210,7 +2210,7 @@ function renderTopArticles(articleAgg) {
 // =============================================
 // SALES BY GENDER
 // =============================================
-const GENDER_ORDER = ["MEN", "WOMEN", "KIDS", "UNISEX", "TANPA KODE"];
+const GENDER_ORDER = ["MEN", "WOMEN", "KIDS", "UNISEX"];
 
 /**
  * Menentukan gender dari deskripsi barang di MSR.
@@ -2218,7 +2218,8 @@ const GENDER_ORDER = ["MEN", "WOMEN", "KIDS", "UNISEX", "TANPA KODE"];
  * kode "(Usia/Gender)" -> A/M, O/M = MEN | A/W, O/W, F = WOMEN | A/U, O/U, U = UNISEX |
  * K/x, GS, PS, TD = KIDS. Deskripsi di MSR terpotong ±40 karakter, jadi kode boleh
  * berakhir dengan ")", "," atau langsung terpotong di akhir teks, mis. "(A/U, MAR".
- * Tidak menebak dari warna. Jika tidak ada petunjuk -> "TANPA KODE" (tidak dipaksa jadi UNISEX).
+ * Tidak menebak dari warna. Jika tidak ada petunjuk -> "TANPA KODE"; pemanggil (renderSalesByGender)
+ * memulihkan dari artikel yang sama, dan sisanya dihitung UNISEX.
  * @param {string} desc - Deskripsi artikel dari MSR (kolom Article)
  * @returns {string} MEN | WOMEN | KIDS | UNISEX | TANPA KODE
  */
@@ -2294,7 +2295,8 @@ function renderSalesByGender(articleAgg) {
   const genderOf = (key) => {
     const g = detectGenderFromDesc(key);
     if (g !== "TANPA KODE") return g;
-    return styleGender[styleOf(key)] || "TANPA KODE";
+    // tetap tanpa petunjuk (kode terpotong/aksesori) -> UNISEX
+    return styleGender[styleOf(key)] || "UNISEX";
   };
 
   const agg = {};
@@ -2324,7 +2326,6 @@ function renderSalesByGender(articleAgg) {
 
   let html = "";
   GENDER_ORDER.forEach((g) => {
-    if (g === "TANPA KODE" && agg[g].qty === 0 && agg[g].sales === 0) return;
     const pct = totalSales ? ((agg[g].sales / totalSales) * 100).toFixed(1) : "0.0";
     html += `<tr style="border-bottom:1px solid #ddd;">
       <td style="padding:8px 10px; font-weight:bold;">${g}</td>
