@@ -37,6 +37,10 @@ const VARIANT_SUFFIX_LENGTH = 6;
 function extractArtikel(variant) {
   if (!variant) return "";
   variant = String(variant).trim();
+  // Non-MD (paper bag, box, dll) berkode ZSP.../ZZZ... dan tidak punya akhiran size,
+  // jadi artikelnya seluruh karakter sebelum "/" (jangan dipotong 6 karakter, kalau tidak
+  // ZSPCONVERSELPB21, ...MPB21, ...SPB22 menyatu jadi satu "ZSPCONVERS").
+  if (/^(ZSP|ZZZ)/i.test(variant)) return variant;
   if (variant.length <= GENERIC_ARTICLE_MAX_LENGTH) {
     return variant;
   }
