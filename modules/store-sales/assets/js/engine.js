@@ -1002,6 +1002,63 @@ const GTEngine = (() => {
   }
 
   // =====================================================
+  // ALOKASI RETURN KE STAFF
+  //
+  // Daftar Salesperson Wise tidak memuat baris return, jadi baris staff
+  // (sales) lebih besar dari TOTAL yang sudah nett return. Return dibebankan
+  // ke staff yang menjual barang pengganti (artikel sama beda size) pada
+  // tanggal yang sama. Jika tidak ada pasangannya: ke satu-satunya staff hari
+  // itu, atau ke baris UNKNOWN bila staff lebih dari satu. Dengan begitu
+  // jumlah sales semua baris staff = TOTAL. Qty tidak dikurangi (qty = barang terjual).
+  // =====================================================
+  function getReturnAllocations(dateFilter = "") {
+    const styleOf = (article) => {
+      const v = text(String(article || "").split("/")[0]);
+      return v.length > 12 ? v.slice(0, -6) : v;
+    };
+
+    const saleLines = transactions.filter(
+      (t) =>
+        !t.isReturn &&
+        !t.isNonMD &&
+        t.staff &&
+        matchDateFilter(t.date, dateFilter),
+    );
+
+    const result = [];
+
+    transactions.forEach((t) => {
+      if (!t.isReturn || t.isNonMD || !matchDateFilter(t.date, dateFilter)) {
+        return;
+      }
+
+      const sameDay = saleLines.filter((s) => s.date === t.date);
+      const style = styleOf(t.article);
+      const exchange = sameDay.find((s) => styleOf(s.article) === style);
+
+      let staffName = "UNKNOWN";
+
+      if (exchange) {
+        staffName = text(exchange.staff.name);
+      } else {
+        const names = new Set(sameDay.map((s) => text(s.staff.name)));
+
+        if (names.size === 1) {
+          staffName = [...names][0];
+        }
+      }
+
+      result.push({
+        date: t.date,
+        staff: staffName,
+        value: Number(t.sales || 0),
+      });
+    });
+
+    return result;
+  }
+
+  // =====================================================
   // GET DAILY CASH INVOICES BY DATE
   // =====================================================
 
@@ -1115,6 +1172,29 @@ const GTEngine = (() => {
       }
     });
 
+    // RETURN DIBEBANKAN KE STAFF (sales saja, qty tidak berubah)
+
+    getReturnAllocations(dateFilter).forEach((a) => {
+      if (!summary.has(a.staff)) {
+        summary.set(a.staff, {
+          id: "",
+          staff: a.staff,
+          sales: 0,
+          grossSales: 0,
+          discount: 0,
+          sm: 0,
+          qty: 0,
+          categories: {},
+          invoices: new Set(),
+        });
+      }
+
+      const row = summary.get(a.staff);
+
+      row.sales += a.value;
+      row.grossSales += a.value;
+    });
+
     // =====================================================
     // 2. FINALIZE STAFF SM
     // =====================================================
@@ -1163,8 +1243,10 @@ const GTEngine = (() => {
     // 6. MD QTY
     // =====================================================
 
+    // QTY = barang terjual. Barang yang di-return tidak mengurangi qty
+    // (sales tetap nett return), mis. tukar size: -1 +1 +9 = qty 10 -> 11 terjual.
     const mdBaseQty = mdMSR.reduce(
-      (sum, item) => sum + Number(item.qty || 0),
+      (sum, item) => sum + Math.max(Number(item.qty || 0), 0),
 
       0,
     );
@@ -1230,7 +1312,7 @@ const GTEngine = (() => {
       }
 
       totalCategories[division] =
-        (totalCategories[division] || 0) + Number(item.qty || 0);
+        (totalCategories[division] || 0) + Math.max(Number(item.qty || 0), 0);
     });
 
     // =====================================================
@@ -1859,7 +1941,7 @@ const GTEngine = (() => {
       .reduce((sum, item) => sum + Number(item.value || 0), 0);
 
     const transactionQty = mdTransactions.reduce(
-      (sum, t) => sum + Number(t.qty || 0),
+      (sum, t) => sum + (t.isReturn ? 0 : Number(t.qty || 0)),
 
       0,
     );

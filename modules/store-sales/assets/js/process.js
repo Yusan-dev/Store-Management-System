@@ -677,7 +677,9 @@ function parseAllData(
     const article = String(row[5] || "").trim();
 
     dataByDate[date].sales += netAmt;
-    dataByDate[date].qty += qty;
+    // Qty = barang terjual: retur (qty negatif) tidak mengurangi qty, tapi sales tetap nett retur.
+    const soldQty = qty > 0 ? qty : 0;
+    dataByDate[date].qty += soldQty;
 
     // Determine the dynamic category key (e.g. "HARDGOODS", "ACC", etc)
     let catKey = division;
@@ -694,7 +696,7 @@ function parseAllData(
       dataByDate[date].catSM[catKey] = new Set();
     }
 
-    dataByDate[date].dynamicCats[catKey].qty += qty;
+    dataByDate[date].dynamicCats[catKey].qty += soldQty;
     dataByDate[date].dynamicCats[catKey].sales += netAmt;
 
     // *** DISCOUNT DETECTION FROM MSR ***
@@ -752,7 +754,7 @@ function parseAllData(
       if (!dataByDate[date].discountData[catKey][productDivision][priceType]) {
         dataByDate[date].discountData[catKey][productDivision][priceType] = { qty: 0, sales: 0 };
       }
-      dataByDate[date].discountData[catKey][productDivision][priceType].qty += qty;
+      dataByDate[date].discountData[catKey][productDivision][priceType].qty += soldQty;
       dataByDate[date].discountData[catKey][productDivision][priceType].sales += netAmt;
     }
 
@@ -767,7 +769,7 @@ function parseAllData(
           division: division,
         };
       }
-      dataByDate[date].articles[article].qty += qty;
+      dataByDate[date].articles[article].qty += soldQty;
       dataByDate[date].articles[article].sales += netAmt;
     }
   }
@@ -989,6 +991,9 @@ function parseAllData(
       );
       if (total && Number.isFinite(Number(total.sales))) {
         dataByDate[date].sales = Number(total.sales);
+      }
+      if (total && Number.isFinite(Number(total.qty))) {
+        dataByDate[date].qty = Number(total.qty);
       }
     });
   }
