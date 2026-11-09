@@ -60,6 +60,7 @@ const files = {
   dailyCash: null,
   advOrd: null,
   salesLy: null,
+  stock: null,
 };
 
 const LY_STORAGE_KEY = "gt_store_ly_data";
@@ -88,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
   registerFileInput("dailyCash", "dailyCashName", "dailyCash");
   registerFileInput("advOrd", "advOrdName", "advOrd");
   registerFileInput("salesLy", "salesLyName", "salesLy");
+  registerFileInput("stock", "stockName", "stock");
   document.getElementById("salesLy").addEventListener("change", () => {
     localStorage.removeItem(LY_STORAGE_KEY);
   });
@@ -184,6 +186,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (loading) loading.classList.add("show");
 
       const msrData = await readExcel(files.msr);
+
+      // Stock Position (opsional) -> status Broken Size di Top 10 Artikel
+      window.stockIndex = null;
+      if (files.stock) {
+        try {
+          window.stockIndex = buildStockIndex(await readExcel(files.stock));
+        } catch (stockErr) {
+          console.error("Stock file gagal dibaca:", stockErr);
+          window.stockIndex = null;
+        }
+      }
 
       if (files.target) {
         targetData = await readExcel(files.target);
@@ -2086,9 +2099,103 @@ const TOP_ARTICLE_CAT_LABELS = {
   FTW: "FOOTWEAR",
 };
 
+// =============================================
+// STOCK & BROKEN SIZE (Top 10 Artikel)
+// Aturan sama dengan modul Broken Size / Auto Stock.
+// =============================================
+const STYLE_GENERIC_MAX_LENGTH = 12;
+const STYLE_SUFFIX_LENGTH = 6;
+const BROKEN_THRESHOLD = { FOOTWEAR: 3, APPAREL: 2 };
+
+/** Artikel (Generic Article): varian dipotong 6 karakter hanya jika > 12 karakter; ZSP/ZZZ utuh. */
+function styleArtikel(variant) {
+  variant = String(variant || "").trim();
+  if (!variant) return "";
+  if (/^(ZSP|ZZZ)/i.test(variant)) return variant;
+  if (variant.length <= STYLE_GENERIC_MAX_LENGTH) return variant;
+  return variant.slice(0, -STYLE_SUFFIX_LENGTH);
+}
+
+/** Size dari 6 karakter terakhir varian (hanya untuk varian > 12 karakter). */
+function styleSize(variant) {
+  variant = String(variant || "").trim();
+  if (variant.length <= STYLE_GENERIC_MAX_LENGTH) return "N/A";
+  const suffix = variant.slice(-STYLE_SUFFIX_LENGTH);
+  const apparel = suffix.match(/(XXXL|XXL|XL|XS|OS|S|M|L)$/i);
+  if (apparel) return apparel[1].toUpperCase();
+  const num = suffix.match(/(\d+\.?\d*)$/);
+  if (num) return num[1];
+  const last = suffix.slice(-3).replace(/^[0-9]+/, "");
+  return last ? last.toUpperCase() : "N/A";
+}
+
+/**
+ * Membangun indeks stok per artikel dari file Stock Position.
+ * Kolom: 1 = kategori, 4 = deskripsi "VARIAN / NAMA", 7 = qty stok (sama dengan Broken Size).
+ * @param {Array} rows - Baris file stok
+ * @returns {Object} { artikel: { category, sizes:Set, qty } }
+ */
+function buildStockIndex(rows) {
+  const index = {};
+  rows.forEach((r) => {
+    if (!r) return;
+    const raw = String(r[4] || "");
+    const qty = Number(String(r[7] == null ? "" : r[7]).replace(/,/g, ""));
+    const slash = raw.indexOf("/");
+    if (slash <= 0 || !(qty > 0)) return;
+    const variant = raw.substring(0, slash).trim();
+    const artikel = styleArtikel(variant);
+    if (!artikel) return;
+    if (!index[artikel]) {
+      index[artikel] = {
+        category: String(r[1] || "").toUpperCase(),
+        sizes: new Set(),
+        qty: 0,
+      };
+    }
+    const size = styleSize(variant);
+    if (size && size !== "N/A") index[artikel].sizes.add(size);
+    index[artikel].qty += qty;
+  });
+  return index;
+}
+
+/**
+ * Status broken size untuk satu artikel Top 10. Footwear <= 3 size dan apparel <= 2 size
+ * yang masih ada stok = BROKEN. Artikel laku yang tidak ada di stok = HABIS.
+ * Kategori selain footwear/apparel tidak dinilai (null).
+ * @param {Object} item - artikel hasil groupArticlesByStyle
+ * @returns {Object|null} { status, sizeCount, qty }
+ */
+function getBrokenStatus(item) {
+  const idx = window.stockIndex;
+  if (!idx) return null;
+  const stock = idx[item.article];
+  const cat = String((stock && stock.category) || item.division || "").toUpperCase();
+  let type = null;
+  if (cat.includes("FOOTWEAR") || cat.includes("SHOES") || cat.includes("SEPATU")) type = "FOOTWEAR";
+  else if (cat.includes("APPAREL")) type = "APPAREL";
+  if (!type) return null;
+  if (!stock || stock.qty <= 0) return { status: "HABIS", sizeCount: 0, qty: 0 };
+  const sizeCount = stock.sizes.size;
+  if (sizeCount === 0) return { status: "NO SIZE", sizeCount: 0, qty: stock.qty };
+  return {
+    status: sizeCount <= BROKEN_THRESHOLD[type] ? "BROKEN" : "NOT BROKEN",
+    sizeCount,
+    qty: stock.qty,
+  };
+}
+
+const BROKEN_BADGE_COLORS = {
+  BROKEN: "#d00000",
+  "NOT BROKEN": "#1b7a2b",
+  HABIS: "#111",
+  "NO SIZE": "#777",
+};
+
 // Kelompokkan baris MSR per ARTIKEL (semua size jadi 1 artikel).
 // Aturan "artikel" sama dengan modul Broken Size / Auto Stock / Change Price:
-// kode varian (bagian sebelum "/") dipotong 6 karakter terakhir (warna+size).
+// kode varian (bagian sebelum "/") dipotong 6 karakter terakhir (warna+size) hanya jika > 12 karakter.
 // Contoh: CONA08263C00506H + CONA08263C00509H  ->  CONA08263C (2 size).
 function groupArticlesByStyle(articleAgg) {
   const groups = {};
@@ -2096,7 +2203,7 @@ function groupArticlesByStyle(articleAgg) {
     const slash = key.indexOf("/");
     const variant = (slash >= 0 ? key.substring(0, slash) : key).trim();
     const desc = slash >= 0 ? key.substring(slash + 1).trim() : "";
-    const base = variant.length > 6 ? variant.slice(0, -6) : variant;
+    const base = styleArtikel(variant);
     const row = articleAgg[key];
 
     if (!groups[base]) {
@@ -2197,7 +2304,17 @@ function renderTopArticles(articleAgg) {
         it.sizeCount > 1
           ? ` <span style="font-size:11px;color:#777;">(${it.sizeCount} size)</span>`
           : "";
-      html += `<li><strong>${it.article}${name}</strong> : ${val}${sizes}</li>`;
+      let badge = "";
+      const bs = getBrokenStatus(it);
+      if (bs) {
+        const color = BROKEN_BADGE_COLORS[bs.status] || "#777";
+        const detail =
+          bs.status === "HABIS"
+            ? "stok 0"
+            : `${bs.sizeCount} size, stok ${bs.qty.toLocaleString("en-US")}`;
+        badge = ` <span style="display:inline-block;font-size:10px;font-weight:bold;color:#fff;background:${color};padding:1px 6px;border-radius:2px;">${bs.status}</span> <span style="font-size:11px;color:#777;">${detail}</span>`;
+      }
+      html += `<li><strong>${it.article}${name}</strong> : ${val}${sizes}${badge}</li>`;
     });
     html += "</ol>";
     return html;
