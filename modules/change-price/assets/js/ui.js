@@ -6,8 +6,26 @@ function drawTable(rows) {
   const body = document.querySelector("tbody");
   if (!body) return;
   body.innerHTML = "";
+  const promoMode = window.cpMode === "promo";
   if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;">NO DATA</td></tr>`;
+    body.innerHTML = `<tr><td colspan="${promoMode ? 7 : 10}" style="text-align:center;padding:20px;">NO DATA</td></tr>`;
+    return;
+  }
+  if (promoMode) {
+    rows.forEach((r) => {
+      body.insertAdjacentHTML(
+        "beforeend",
+        `<tr style="${PROMO_STATUS_STYLE[r.status] || ""}">
+        <td>${escHtml(r.brand)}</td>
+        <td>${escHtml(r.category)}</td>
+        <td>${escHtml(r.artikel)}</td>
+        <td>${escHtml(r.desc)}</td>
+        <td style="font-weight: bold;">${escHtml(r.status)}</td>
+        <td>${escHtml(r.remark)}</td>
+        <td>${Number(r.qty).toLocaleString("en-US")}</td>
+      </tr>`
+      );
+    });
     return;
   }
   rows.forEach((r) => {
@@ -46,8 +64,13 @@ function updateSummary(rows) {
   const totalSku = rows.length;
   const totalQty = rows.reduce((a, b) => a + (Number(b.qty) || 0), 0);
 
-  const trueRows  = rows.filter((x) => x.status === "TRUE");
-  const falseRows = rows.filter((x) => x.status === "FALSE");
+  // Mode PROMO: INCLUDE = kartu pertama, EXCLUDE = kartu kedua, TIDAK TERDAFTAR = kartu ketiga.
+  const promoMode = window.cpMode === "promo";
+  const okStatus = promoMode ? "INCLUDE" : "TRUE";
+  const koStatus = promoMode ? "EXCLUDE" : "FALSE";
+  const trueRows  = rows.filter((x) => x.status === okStatus);
+  const falseRows = rows.filter((x) => x.status === koStatus);
+  const noneRows  = rows.filter((x) => x.status === "TIDAK TERDAFTAR");
 
   const affectedSku  = trueRows.length;
   const affectedQty  = trueRows.reduce((a, b) => a + (Number(b.qty) || 0), 0);
@@ -65,6 +88,12 @@ function updateSummary(rows) {
   setEl("affectedQty",   `${affectedQty.toLocaleString("en-US")} PCS`);
   setEl("unaffectedSku", `${unaffectedSku.toLocaleString("en-US")} SKU`);
   setEl("unaffectedQty", `${unaffectedQty.toLocaleString("en-US")} PCS`);
+  setEl("affectedLabel",   promoMode ? "INCLUDE SKU" : "AFFECTED SKU");
+  setEl("unaffectedLabel", promoMode ? "EXCLUDE SKU" : "UNAFFECTED SKU");
+  setEl("noneSku", `${noneRows.length.toLocaleString("en-US")} SKU`);
+  setEl("noneQty", `${noneRows.reduce((a, b) => a + (Number(b.qty) || 0), 0).toLocaleString("en-US")} PCS`);
+  const noneCard = document.getElementById("noneCard");
+  if (noneCard) noneCard.style.display = promoMode ? "" : "none";
 
   // Dynamic Categories
   const dynContainer = document.getElementById("dynamicCategories");
@@ -79,9 +108,9 @@ function updateSummary(rows) {
     const catRows = rows.filter(
       (x) => (x.category || "").toUpperCase() === cat
     );
-    const catAffectedSku = catRows.filter((x) => x.status === "TRUE").length;
+    const catAffectedSku = catRows.filter((x) => x.status === okStatus).length;
     const catAffectedQty = catRows
-      .filter((x) => x.status === "TRUE")
+      .filter((x) => x.status === okStatus)
       .reduce((a, b) => a + (Number(b.qty) || 0), 0);
 
     dynContainer.insertAdjacentHTML(
@@ -89,7 +118,7 @@ function updateSummary(rows) {
       `<div class="card">
         <div class="label" style="display:flex; justify-content:space-between; align-items:center;">
           <span>${cat}</span>
-          <span style="font-size:10px; background:#00ffff; color:#000; padding:2px 4px; border-radius:4px; font-weight:bold;">AFFECTED</span>
+          <span style="font-size:10px; background:#00ffff; color:#000; padding:2px 4px; border-radius:4px; font-weight:bold;">${promoMode ? "INCLUDE" : "AFFECTED"}</span>
         </div>
         <h2>${catAffectedSku.toLocaleString("en-US")} SKU</h2>
         <small>${catAffectedQty.toLocaleString("en-US")} PCS</small>

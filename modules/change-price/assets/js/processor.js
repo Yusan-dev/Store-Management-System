@@ -37,6 +37,9 @@ const VARIANT_SUFFIX_LENGTH = 6;
 function extractArtikel(variant) {
   if (!variant) return "";
   variant = String(variant).trim();
+  // Non-MD (paper bag, box, dll) berkode ZSP.../ZZZ... tanpa akhiran size: artikelnya
+  // seluruh karakter sebelum "/" (sama dengan Auto Stock).
+  if (/^(ZSP|ZZZ)/i.test(variant)) return variant;
   if (variant.length <= GENERIC_ARTICLE_MAX_LENGTH) {
     return variant;
   }

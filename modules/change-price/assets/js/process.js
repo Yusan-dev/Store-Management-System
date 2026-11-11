@@ -68,6 +68,7 @@ function findPriceListColumns(rows) {
  * Menjalankan proses pembacaan file excel stock (A) dan pricelist (B).
  */
 async function runProcess() {
+  if (window.cpMode === "promo") return runPromoProcess();
   showLoading();
   const fileA = document.getElementById("stock").files[0];
   const fileB = document.getElementById("pricelist").files[0];
@@ -81,6 +82,12 @@ async function runProcess() {
   try {
     const wbA = await readExcel(fileA);
     const wbB = await readExcel(fileB);
+
+    if (looksLikePromoWorkbook(wbB)) {
+      hideLoading();
+      alert("File ini adalah file promo. Pilih mode PROMO, atau upload Price List untuk mode CHANGE PRICE.");
+      return;
+    }
 
     // Extract title from first sheet A1 and A2 of Price List
     let plTitle1 = "";

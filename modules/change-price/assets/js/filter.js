@@ -71,7 +71,8 @@ function applyFilter() {
       match = (x.artikel || "").toUpperCase().includes(search) ||
               (x.brand || "").toUpperCase().includes(search) ||
               (x.category || "").toUpperCase().includes(search) ||
-              (x.desc || "").toUpperCase().includes(search);
+              (x.desc || "").toUpperCase().includes(search) ||
+              (x.remark || "").toUpperCase().includes(search);
     }
     return match;
   });

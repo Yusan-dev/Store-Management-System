@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAA CHANGE PRICE</title>
+    <title>MAA CHANGE PRICE & PROMO</title>
     <link rel="stylesheet" href="assets/css/dashboard.css?v=4">
     <style>
         .loading-overlay {
@@ -28,7 +28,7 @@
     <div class="brand" style="display: flex; align-items: center; gap: 20px;">
         <div class="logo-box" style="width:52px;height:52px;background:linear-gradient(135deg, #FACC15, #EAB308);border:2px solid #FEF08A;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#422006;font-size:22px;box-shadow:0px 4px 16px rgba(234, 179, 8, 0.4);text-shadow:1px 1px 0px rgba(255,255,255,0.3);">KG</div>
         <div>
-            <h1 style="margin: 0; font-size: 24px; color: #ffffff;">CHANGE PRICE</h1>
+            <h1 id="pageTitle" style="margin: 0; font-size: 24px; color: #ffffff;">CHANGE PRICE & PROMO</h1>
             <p style="margin: 4px 0 8px 0; font-size: 14px; color: #94a3b8;">Created By : 2309445</p>
             <span class="version global-version-badge" style="background:transparent; border:1px solid #FFDF00; color:#FFDF00; padding:4px 12px; font-weight:bold; border-radius:12px; font-size:12px; display: inline-block;">Version 1.0</span>
         </div>
@@ -55,13 +55,17 @@
 </div>
 
         <section class="upload-card">
+            <div style="display:flex; gap:0; margin-bottom:16px;">
+                <button type="button" id="modePrice" style="padding:8px 18px; border:3px solid #111; font-weight:bold; cursor:pointer; background:#FACC15; color:#111;">CHANGE PRICE</button>
+                <button type="button" id="modePromo" style="padding:8px 18px; border:3px solid #111; border-left:0; font-weight:bold; cursor:pointer; background:#fff; color:#111;">PROMO</button>
+            </div>
             <div style="display: flex; gap: 20px; width: 100%;">
                 <div>
                     <label>UPLOAD FILE STOCK POSITION REPORT</label><br><br>
                     <input id="stock" type="file" accept=".xlsx,.xls,.ods">
                 </div>
                 <div>
-                    <label>UPLOAD FILE PRICE LIST</label><br><br>
+                    <label id="pricelistLabel">UPLOAD FILE PRICE LIST</label><br><br>
                     <input id="pricelist" type="file" accept=".xlsx,.xls,.xlsb,.ods">
                 </div>
                 <div style="margin-left: auto;">
@@ -86,14 +90,19 @@
                 <h2 id="totalQty">0</h2>
             </div>
             <div class="card">
-                <div class="label">AFFECTED SKU</div>
+                <div class="label" id="affectedLabel">AFFECTED SKU</div>
                 <h2 id="affectedSku">0 SKU</h2>
                 <small id="affectedQty">0 PCS</small>
             </div>
             <div class="card">
-                <div class="label">UNAFFECTED SKU</div>
+                <div class="label" id="unaffectedLabel">UNAFFECTED SKU</div>
                 <h2 id="unaffectedSku">0 SKU</h2>
                 <small id="unaffectedQty">0 PCS</small>
+            </div>
+            <div class="card" id="noneCard" style="display:none;">
+                <div class="label">TIDAK TERDAFTAR</div>
+                <h2 id="noneSku">0 SKU</h2>
+                <small id="noneQty">0 PCS</small>
             </div>
             <div id="dynamicCategories" style="display: contents;"></div>
         </section>
@@ -131,7 +140,7 @@
                     <div id="category"></div>
                 </div>
 
-                <div class="filter-box">
+                <div class="filter-box" id="discountBox">
                     <div class="filter-title">DISCOUNT</div>
                     <div id="discount"></div>
                 </div>
@@ -168,13 +177,14 @@
     
     <script src="libs/xlsx.full.min.js"></script>
     <script src="assets/js/db-cache.js"></script>
-    <script src="assets/js/processor.js?v=2"></script>
-    <script src="assets/js/ui.js"></script>
-    <script src="assets/js/filter.js"></script>
-    <script src="assets/js/process.js?v=2"></script>
+    <script src="assets/js/processor.js?v=3"></script>
+    <script src="assets/js/ui.js?v=2"></script>
+    <script src="assets/js/filter.js?v=2"></script>
+    <script src="assets/js/process.js?v=3"></script>
+    <script src="assets/js/promo.js?v=1"></script>
     <script src="assets/js/sort.js"></script>
-    <script src="assets/js/export.js"></script>
-    <script src="assets/js/print.js"></script>
+    <script src="assets/js/export.js?v=2"></script>
+    <script src="assets/js/print.js?v=2"></script>
     <script src="assets/js/app.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {

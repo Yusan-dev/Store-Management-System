@@ -7,6 +7,8 @@ function printData() {
     return;
   }
 
+  if (window.cpMode === "promo") return printPromo(rows);
+
   const now = new Date();
   const generatedAt = now.toLocaleString("id-ID", {
     dateStyle: "medium",
